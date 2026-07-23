@@ -1412,37 +1412,6 @@ export function createApiRouter() {
 
     res.json({ payout });
   });
-      prisma.listing.findMany({
-        where: { referredByUserId: userId },
-        orderBy: { updatedAt: 'desc' },
-      })
-    ]);
-
-    const totalPayments = payments.reduce((acc: number, p: (typeof payments)[number]) => acc + p.amount, 0);
-    const referralCredits = referredListings.reduce((sum: number, item: (typeof referredListings)[number]) => sum + (item.distributorCommissionAmount ?? 0), 0);
-    const balance = 100000 + totalPayments + referralCredits;
-
-    const transactions = [
-      ...payments.map((p: (typeof payments)[number]) => ({
-        id: p.id,
-        title: p.listing?.title || (p.bid ? 'Bid Payment' : 'Payment'),
-        amount: p.amount,
-        type: p.bid ? 'DEBIT' : 'CREDIT',
-        date: p.createdAt,
-        status: p.status
-      })),
-      ...referredListings.filter((item: (typeof referredListings)[number]) => (item.distributorCommissionAmount ?? 0) > 0).map((item: (typeof referredListings)[number]) => ({
-        id: `dist-${item.id}`,
-        title: `Distributor earning • ${item.title}`,
-        amount: item.distributorCommissionAmount ?? 0,
-        type: 'CREDIT',
-        date: item.updatedAt,
-        status: item.distributorCommissionStatus ?? 'PENDING'
-      }))
-    ];
-
-    res.json({ balance, transactions });
-  });
 
   get('/users/:userId/payments', async (req: Request, res: Response) => {
     const userId = req.params.userId;
@@ -1879,8 +1848,8 @@ export function createApiRouter() {
       name: z.string().optional(),
       email: z.string().email().optional(),
       isVerified: z.boolean().optional(),
-      kycStatus: z.string().optional(),
-      role: z.string().optional(),
+      kycStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED']).nullable().optional(),
+      role: z.enum(['BUYER', 'SELLER', 'ADMIN']).optional(),
     }).parse(req.body);
     if (useMemoryStore) {
       return res.json({ user: devStore.updateUser(id, body) });

@@ -1,0 +1,92 @@
+const BRAND_LOGOS: Record<string, any> = {
+  maruti:       require('../../assets/brands/suzuki.png'),
+  hyundai:      require('../../assets/brands/hyundai.png'),
+  tata:         require('../../assets/brands/tata.png'),
+  mahindra:     require('../../assets/brands/mahindra.png'),
+  kia:          require('../../assets/brands/kia.png'),
+  honda:        require('../../assets/brands/honda.png'),
+  toyota:       require('../../assets/brands/toyota.png'),
+  volkswagen:   require('../../assets/brands/volkswagen.png'),
+  renault:      require('../../assets/brands/renault.png'),
+  ford:         require('../../assets/brands/ford.png'),
+  skoda:        require('../../assets/brands/skoda.png'),
+  nissan:       require('../../assets/brands/nissan.png'),
+  mg:           require('../../assets/brands/mg.png'),
+  jeep:         require('../../assets/brands/jeep.png'),
+  citroen:      require('../../assets/brands/citroen.png'),
+  fiat:         require('../../assets/brands/fiat.png'),
+  isuzu:        require('../../assets/brands/isuzu.png'),
+  mitsubishi:   require('../../assets/brands/mitsubishi.png'),
+  force:        require('../../assets/brands/force.png'),
+  datsun:       require('../../assets/brands/datsun.png'),
+  bmw:          require('../../assets/brands/bmw.png'),
+  mercedes:     require('../../assets/brands/mercedes.png'),
+  audi:         require('../../assets/brands/audi.png'),
+  jaguar:       require('../../assets/brands/jaguar.png'),
+  volvo:        require('../../assets/brands/volvo.png'),
+  landrover:    require('../../assets/brands/landrover.png'),
+  lexus:        require('../../assets/brands/lexus.png'),
+  porsche:      require('../../assets/brands/porsche.png'),
+  lamborghini:  require('../../assets/brands/lamborghini.png'),
+  ferrari:      require('../../assets/brands/ferrari.png'),
+  maserati:     require('../../assets/brands/maserati.png'),
+  bentley:      require('../../assets/brands/bentley.png'),
+  rollsroyce:   require('../../assets/brands/rollsroyce.png'),
+  mini:         require('../../assets/brands/mini.png'),
+};
+
+export type BrandItem = {
+  id: string;
+  name: string;
+  logo: any;
+  count?: string;
+};
+
+export function sortBrandsByPriority<T extends BrandItem>(brands: T[]): T[] {
+  const priorityOrder = ['maruti', 'hyundai', 'tata', 'mahindra', 'kia', 'honda', 'toyota'];
+  return [...brands].sort((a, b) => {
+    const aIndex = priorityOrder.indexOf(a.id);
+    const bIndex = priorityOrder.indexOf(b.id);
+    const normalizedA = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+    const normalizedB = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+    if (normalizedA !== normalizedB) return normalizedA - normalizedB;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+export const ALL_BRANDS: BrandItem[] = [
+  { id: 'maruti',      name: 'Maruti Suzuki', logo: BRAND_LOGOS.maruti },
+  { id: 'hyundai',     name: 'Hyundai',       logo: BRAND_LOGOS.hyundai },
+  { id: 'tata',        name: 'Tata Motors',   logo: BRAND_LOGOS.tata },
+  { id: 'mahindra',    name: 'Mahindra',      logo: BRAND_LOGOS.mahindra },
+  { id: 'kia',         name: 'Kia',           logo: BRAND_LOGOS.kia },
+  { id: 'honda',       name: 'Honda',         logo: BRAND_LOGOS.honda },
+  { id: 'toyota',      name: 'Toyota',        logo: BRAND_LOGOS.toyota },
+  { id: 'volkswagen',  name: 'Volkswagen',    logo: BRAND_LOGOS.volkswagen },
+  { id: 'renault',     name: 'Renault',       logo: BRAND_LOGOS.renault },
+  { id: 'ford',        name: 'Ford',          logo: BRAND_LOGOS.ford },
+  { id: 'skoda',       name: 'Skoda',         logo: BRAND_LOGOS.skoda },
+  { id: 'nissan',      name: 'Nissan',        logo: BRAND_LOGOS.nissan },
+  { id: 'mg',          name: 'MG Motors',     logo: BRAND_LOGOS.mg },
+  { id: 'jeep',        name: 'Jeep',          logo: BRAND_LOGOS.jeep },
+  { id: 'citroen',     name: 'Citroen',       logo: BRAND_LOGOS.citroen },
+  { id: 'fiat',        name: 'Fiat',          logo: BRAND_LOGOS.fiat },
+  { id: 'isuzu',       name: 'Isuzu',         logo: BRAND_LOGOS.isuzu },
+  { id: 'mitsubishi',  name: 'Mitsubishi',    logo: BRAND_LOGOS.mitsubishi },
+  { id: 'force',       name: 'Force Motors',  logo: BRAND_LOGOS.force },
+  { id: 'datsun',      name: 'Datsun',        logo: BRAND_LOGOS.datsun },
+  { id: 'bmw',         name: 'BMW',           logo: BRAND_LOGOS.bmw },
+  { id: 'mercedes',    name: 'Mercedes',      logo: BRAND_LOGOS.mercedes },
+  { id: 'audi',        name: 'Audi',          logo: BRAND_LOGOS.audi },
+  { id: 'jaguar',      name: 'Jaguar',        logo: BRAND_LOGOS.jaguar },
+  { id: 'volvo',       name: 'Volvo',         logo: BRAND_LOGOS.volvo },
+  { id: 'landrover',   name: 'Land Rover',    logo: BRAND_LOGOS.landrover },
+  { id: 'lexus',       name: 'Lexus',         logo: BRAND_LOGOS.lexus },
+  { id: 'porsche',     name: 'Porsche',       logo: BRAND_LOGOS.porsche },
+  { id: 'lamborghini', name: 'Lamborghini',   logo: BRAND_LOGOS.lamborghini },
+  { id: 'ferrari',     name: 'Ferrari',       logo: BRAND_LOGOS.ferrari },
+  { id: 'maserati',    name: 'Maserati',      logo: BRAND_LOGOS.maserati },
+  { id: 'bentley',     name: 'Bentley',       logo: BRAND_LOGOS.bentley },
+  { id: 'rollsroyce',  name: 'Rolls Royce',   logo: BRAND_LOGOS.rollsroyce },
+  { id: 'mini',        name: 'Mini Cooper',   logo: BRAND_LOGOS.mini },
+];

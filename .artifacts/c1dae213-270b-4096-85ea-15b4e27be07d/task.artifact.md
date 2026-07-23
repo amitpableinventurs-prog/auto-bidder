@@ -1,0 +1,11 @@
+- `[x]` Environment Cleanup
+    - `[x]` Delete `node_modules` and `package-lock.json`
+    - `[/]` Clear Gradle cache (Requires npm install)
+- `[/]` Dependency Alignment
+    - `[/]` Run `npm install`
+    - `[ ]` Fix Expo dependency mismatches
+- `[ ]` Android Build
+    - `[ ]` Run `./gradlew clean`
+    - `[ ]` Run `./gradlew assembleRelease`
+- `[ ]` Verification
+    - `[ ]` Verify APK generation

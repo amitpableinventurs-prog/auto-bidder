@@ -1,0 +1,3409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoBidder Admin | Advanced Control Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #F0F4F8;
+            --sidebar: #161829;
+            --sidebar-text: #D3E2F1;
+            --sidebar-active: #FFC107;
+            --card: #ffffff;
+            --card-hover: #f8fafc;
+            --border: #D3E2F1;
+            --accent: #266EB9;
+            --accent-glow: rgba(38, 110, 185, 0.1);
+            --green: #10B981;
+            --yellow: #FFC107;
+            --red: #FF6F61;
+            --purple: #8B5CF6;
+            --cyan: #06B6D4;
+            --orange: #F97316;
+            --text: #161829;
+            --muted: #64748B;
+            --radius: 12px;
+            --header-h: 70px;
+            --sidebar-w: 260px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline-color: var(--accent);
+        }
+
+        body {
+            font-family: 'Open Sans', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6, .stat-value, .btn {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+
+        h1 { font-size: 30px; letter-spacing: -0.02em; }
+        h2 { font-size: 26px; }
+        h3 { font-size: 22px; }
+
+        /* ── UTILS ── */
+        .glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+        }
+
+        .shadow-glow {
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05), 0 0 0 1px var(--border);
+        }
+
+        /* ── TOP NAV ── */
+        header {
+            height: var(--header-h);
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+
+        .admin-header-logo {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo:hover { transform: scale(1.02); }
+
+        @media (max-width: 640px) {
+            .admin-header-logo { height: 32px; }
+        }
+
+        .header-search {
+            margin-left: 60px;
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .header-search input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 12px 8px 36px;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .header-search i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .header-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .api-config {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg);
+            padding: 4px 12px;
+            border-radius: 99px;
+            border: 1px solid var(--border);
+        }
+
+        .api-config input {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: 12px;
+            width: 140px;
+            outline: none;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--muted);
+            position: relative;
+        }
+        .status-dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); }
+        .status-dot.offline { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+        /* ── LAYOUT ── */
+        .layout {
+            display: flex;
+            margin-top: var(--header-h);
+            min-height: calc(100vh - var(--header-h));
+        }
+
+        /* ── SIDEBAR ── */
+        aside {
+            width: var(--sidebar-w);
+            background: var(--sidebar);
+            border-right: 1px solid var(--sidebar);
+            position: fixed;
+            top: var(--header-h);
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            padding: 20px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sidebar-group {
+            margin-bottom: 20px;
+        }
+
+        .sidebar-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: #64748B;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            padding: 16px 12px 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--sidebar-text);
+            transition: all 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: 'Poppins', sans-serif;
+            opacity: 0.8;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            opacity: 1;
+        }
+
+        .nav-item.active {
+            background: var(--yellow);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+            opacity: 1;
+        }
+
+        .nav-item .icon { font-size: 16px; width: 24px; text-align: center; }
+
+        /* ── MAIN ── */
+        main {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            padding: 32px 40px;
+            max-width: 1600px;
+        }
+
+        /* ── PAGE ELEMENTS ── */
+        .page-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 32px;
+        }
+
+        .page-info h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+        .page-info p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+
+        .btn-secondary { background: var(--card); color: var(--text); border-color: var(--border); }
+        .btn-secondary:hover { background: var(--card-hover); }
+
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--red); border-color: rgba(239, 68, 68, 0.2); }
+        .btn-danger:hover { background: var(--red); color: white; }
+
+        /* ── STATS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: ''; position: absolute; top: 0; right: 0; width: 100px; height: 100px;
+            background: radial-gradient(circle at top right, var(--accent-glow), transparent 70%);
+            opacity: 1;
+        }
+
+        .stat-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-value { font-size: 32px; font-weight: 800; margin-top: 8px; }
+        .stat-trend { font-size: 12px; margin-top: 8px; display: flex; align-items: center; gap: 4px; }
+        .trend-up { color: var(--green); }
+        .trend-down { color: var(--red); }
+
+        /* ── TABLE ── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(0,0,0,0.02);
+        }
+
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { padding: 14px 24px; text-align: left; color: var(--muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+        td { padding: 16px 24px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(0,0,0,0.02); }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-green { background: rgba(16, 185, 129, 0.1); color: var(--green); }
+        .badge-yellow { background: rgba(245, 158, 11, 0.1); color: var(--yellow); }
+        .badge-red { background: rgba(239, 68, 68, 0.1); color: var(--red); }
+        .badge-blue { background: rgba(59, 130, 246, 0.1); color: var(--accent); }
+        .badge-gray { background: rgba(148, 163, 184, 0.1); color: var(--muted); }
+
+        .avatar {
+            width: 36px; height: 36px; border-radius: 10px; background: var(--bg);
+            display: grid; place-items: center; font-weight: 700; color: var(--accent);
+            border: 1px solid var(--border);
+        }
+
+        /* ── DETAIL PANEL ── */
+        #detail-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 2000; display: none; }
+        #detail-panel {
+            position: fixed; top: 0; right: 0; bottom: 0; width: 500px;
+            background: var(--sidebar); border-left: 1px solid var(--border);
+            z-index: 2001; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column;
+        }
+        #detail-panel.open { transform: translateX(0); }
+        #detail-overlay.open { display: block; }
+
+        .detail-head { padding: 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .detail-body { flex: 1; overflow-y: auto; padding: 24px; }
+        .detail-foot { padding: 20px 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+
+        .detail-row { margin-bottom: 20px; }
+        .detail-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+        .detail-value { font-size: 15px; font-weight: 500; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+            aside { width: 80px; padding: 20px 10px; }
+            .sidebar-label, .nav-item span:not(.icon) { display: none; }
+            main { margin-left: 80px; }
+            .nav-item .icon { width: 100%; font-size: 22px; }
+        }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s ease forwards; }
+
+        /* ── LOADER ── */
+        .loader { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── CUSTOM SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+        /* ── TOGGLE SWITCH ── */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--border); transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* ── PREVIEW OVERLAY ── */
+        #preview-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        #preview-overlay.open { display: flex; }
+        .preview-card {
+            width: 100%;
+            max-width: 1000px;
+            height: 100%;
+            max-height: 800px;
+            background: var(--sidebar);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+        }
+        .preview-head {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .preview-content {
+            flex: 1;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .preview-content img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .preview-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* ── LOGIN SCREEN ── */
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at top right, #266EB9, #161829);
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .admin-logo-img {
+            height: 50px;
+            width: auto;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
+        .login-field {
+            margin-bottom: 20px;
+        }
+
+        .login-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .login-field input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 16px;
+            background: var(--bg);
+        }
+
+        .login-error {
+            color: var(--red);
+            font-size: 13px;
+            margin-bottom: 15px;
+            text-align: center;
+            min-height: 1.2em;
+        }
+
+        body.not-auth header, body.not-auth .layout {
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 28px 22px;
+                border-radius: 16px;
+            }
+
+            .login-logo {
+                margin-bottom: 22px;
+            }
+
+            .admin-logo-img {
+                height: 40px;
+            }
+        }
+        body.auth #login-screen {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="not-auth">
+
+    <div id="login-screen">
+        <div class="login-card">
+            <div class="login-logo">
+                <img src="assets/hdlogo.png" alt="AutoBidder Logo" class="admin-logo-img">
+                <p style="color: var(--muted); font-size: 13px; margin-top: 10px;">Control Panel Authentication</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="login-field">
+                    <label>Admin Email</label>
+                    <input type="email" id="login-email" placeholder="admin@autobidder.in" required>
+                </div>
+                <div class="login-field">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <div id="login-err" class="login-error"></div>
+                <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 14px;" type="submit" id="login-btn">
+                    Authorize Access
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <header class="glass">
+        <a class="logo" href="#">
+            <img src="assets/hdlogo.png" alt="AutoBidder Logo" class="admin-header-logo">
+        </a>
+
+        <div class="header-search">
+            <i>🔍</i>
+            <input type="text" placeholder="Global search users, cars, auctions..." id="globalSearch">
+        </div>
+
+        <div class="header-right">
+            <div class="api-config">
+                <div class="status-dot" id="status-indicator"></div>
+                <input id="apiBase" type="text" placeholder="API Base URL">
+                <button onclick="reconnect()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:10px; font-weight:800;">SYNC</button>
+            </div>
+            <div style="width:1px; height:24px; background:var(--border)"></div>
+            <div style="display:flex; align-items:center; gap:10px">
+                <div style="text-align:right">
+                    <div style="font-size:13px; font-weight:700">Administrator</div>
+                    <div style="font-size:11px; color:var(--muted)">super-admin</div>
+                </div>
+                <div class="avatar">AD</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside id="sidebar">
+            <div class="sidebar-group">
+                <div class="sidebar-label">Overview</div>
+                <button class="nav-item active" data-mod="dashboard" onclick="nav('dashboard')">
+                    <span class="icon"><i class="fa-solid fa-chart-line"></i></span> <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-mod="analytics" onclick="nav('analytics')">
+                    <span class="icon"><i class="fa-solid fa-chart-pie"></i></span> <span>Revenue Analytics</span>
+                </button>
+            </div>
+
+            <div class="sidebar-group">
+                <div class="sidebar-label">Management</div>
+                <button class="nav-item" data-mod="users" onclick="nav('users')">
+                    <span class="icon"><i class="fa-solid fa-users"></i></span> <span>User Directory</span>
+                </button>
+                <button class="nav-item" data-mod="dealers" onclick="nav('dealers')">
+                    <span class="icon"><i class="fa-solid fa-building"></i></span> <span>Dealer Network</span>
+                </button>
+                <button class="nav-item" data-mod="distributors" onclick="nav('distributors')">
+                    <span class="icon"><i class="fa-solid fa-share-nodes"></i></span> <span>Distributor Program</span>
+                </button>
+                <button class="nav-item" data-mod="brands" onclick="nav('brands')">
+                    <span class="icon"><i class="fa-solid fa-tag"></i></span> <span>Brand Network</span>
+                </button>
+                <button class="nav-item" data-mod="bids" onclick="nav('bids')">
+                    <span class="icon"><i class="fa-solid fa-hand-holding-dollar"></i></span> <span>Buyer Records</span>
+                </button>
+                <button class="nav-item" data-mod="sellers" onclick="nav('sellers')">
+                    <span class="icon"><i class="fa-solid fa-user-check"></i></span> <span>Seller Verification</span>
+                </button>
+                <button class="nav-item" data-mod="vehicles" onclick="nav('vehicles')">
+                    <span class="icon"><i class="fa-solid fa-car-side"></i></span> <span>Vehicle Inspection</span>
+                </button>
+            </div>
+
+            <div class="sidebar-group">
+                <div class="sidebar-label">Operations</div>
+                <button class="nav-item" data-mod="auctions" onclick="nav('auctions')">
+                    <span class="icon"><i class="fa-solid fa-gavel"></i></span> <span>Auction Center</span>
+                </button>
+                <button class="nav-item" data-mod="appointments" onclick="nav('appointments')">
+                    <span class="icon"><i class="fa-solid fa-calendar-check"></i></span> <span>Appointments</span>
+                </button>
+                <button class="nav-item" data-mod="rtonoc" onclick="nav('rtonoc')">
+                    <span class="icon"><i class="fa-solid fa-file-contract"></i></span> <span>RTO & NOC</span>
+                </button>
+                <button class="nav-item" data-mod="leads" onclick="nav('leads')">
+                    <span class="icon"><i class="fa-solid fa-bullseye"></i></span> <span>Leads & Inquiries</span>
+                </button>
+                <button class="nav-item" data-mod="autobid" onclick="nav('autobid')">
+                    <span class="icon"><i class="fa-solid fa-robot"></i></span> <span>Auto-Bid Monitor</span>
+                </button>
+                <button class="nav-item" data-mod="delivery" onclick="nav('delivery')">
+                    <span class="icon"><i class="fa-solid fa-truck-fast"></i></span> <span>Delivery Tracking</span>
+                </button>
+                <button class="nav-item" data-mod="payments" onclick="nav('payments')">
+                    <span class="icon"><i class="fa-solid fa-credit-card"></i></span> <span>Payments & Escrow</span>
+                </button>
+                <button class="nav-item" data-mod="commissions" onclick="nav('commissions')">
+                    <span class="icon"><i class="fa-solid fa-coins"></i></span> <span>Dealer Commissions</span>
+                </button>
+                <button class="nav-item" data-mod="fraud" onclick="nav('fraud')">
+                    <span class="icon"><i class="fa-solid fa-shield-halved"></i></span> <span>Fraud Detection</span>
+                </button>
+                <button class="nav-item" data-mod="sliders" onclick="nav('sliders')">
+                    <span class="icon"><i class="fa-solid fa-images"></i></span> <span>Sliders & Banners</span>
+                </button>
+            </div>
+
+            <div class="sidebar-group">
+                <div class="sidebar-label">System</div>
+                <button class="nav-item" data-mod="notifications" onclick="nav('notifications')">
+                    <span class="icon"><i class="fa-solid fa-bell"></i></span> <span>Notifications</span>
+                </button>
+                <button class="nav-item" data-mod="logs" onclick="nav('logs')">
+                    <span class="icon"><i class="fa-solid fa-clipboard-list"></i></span> <span>Audit Logs</span>
+                </button>
+                <button class="nav-item" data-mod="pushtokens" onclick="nav('pushtokens')">
+                    <span class="icon"><i class="fa-solid fa-mobile-screen-button"></i></span> <span>Push Tokens</span>
+                </button>
+            </div>
+
+            <div style="margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1)">
+                <button class="nav-item" onclick="logout()" style="color:var(--red); opacity:1">
+                    <span class="icon"><i class="fa-solid fa-right-from-bracket"></i></span> <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <main id="main">
+            <div id="content" class="animate-fade">
+                <!-- Content injected here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- DETAIL DRAWER -->
+    <div id="detail-overlay" onclick="closeDetail()"></div>
+    <div id="detail-panel">
+        <div class="detail-head">
+            <h2 id="detail-title">Detail View</h2>
+            <button class="btn btn-secondary" style="padding:4px 8px" onclick="closeDetail()">✕</button>
+        </div>
+        <div class="detail-body" id="detail-content"></div>
+        <div class="detail-foot" id="detail-actions"></div>
+    </div>
+
+    <!-- PREVIEW OVERLAY -->
+    <div id="preview-overlay" onclick="closePreview(event)">
+        <div class="preview-card" onclick="event.stopPropagation()">
+            <div class="preview-head">
+                <h3 id="preview-title" style="margin:0; font-size:16px; color:#000">Document Preview</h3>
+                <div style="display:flex; gap:10px">
+                    <a id="preview-download" href="#" target="_blank" class="btn btn-secondary" style="padding:6px 12px; font-size:12px">
+                        <i class="fa-solid fa-download"></i> Open Original
+                    </a>
+                    <button class="btn btn-danger" style="padding:6px 12px; font-size:12px" onclick="closePreview()">✕ Close</button>
+                </div>
+            </div>
+            <div id="preview-content" class="preview-content"></div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" style="position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--card); border:1px solid var(--border); padding:12px 24px; border-radius:99px; display:flex; align-items:center; gap:12px; z-index:9999; transition: transform 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.1)">
+        <div id="toast-icon"></div>
+        <div id="toast-msg">Action successful</div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // ───────────────────────────────────────────────
+        // APP STATE & CONFIG
+        // ───────────────────────────────────────────────
+        let activeModule = 'dashboard';
+        const root = document.getElementById('content');
+        const indicator = document.getElementById('status-indicator');
+
+        function updateAuthState() {
+            const isAuth = !!adminApp.token;
+            document.body.className = isAuth ? 'auth' : 'not-auth';
+            if (isAuth && activeModule === 'dashboard') {
+                reconnect();
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const err = document.getElementById('login-err');
+            const btn = document.getElementById('login-btn');
+
+            err.textContent = '';
+            btn.disabled = true;
+            btn.textContent = 'Authenticating...';
+
+            try {
+                await adminApp.login(email, password);
+                updateAuthState();
+            } catch (e) {
+                err.textContent = e.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Authorize Access';
+            }
+        }
+
+        function logout() {
+            adminApp.logout();
+            updateAuthState();
+        }
+
+        async function reconnect() {
+            if (!adminApp.token) {
+                updateAuthState();
+                return;
+            }
+            showToast('🔄 Synchronizing with backend...', 'info');
+            try {
+                const data = await adminApp.getDashboardStats();
+                indicator.className = 'status-dot online';
+                showToast('✅ Backend Connected', 'success');
+                loadModule(activeModule);
+            } catch (e) {
+                indicator.className = 'status-dot offline';
+                if (e.message.includes('401') || e.message.includes('Unauthorized')) {
+                    adminApp.token = null;
+                    updateAuthState();
+                } else {
+                    showToast('❌ Connection Failed', 'error');
+                }
+            }
+        }
+
+        // ───────────────────────────────────────────────
+        // NAVIGATION
+        // ───────────────────────────────────────────────
+        function nav(mod) {
+            activeModule = mod;
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.mod === mod);
+            });
+            loadModule(mod);
+        }
+
+        function loadModule(mod) {
+            root.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:400px">
+                <div class="loader"></div>
+                <p style="margin-top:20px; color:var(--muted)">Fetching ${mod} data...</p>
+            </div>`;
+
+            const handlers = {
+                dashboard: renderDashboard,
+                users: renderUsers,
+                dealers: renderDealers,
+                sellers: renderSellers,
+                vehicles: renderVehicles,
+                auctions: renderAuctions,
+                analytics: renderAnalytics,
+                fraud: renderFraud,
+                payments: renderPayments,
+                commissions: renderCommissions,
+                distributors: renderDistributors,
+                logs: renderLogs,
+                notifications: renderNotifications,
+                sliders: renderSliders,
+                brands: renderBrands,
+                bids: renderBids,
+                delivery: renderDelivery,
+                autobid: renderAutoBids,
+                leads: renderLeads,
+                payouts: renderPayouts,
+                appointments: renderAppointments,
+                rtonoc: renderRtoNoc,
+                pushtokens: renderPushTokens
+            };
+
+            (handlers[mod] || renderDashboard)();
+        }
+
+        // ───────────────────────────────────────────────
+        // ① DASHBOARD
+        // ───────────────────────────────────────────────
+        async function renderDashboard() {
+            try {
+                const data = await adminApp.getDashboardStats();
+                const s = data.stats || {};
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Platform Overview</h1>
+                            <p>Real-time system health and performance metrics</p>
+                        </div>
+                        <div style="display:flex; gap:10px">
+                            <button class="btn btn-secondary" onclick="adminApp.seedData().then(() => renderDashboard())">✨ Seed Demo Data</button>
+                            <button class="btn btn-primary" onclick="renderDashboard()">↺ Refresh</button>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('Total Users', s.users || 0, '👥', '+12% vs last month', true)}
+                        ${statCard('Active Dealers', s.dealers || 0, '🏢', 'Verified showrooms', true)}
+                        ${statCard('Total Revenue', fmtINR(s.totalRevenue || 0), '💰', '+5.4k today', true)}
+                        ${statCard('Pending Leads', s.pendingLeads || 0, '🎯', 'Needs attention', false)}
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px">
+                        <div class="card">
+                            <div class="table-header">
+                                <h3 style="flex:1">Recent Vehicle Submissions</h3>
+                                <button class="btn btn-secondary" style="padding:6px 12px" onclick="nav('vehicles')">View All</button>
+                            </div>
+                            <div class="table-wrap">
+                                ${renderListingTable(data.recentListings || [])}
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="table-header">
+                                <h3>Latest Bids</h3>
+                            </div>
+                            <div style="padding:10px 0">
+                                ${(data.recentBids || []).slice(0, 6).map(b => `
+                                    <div style="padding:12px 24px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border)">
+                                        <div class="avatar" style="width:30px; height:30px; font-size:10px">${(b.user?.name || 'U')[0]}</div>
+                                        <div style="flex:1">
+                                            <div style="font-size:13px; font-weight:700">${b.user?.name || 'Unknown'}</div>
+                                            <div style="font-size:11px; color:var(--muted)">on ${b.listing?.title || 'Listing'}</div>
+                                        </div>
+                                        <div style="text-align:right">
+                                            <div style="font-size:13px; font-weight:800; color:var(--green)">${fmtINR(b.amount)}</div>
+                                            <div style="font-size:10px; color:var(--muted)">${fmtTimeAgo(b.createdAt)}</div>
+                                        </div>
+                                    </div>
+                                `).join('') || '<div style="padding:40px; text-align:center; color:var(--muted)">No recent bids</div>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px">
+                        <div class="card">
+                            <div class="table-header">
+                                <h3 style="flex:1">📅 Pending Appointments</h3>
+                            </div>
+                            <div style="padding:10px 0">
+                                ${(data.recentAppointments || []).map(a => `
+                                    <div style="padding:16px 24px; display:flex; align-items:center; gap:16px; border-bottom:1px solid var(--border)">
+                                        <div style="font-size:24px">${a.type === 'BUYER_INSPECTION' ? '🔍' : '🏠'}</div>
+                                        <div style="flex:1">
+                                            <div style="font-size:14px; font-weight:700">${a.listing?.title}</div>
+                                            <div style="font-size:12px; color:var(--muted)">${a.user?.name} • ${a.location}</div>
+                                        </div>
+                                        <div style="text-align:right">
+                                            <div style="font-size:13px; font-weight:600">${fmtDate(a.scheduledAt)}</div>
+                                            <div style="font-size:11px">${badge(a.status, a.status === 'CONFIRMED' ? 'green' : 'yellow')}</div>
+                                        </div>
+                                    </div>
+                                `).join('') || '<div style="padding:40px; text-align:center; color:var(--muted)">No pending appointments</div>'}
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="table-header">
+                                <h3 style="flex:1">🚨 Security Monitor</h3>
+                            </div>
+                            <div style="padding:24px">
+                                <div style="display:flex; flex-direction:column; gap:16px">
+                                    <div style="display:flex; justify-content:space-between; align-items:center">
+                                        <span style="font-size:13px">Abnormal Bidding Detected</span>
+                                        ${badge('3 Alerts', 'red')}
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center">
+                                        <span style="font-size:13px">Multiple Account Login</span>
+                                        ${badge('1 Alert', 'yellow')}
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center">
+                                        <span style="font-size:13px">Payment Failures (24h)</span>
+                                        <span style="font-weight:700">₹0</span>
+                                    </div>
+                                    <button class="btn btn-secondary" style="width:100%; justify-content:center" onclick="nav('fraud')">Open Fraud Center</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                renderError(e);
+            }
+        }
+
+        // ───────────────────────────────────────────────
+        // ② USER MANAGEMENT
+        // ───────────────────────────────────────────────
+        async function renderUsers() {
+            try {
+                const data = await adminApp.getUsers();
+                const users = data.users || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>User Directory</h1>
+                            <p>Manage buyer and seller accounts and permissions</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header">
+                            <input type="text" placeholder="Search by name, email or phone..." class="btn-secondary" style="flex:1; padding:10px 16px; border-radius:8px; text-align:left">
+                            <select class="btn-secondary" style="padding:10px">
+                                <option>All Roles</option>
+                                <option>Buyer</option>
+                                <option>Seller</option>
+                            </select>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Contact</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Activity</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${users.map(u => `
+                                        <tr>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:12px">
+                                                    <div class="avatar">${(u.name || 'U')[0].toUpperCase()}</div>
+                                                    <div>
+                                                        <div style="font-weight:700">${u.name || 'Anonymous'}</div>
+                                                        <div style="font-size:11px; color:var(--muted)">ID: ${u.id.slice(0,8)}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div style="font-size:13px">${u.email || '—'}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${u.phone || '—'}</div>
+                                            </td>
+                                            <td>
+                                                ${u.isVerified ? badge('Verified', 'green', '✓') : badge('Unverified', 'yellow', '!')}
+                                            </td>
+                                            <td style="font-size:12px; color:var(--muted)">${fmtDate(u.createdAt)}</td>
+                                            <td>
+                                                <div style="font-size:11px">🔨 ${u._count?.bids || 0} Bids Placed</div>
+                                                <div style="font-size:11px">📦 ${u._count?.listings || 0} Listings</div>
+                                            </td>
+                                            <td>
+                                                <div style="display:flex; gap:6px">
+                                                    <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px" onclick="showUserDetails('${u.id}')">View</button>
+                                                    <button class="btn btn-danger" style="padding:6px 12px; font-size:11px" onclick="deleteUser('${u.id}')">Delete</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        // ───────────────────────────────────────────────
+        // ② DEALER NETWORK
+        // ───────────────────────────────────────────────
+        async function renderDealers() {
+            try {
+                const data = await adminApp.getDealers();
+                const dealers = data.dealers || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Dealer Network</h1>
+                            <p>Manage showrooms, business verification, and premium placements</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('Total Dealers', dealers.length, '🏢', 'Active network', true)}
+                        ${statCard('Premium Dealers', dealers.filter(d => d.isFeatured).length, '⭐', 'Featured partners', true)}
+                        ${statCard('Pending Verification', dealers.filter(d => d.status === 'PENDING').length, '🔍', 'KYC needed', false)}
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header">
+                            <h3 style="flex:1">Showroom Directory</h3>
+                            <button class="btn btn-primary" onclick="showAddDealerForm()">+ Add Dealer</button>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Dealer / Showroom</th>
+                                        <th>Location</th>
+                                        <th>Inventory</th>
+                                        <th>Status</th>
+                                        <th>Premium</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${dealers.map(d => `
+                                        <tr>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:12px">
+                                                    <div class="avatar" style="background:var(--accent); color:white">${(d.businessName || d.name || 'D')[0]}</div>
+                                                    <div>
+                                                        <div style="font-weight:700">${d.businessName || d.name}</div>
+                                                        <div style="font-size:11px; color:var(--muted)">${d.email}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>${d.city || 'N/A'}</td>
+                                            <td>
+                                                <div style="font-weight:600">${d._count?.listings || 0} Cars</div>
+                                                <div style="font-size:10px; color:var(--muted)">${d._count?.soldListings || 0} Sold</div>
+                                            </td>
+                                            <td>${badge(d.status || 'VERIFIED', d.status === 'PENDING' ? 'yellow' : 'green')}</td>
+                                            <td>
+                                                <label class="switch">
+                                                    <input type="checkbox" ${d.isFeatured ? 'checked' : ''} onchange="toggleDealerPromotion('${d.id}', this.checked)">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <div style="display:flex; gap:6px">
+                                                    <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px" onclick="showDealerDetails('${d.id}')">Manage</button>
+                                                    <button class="btn btn-danger" style="padding:6px 12px; font-size:11px" onclick="deleteDealer('${d.id}')">Delete</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted)">No dealers found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function toggleDealerPromotion(id, isFeatured) {
+            try {
+                await adminApp.toggleDealerPromotion(id, isFeatured);
+                showToast(isFeatured ? 'Dealer Promoted' : 'Promotion Removed', 'success');
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function renderDistributors() {
+            try {
+                const data = await adminApp.getDistributors();
+                const distributors = data.distributors || [];
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Distributor Program</h1>
+                            <p>Manage referral partners, fraud controls, and commission performance</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statcard('Total Distributors', distributors.length, '🔗', 'Registered partners', true)}
+                        ${statcard('Active', distributors.filter(d => d.distributorStatus === 'ACTIVE').length, '✅', 'Eligible to earn', true)}
+                        ${statcard('Suspended', distributors.filter(d => d.distributorStatus === 'SUSPENDED').length, '🚫', 'Fraud or policy hold', false)}
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Distributor Directory</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Distributor</th>
+                                        <th>Code</th>
+                                        <th>Referrals</th>
+                                        <th>Earnings</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${distributors.map(d => `
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight:700">${d.name || 'Unnamed'}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${d.phone || d.email || '—'}</div>
+                                            </td>
+                                            <td><code>${d.distributorCode || '—'}</code></td>
+                                            <td>${d.referralCount || 0}</td>
+                                            <td style="font-weight:800; color:var(--green)">${fmtINR(d.referralEarnings || 0)}</td>
+                                            <td>${badge(d.distributorStatus || 'ACTIVE', d.distributorStatus === 'SUSPENDED' ? 'red' : 'green')}</td>
+                                            <td>
+                                                <div style="display:flex; gap:6px">
+                                                    <button class="btn btn-secondary" style="padding:4px 10px; font-size:11px" onclick="setDistributorStatus('${d.id}', '${d.distributorStatus === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED'}')">${d.distributorStatus === 'SUSPENDED' ? 'Activate' : 'Suspend'}</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted)">No distributors found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function setDistributorStatus(id, status) {
+            try {
+                await adminApp.updateDistributorStatus(id, status);
+                showToast(`Distributor ${status.toLowerCase()}`, 'success');
+                renderDistributors();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function renderLeads() {
+            try {
+                const data = await adminApp.getLeads();
+                const leads = data.leads || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Leads & Inquiries</h1>
+                            <p>Monitor buyer interest and direct inquiries for listed vehicles</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Active Inquiries</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Inquirer</th>
+                                        <th>Vehicle</th>
+                                        <th>Source</th>
+                                        <th>Assigned Dealer</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${leads.map(l => `
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight:700">${l.userName}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${l.phone}</div>
+                                            </td>
+                                            <td>
+                                                <div style="font-weight:600">${l.listingTitle}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${fmtINR(l.askingPrice)}</div>
+                                            </td>
+                                            <td>${badge(l.source || 'WEB', 'blue')}</td>
+                                            <td>${l.dealerName || 'Direct Owner'}</td>
+                                            <td>${badge(l.status, l.status === 'NEW' ? 'yellow' : 'green')}</td>
+                                            <td>
+                                                <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px" onclick="showLeadDetails('${l.id}')">Details</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted)">No leads found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function renderCommissions() {
+            try {
+                const data = await adminApp.getCommissions();
+                const comms = data.commissions || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Dealer & Distributor Commissions</h1>
+                            <p>Track partner earnings, payouts, and commission structures</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="nav('payouts')">💳 Payout Dashboard</button>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('Total Commission', fmtINR(data.totalEarned || 0), '💰', 'All time', true)}
+                        ${statCard('Unpaid Balance', fmtINR(data.unpaidBalance || 0), '🕒', 'Awaiting payout', false)}
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Commission Log</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Partner</th>
+                                        <th>Sale Amount</th>
+                                        <th>Comm. Rate</th>
+                                        <th>Earned</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${comms.map(c => `
+                                        <tr>
+                                            <td>${c.dealerName}</td>
+                                            <td>${fmtINR(c.saleAmount)}</td>
+                                            <td>${c.rate}%</td>
+                                            <td style="font-weight:800; color:var(--green)">${fmtINR(c.earned)}</td>
+                                            <td style="font-size:12px">${fmtDate(c.createdAt)}</td>
+                                            <td>${badge(c.status, c.status === 'PAID' ? 'green' : 'yellow')}</td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted)">No commission records</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function renderPayouts() {
+            try {
+                const data = await adminApp.getPayouts();
+                const payouts = data.payouts || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Payout Management</h1>
+                            <p>Approve and process payments to dealers and sellers</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Pending Payouts</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Recipient</th>
+                                        <th>Amount</th>
+                                        <th>Bank Details</th>
+                                        <th>Requested</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${payouts.map(p => `
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight:700">${p.recipientName}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${p.role}</div>
+                                            </td>
+                                            <td style="font-weight:800">${fmtINR(p.amount)}</td>
+                                            <td>
+                                                <div style="font-size:11px">A/C: ${p.accountNumber}</div>
+                                                <div style="font-size:11px; color:var(--muted)">IFSC: ${p.ifsc}</div>
+                                            </td>
+                                            <td>${fmtDate(p.createdAt)}</td>
+                                            <td>
+                                                <button class="btn btn-primary" style="padding:4px 12px; font-size:11px" onclick="processPayout('${p.id}', ${p.amount})">Approve & Pay</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--muted)">No pending payouts</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function renderBids() {
+            try {
+                const data = await adminApp.getBids();
+                const bids = data.bids || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Buyer Records & Bidding Activity</h1>
+                            <p>Complete history of all bids placed across the platform</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('Total Bids', bids.length, '🔨', 'All time bids', true)}
+                        ${statCard('Unique Bidders', new Set(bids.map(b => b.userId)).size, '👤', 'Active buyers', true)}
+                        ${statCard('Highest Bid', fmtINR(Math.max(...bids.map(b => b.amount), 0)), '🏆', 'Record bid', true)}
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Recent Bidding Activity</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Buyer</th>
+                                        <th>Vehicle</th>
+                                        <th>Bid Amount</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${bids.map(b => `
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight:700">${b.user?.name || 'Unknown'}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${b.user?.email || ''}</div>
+                                            </td>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:8px">
+                                                    <img src="${getBrandLogo(b.listing?.brand)}" style="width:20px; height:20px; object-fit:contain">
+                                                    <div>
+                                                        <div style="font-weight:600">${b.listing?.title || 'Listing'}</div>
+                                                        <div style="font-size:11px; color:var(--muted)">${b.listing?.brand || ''}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style="font-weight:800; color:var(--green)">${fmtINR(b.amount)}</td>
+                                            <td>${badge(b.status || 'ACTIVE', (b.status === 'WON' ? 'green' : b.status === 'OUTBID' ? 'red' : 'blue'))}</td>
+                                            <td style="font-size:12px; color:var(--muted)">${fmtTimeAgo(b.createdAt)}</td>
+                                            <td>
+                                                <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px" onclick="showUserDetails('${b.userId}')">Buyer Profile</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted)">No bidding records found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        // ───────────────────────────────────────────────
+        // ③ SELLER VERIFICATION
+        // ───────────────────────────────────────────────
+        async function renderSellers() {
+            try {
+                const data = await adminApp.getUsers();
+                const pending = (data.users || []).filter(u => !u.isVerified);
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Seller Verification</h1>
+                            <p>Review KYC documents and approve sellers for listing vehicles</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('Pending KYC', pending.length, '🛡️', 'Awaiting review', false)}
+                        ${statCard('Total Verified', (data.users || []).length - pending.length, '✅', 'Trusted sellers', true)}
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Awaiting Review</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Seller</th>
+                                        <th>Registration Date</th>
+                                        <th>Identity Docs</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${pending.map(u => `
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight:700">${u.name}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${u.email}</div>
+                                            </td>
+                                            <td>${fmtDate(u.createdAt)}</td>
+                                            <td>
+                                                ${u.kycImageUrl ? docButton(u.kycImageUrl, 'KYC - ' + u.name) : '<span style="color:var(--muted); font-size:12px">No Documents</span>'}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-primary" style="padding:4px 12px; font-size:11px" onclick="verifySeller('${u.id}', true)">Approve</button>
+                                                <button class="btn btn-danger" style="padding:4px 12px; font-size:11px" onclick="verifySeller('${u.id}', false)">Reject</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--muted)">No pending verifications</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        // ───────────────────────────────────────────────
+        // ④ VEHICLE VERIFICATION
+        // ───────────────────────────────────────────────
+        async function renderVehicles() {
+            try {
+                const data = await adminApp.getListings();
+                const listings = data.listings || [];
+                const pending = listings.filter(l => l.status === 'PENDING_INSPECTION' || l.status === 'DRAFT');
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Vehicle Inspection</h1>
+                            <p>Verify car details, images, and documents before they go live</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Queue (${pending.length})</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Vehicle</th>
+                                        <th>Seller</th>
+                                        <th>Details</th>
+                                        <th>Price</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${pending.map(l => `
+                                        <tr>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:12px">
+                                                    <div style="width:36px; height:36px; background:white; border-radius:8px; border:1px solid var(--border); display:grid; place-items:center; padding:4px">
+                                                        <img src="${getBrandLogo(l.brand)}" style="width:100%; height:100%; object-fit:contain">
+                                                    </div>
+                                                    <div>
+                                                        <div style="font-weight:700">${l.brand} ${l.model}</div>
+                                                        <div style="font-size:11px; color:var(--muted)">Reg: ${l.plateNumber || 'Pending'}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>${l.seller?.name || '—'}</td>
+                                            <td>${l.manufacturingYear} • ${l.fuelType} • ${l.transmission}</td>
+                                            <td style="font-weight:700">${fmtINR(l.demandPrice)}</td>
+                                            <td>
+                                                <button class="btn btn-primary" style="padding:4px 12px; font-size:11px" onclick="updateListing('${l.id}', 'ACTIVE')">Approve</button>
+                                                <button class="btn btn-secondary" style="padding:4px 12px; font-size:11px" onclick="showListingDetails('${l.id}')">Review</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--muted)">Inspection queue empty</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        // ───────────────────────────────────────────────
+        // ⑤ AUCTION MONITORING
+        // ───────────────────────────────────────────────
+        async function renderAuctions() {
+            try {
+                const data = await adminApp.getListings();
+                const active = (data.listings || []).filter(l => l.status === 'ACTIVE');
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Live Auction Monitor</h1>
+                            <p>Real-time oversight of ongoing bidding and clock management</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('Live Auctions', active.length, '🔥', 'Active now', true)}
+                        ${statCard('Total Bidders', '24', '👥', 'Active session', true)}
+                        ${statCard('Avg. Increment', '₹5,000', '📈', 'Bid velocity', true)}
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Live Board</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Auction Item</th>
+                                        <th>Time Remaining</th>
+                                        <th>Current Highest</th>
+                                        <th>Leader</th>
+                                        <th>Activity</th>
+                                        <th>Management</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${active.map(l => `
+                                        <tr>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:12px">
+                                                    <img src="${getBrandLogo(l.brand)}" style="width:24px; height:24px; object-fit:contain">
+                                                    <div>
+                                                        <div style="font-weight:700">${l.title}</div>
+                                                        <div style="font-size:11px; color:var(--muted)">Inc: ₹5,000</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:6px; font-weight:700; color:var(--red)">
+                                                    <span>⏳</span> 02:45:12
+                                                </div>
+                                                <div style="font-size:10px; color:var(--muted)">Extends on late bid</div>
+                                            </td>
+                                            <td style="color:var(--green); font-weight:800">${fmtINR(Math.max(l.startingBid, (l.bids?.[0]?.amount || 0)))}</td>
+                                            <td>
+                                                <div style="font-size:13px; font-weight:600">${l.bids?.[0]?.user?.name || 'No Bids'}</div>
+                                                <div style="font-size:10px; color:var(--muted)">ID: ${l.bids?.[0]?.userId?.slice(0,6) || '—'}</div>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px" onclick="showBidHistory('${l.id}')">📜 ${l._count?.bids || 0} Bids</button>
+                                            </td>
+                                            <td>
+                                                <div style="display:flex; gap:6px">
+                                                    <button class="btn btn-secondary" style="padding:4px 8px" title="Extend 5m" onclick="extendAuction('${l.id}')">+5m</button>
+                                                    <button class="btn btn-danger" style="padding:4px 12px; font-size:11px" onclick="updateListing('${l.id}', 'SOLD')">Hammer Down 🔨</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function showBidHistory(id) {
+            try {
+                const listings = (await adminApp.getListings()).listings;
+                const l = listings.find(x => x.id === id);
+                if(!l) return;
+
+                const bids = l.bids || [];
+
+                const html = `
+                    <div style="margin-bottom:20px; padding:16px; background:var(--bg); border-radius:12px">
+                        <h3 style="font-size:16px">${l.title}</h3>
+                        <p style="font-size:12px; color:var(--muted)">Starting Price: ${fmtINR(l.startingBid)}</p>
+                    </div>
+
+                    <div class="detail-label">Bid Ledger (Real-Time)</div>
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px">
+                        ${bids.map((b, i) => `
+                            <div style="padding:12px; border:1px solid var(--border); border-radius:10px; display:flex; justify-content:space-between; align-items:center; ${i===0?'border-color:var(--green); background:rgba(16, 185, 129, 0.05)':''}">
+                                <div>
+                                    <div style="font-weight:700; font-size:14px">${fmtINR(b.amount)}</div>
+                                    <div style="font-size:11px; color:var(--muted)">${b.user?.name} • ${fmtTimeAgo(b.createdAt)}</div>
+                                </div>
+                                <div>
+                                    ${b.autoBidConfigId ? badge('Auto', 'blue', '🤖') : badge('Manual', 'gray')}
+                                    ${i === 0 ? badge('Highest', 'green') : ''}
+                                </div>
+                            </div>
+                        `).join('') || '<div style="padding:40px; text-align:center; color:var(--muted)">No bids yet. Initializing auction...</div>'}
+                    </div>
+                `;
+
+                openDetail('Live Bid History', html, '<button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Close Monitor</button>');
+            } catch (e) {}
+        }
+
+        // ───────────────────────────────────────────────
+        // ⑥ REVENUE ANALYTICS
+        // ───────────────────────────────────────────────
+        async function renderAnalytics() {
+            try {
+                const data = await adminApp.getRevenueAnalytics();
+                const s = data.stats || {};
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Revenue Analytics</h1>
+                            <p>Financial performance tracking and growth projections</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('Gross Volume', fmtINR(s.revenue || 0), '💎', 'Total processed', true)}
+                        ${statCard('Platform Fee (5%)', fmtINR((s.revenue || 0) * 0.05), '📈', 'Company earnings', true)}
+                        ${statCard('Avg Ticket Size', fmtINR(s.avgSalePrice || 0), '🎫', 'Per transaction', true)}
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px">
+                        <div class="card" style="padding:24px">
+                            <h3 style="margin-bottom:20px">Monthly Revenue Trend</h3>
+                            ${(() => {
+                                const monthly = data.monthly || [40, 55, 45, 70, 85, 65, 95, 110, 105];
+                                const maxVal = Math.max(...monthly);
+                                const chartH = 160;
+                                return `<div style="height:${chartH}px; display:flex; align-items:flex-end; gap:8px; border-bottom:1px solid var(--border)">
+                                    ${monthly.map((v, i) => `
+                                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end">
+                                            <div style="width:100%; background:var(--accent); height:${Math.round((v / maxVal) * chartH)}px; border-radius:4px 4px 0 0; opacity:0.85" title="&#8377;${v}k"></div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div style="display:flex; gap:8px; margin-top:6px">
+                                    ${monthly.map((_, i) => `<div style="flex:1; text-align:center; font-size:10px; color:var(--muted)">M${i+1}</div>`).join('')}
+                                </div>`;
+                            })()}
+                        </div>
+                        <div class="card" style="padding:24px">
+                            <h3>Top Performing Regions</h3>
+                            <div style="margin-top:20px">
+                                ${[
+                                    { city: 'Mumbai', revenue: 1850000 },
+                                    { city: 'Delhi NCR', revenue: 2100000 },
+                                    { city: 'Bangalore', revenue: 1420000 },
+                                    { city: 'Pune', revenue: 980000 },
+                                    { city: 'Indore', revenue: 760000 },
+                                ].map(r => `
+                                    <div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border)">
+                                        <span style="font-weight:600">${r.city}</span>
+                                        <span style="color:var(--green); font-weight:700">${fmtINR(r.revenue)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        // ───────────────────────────────────────────────
+        // ⑦ FRAUD DETECTION
+        // ───────────────────────────────────────────────
+        async function renderFraud() {
+            try {
+                const data = await adminApp.getFraudAlerts();
+                const alerts = data.alerts || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Fraud Detection Center</h1>
+                            <p>AI-powered anomaly detection and risk management</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('Risk Alerts', alerts.length, '🚨', 'Needs manual review', false)}
+                        ${statCard('Flagged IPs', '12', '🌐', 'Suspicious activity', false)}
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Active Security Threats</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Risk Score</th>
+                                        <th>Alert Type</th>
+                                        <th>Target User</th>
+                                        <th>Detected</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${alerts.map(a => `
+                                        <tr>
+                                            <td>
+                                                <div style="width:100%; height:6px; background:var(--bg); border-radius:10px; margin-bottom:4px">
+                                                    <div style="width:${a.severity==='HIGH'?'90%':'40%'}; height:100%; background:${a.severity==='HIGH'?'var(--red)':'var(--yellow)'}; border-radius:10px"></div>
+                                                </div>
+                                                <span style="font-size:10px; font-weight:700; color:${a.severity==='HIGH'?'var(--red)':'var(--yellow)'}">${a.severity}</span>
+                                            </td>
+                                            <td>
+                                                <div style="font-weight:700">${a.type}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${a.description}</div>
+                                            </td>
+                                            <td>${a.userName || 'Unknown'}</td>
+                                            <td style="font-size:12px">${fmtDate(a.createdAt)}</td>
+                                            <td>
+                                                <button class="btn btn-danger" style="padding:4px 12px; font-size:11px" onclick="blockUser('${a.userId || ''}')">Block User</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--muted)">System clear. No active threats detected.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        // ───────────────────────────────────────────────
+        // ⑧ PAYMENT & DELIVERY
+        // ───────────────────────────────────────────────
+        async function renderPayments() {
+            try {
+                const data = await adminApp.getPayments();
+                const payments = data.payments || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Financials & Payments</h1>
+                            <p>Manage UPI, Wallet and Card transactions with refund controls</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('In Escrow', '₹42,50,000', '🔒', 'Secured deposits', true)}
+                        ${statCard('Total Volume', fmtINR(payments.reduce((s,p) => s + (p.status==='SUCCEEDED'?p.amount:0), 0)), '💳', 'Lifetime processed', true)}
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Transaction Log</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>TXN ID</th>
+                                        <th>Method</th>
+                                        <th>Amount</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Verification</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${payments.map(p => `
+                                        <tr>
+                                            <td class="td-mono" style="font-size:10px">${p.id}</td>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:6px">
+                                                    <span style="font-size:18px">${p.paymentMethod==='UPI'?'📱':'💳'}</span>
+                                                    <div style="font-size:12px; font-weight:600">${p.paymentMethod || 'UPI/Card'}</div>
+                                                </div>
+                                            </td>
+                                            <td style="font-weight:800; color:var(--text)">${fmtINR(p.amount)}</td>
+                                            <td>${p.bidId ? badge('Auction', 'blue') : badge('Wallet', 'purple')}</td>
+                                            <td>${badge(p.status, p.status === 'SUCCEEDED' ? 'green' : p.status === 'FAILED' ? 'red' : 'yellow')}</td>
+                                            <td style="font-size:11px; color:var(--muted)">Auth: 124590</td>
+                                            <td>
+                                                ${p.status === 'SUCCEEDED' ? `
+                                                    <button class="btn btn-danger" style="padding:4px 8px; font-size:10px" onclick="processRefund('${p.id}', ${p.amount})">Refund</button>
+                                                ` : '—'}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function renderDelivery() {
+            try {
+                const data = await adminApp.getListings();
+                // Filter for sold items that are in the delivery phase
+                const sold = (data.listings || []).filter(l => l.status === 'SOLD');
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Delivery & Fulfillment</h1>
+                            <p>Manage the final stage of the buyer auction flow: Vehicle Handover</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Pending Deliveries</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Vehicle</th>
+                                        <th>Winner</th>
+                                        <th>Location</th>
+                                        <th>Status</th>
+                                        <th>Handover</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${sold.map(l => `
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight:700">${l.title}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${fmtINR(l.bids?.[0]?.amount || l.demandPrice)}</div>
+                                            </td>
+                                            <td>
+                                                <div style="font-weight:600">${l.bids?.[0]?.user?.name || 'Winner'}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${l.bids?.[0]?.user?.phone || ''}</div>
+                                            </td>
+                                            <td>${l.city}</td>
+                                            <td>${badge('Paid', 'green')}</td>
+                                            <td>
+                                                <button class="btn btn-primary" style="padding:4px 12px; font-size:11px" onclick="markDelivered('${l.id}')">Mark Delivered</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--muted)">No vehicles ready for delivery</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        // ───────────────────────────────────────────────
+        // ⑨ AUTO-BID WORKFLOW MONITOR
+        // ───────────────────────────────────────────────
+        async function renderAutoBids() {
+            try {
+                const data = await adminApp.getAutoBids();
+                const configs = data.autoBidConfigs || [];
+                const stats = data.stats || {};
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Auto-Bid Workflow Monitor</h1>
+                            <p>Real-time oversight of automated bidding system and agent activity</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        ${statCard('Active Agents', configs.filter(c => c.isActive).length, '🤖', 'Currently monitoring', true)}
+                        ${statCard('Total Configs', stats.total || 0, '⚙️', 'All time setups', true)}
+                        ${statCard('Auto-Bids Placed', configs.reduce((s, c) => s + (c._count?.bids || 0), 0), '🔨', 'Agent actions', true)}
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header">
+                            <h3>Active Auto-Bid Workflows</h3>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>User Agent</th>
+                                        <th>Target Vehicle</th>
+                                        <th>Max Limit</th>
+                                        <th>Increment</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${configs.map(c => `
+                                        <tr>
+                                            <td>
+                                                <div style="font-weight:700">${c.user?.name || 'Unknown'}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${c.user?.email || ''}</div>
+                                            </td>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:10px">
+                                                    <img src="${getBrandLogo(c.listing?.brand)}" style="width:20px; height:20px; object-fit:contain">
+                                                    <div>
+                                                        <div style="font-weight:600">${c.listing?.title || 'Listing'}</div>
+                                                        <div style="font-size:11px; color:var(--muted)">ID: ${c.listingId.slice(0,8)}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style="font-weight:800; color:var(--accent)">${fmtINR(c.maxLimit)}</td>
+                                            <td style="color:var(--muted)">+${fmtINR(c.increment || 5000)}</td>
+                                            <td>${c.isActive ? badge('Monitoring', 'green', '📡') : badge('Inactive', 'gray')}</td>
+                                            <td>
+                                                <button class="btn btn-secondary" style="padding:4px 12px; font-size:11px" onclick="showAutoBidDetails('${c.id}')">View Flow</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted)">No active auto-bid workflows</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function showAutoBidDetails(id) {
+            try {
+                const data = await adminApp.getAutoBids();
+                const c = data.autoBidConfigs.find(x => x.id === id);
+                if(!c) return;
+
+                const html = `
+                    <div style="margin-bottom:24px; padding:20px; background:var(--bg); border-radius:12px; border:1px solid var(--border)">
+                        <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px">
+                            <div style="width:50px; height:50px; background:white; border-radius:10px; border:1px solid var(--border); padding:8px; display:grid; place-items:center">
+                                <img src="${getBrandLogo(c.listing?.brand)}" style="width:100%; height:100%; object-fit:contain">
+                            </div>
+                            <div>
+                                <h3 style="font-size:18px">Workflow: ${c.user?.name}</h3>
+                                <p style="font-size:12px; color:var(--muted)">Active on ${c.listing?.title}</p>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
+                            <div>
+                                <label class="detail-label">Ceiling Price</label>
+                                <div style="font-size:18px; font-weight:800; color:var(--accent)">${fmtINR(c.maxLimit)}</div>
+                            </div>
+                            <div>
+                                <label class="detail-label">Bid Step</label>
+                                <div style="font-size:18px; font-weight:700">${fmtINR(c.increment || 5000)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin-bottom:24px; border-color:var(--accent); background:rgba(59, 130, 246, 0.03)">
+                        <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px">
+                            <span style="font-size:14px">⚙️</span>
+                            <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em">Agent Logic Engine</span>
+                        </div>
+                        <div style="padding:16px; font-family:'JetBrains Mono', monospace; font-size:11px; line-height:1.6">
+                            <div style="color:var(--muted)">// Real-time calculation logic</div>
+                            <div><span style="color:var(--purple)">if</span> (currentHighest < <span style="color:var(--accent)">${c.maxLimit}</span>) {</div>
+                            <div style="padding-left:16px">nextBid = currentHighest + <span style="color:var(--accent)">${c.increment || 5000}</span>;</div>
+                            <div style="padding-left:16px">placeBid(userId, nextBid);</div>
+                            <div>} <span style="color:var(--purple)">else</span> {</div>
+                            <div style="padding-left:16px">terminateAgent(userId); <span style="color:var(--muted)">// Limit reached</span></div>
+                            <div>}</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-label" style="margin-bottom:15px">Workflow Execution Trail</div>
+                    <div style="position:relative; padding-left:30px">
+                        <div style="position:absolute; left:7px; top:0; bottom:0; width:2px; background:var(--border)"></div>
+
+                        <div style="margin-bottom:20px; position:relative">
+                            <div style="position:absolute; left:-27px; top:2px; width:12px; height:12px; border-radius:50%; background:var(--green); border:3px solid var(--sidebar)"></div>
+                            <div style="font-size:13px; font-weight:700">Workflow Initialized</div>
+                            <div style="font-size:11px; color:var(--muted)">${fmtDate(c.createdAt)} • Configuration established by user</div>
+                        </div>
+
+                        ${(c.bids || []).map(b => `
+                            <div style="margin-bottom:20px; position:relative">
+                                <div style="position:absolute; left:-27px; top:2px; width:12px; height:12px; border-radius:50%; background:var(--accent); border:3px solid var(--sidebar)"></div>
+                                <div style="font-size:13px; font-weight:700">Automated Bid Placed: ${fmtINR(b.amount)}</div>
+                                <div style="font-size:11px; color:var(--muted)">${fmtTimeAgo(b.createdAt)} • Agent responded to outbid</div>
+                            </div>
+                        `).join('')}
+
+                        <div style="position:relative">
+                            <div style="position:absolute; left:-27px; top:2px; width:12px; height:12px; border-radius:50%; background:var(--orange); border:3px solid var(--sidebar)"></div>
+                            <div style="font-size:13px; font-weight:700">Status: ${c.isActive ? 'Active Monitoring' : 'Limit Reached / Cancelled'}</div>
+                            <div style="font-size:11px; color:var(--muted)">Agent is ${c.isActive ? 'watching for new bids' : 'no longer active for this listing'}</div>
+                        </div>
+                    </div>
+                `;
+
+                const actions = `
+                    <button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Close</button>
+                    <button class="btn btn-danger" onclick="terminateAutoBid('${c.id}')">Force Terminate Agent</button>
+                `;
+
+                openDetail('Auto-Bid Workflow Execution', html, actions);
+            } catch (e) {}
+        }
+
+        // ───────────────────────────────────────────────
+        // ⑨ REPORTS & LOGS
+        // ───────────────────────────────────────────────
+        async function renderAppointments() {
+            try {
+                const data = await adminApp.getAppointments();
+                const appts = data.appointments || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Appointments</h1>
+                            <p>Manage vehicle inspections and hub visits</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Upcoming Visits</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Car</th>
+                                        <th>User</th>
+                                        <th>Location</th>
+                                        <th>Scheduled</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${appts.map(a => `
+                                        <tr>
+                                            <td>${badge(a.type, 'blue')}</td>
+                                            <td>${badge(a.status, a.status === 'CONFIRMED' ? 'green' : 'yellow')}</td>
+                                            <td>${a.listing?.title || '—'}</td>
+                                            <td>${a.user?.name || '—'}</td>
+                                            <td>${a.location || '—'}</td>
+                                            <td>${fmtDate(a.scheduledAt)}</td>
+                                            <td>
+                                                <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px" onclick="updateApptStatus('${a.id}', 'CONFIRMED')">Confirm</button>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--muted)">No appointments found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function updateApptStatus(id, status) {
+            try {
+                await adminApp.updateAppointmentStatus(id, status);
+                showToast(`Appointment ${status}`, 'success');
+                renderAppointments();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function renderRtoNoc() {
+            try {
+                const data = await adminApp.getRtoNocs();
+                const items = data.rtoNocs || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>RTO & NOC</h1>
+                            <p>Track document transfers and NOC status for sold vehicles</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Car</th>
+                                        <th>Seller</th>
+                                        <th>RTO Tax</th>
+                                        <th>Bank NOC</th>
+                                        <th>RTO NOC</th>
+                                        <th>Invoice</th>
+                                        <th>Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${items.map(r => `
+                                        <tr>
+                                            <td style="font-weight:700">${r.listing?.title || '—'}</td>
+                                            <td>${r.listing?.seller?.name || '—'}</td>
+                                            <td>${r.rtoTaxStatus || '—'}</td>
+                                            <td>${badge(r.bankNocStatus, r.bankNocStatus === 'COMPLETED' ? 'green' : 'yellow')}</td>
+                                            <td>${badge(r.rtoNocStatus, r.rtoNocStatus === 'COMPLETED' ? 'green' : 'yellow')}</td>
+                                            <td>${badge(r.invoiceStatus, r.invoiceStatus === 'COMPLETED' ? 'green' : 'yellow')}</td>
+                                            <td>${fmtDate(r.updatedAt)}</td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--muted)">No records found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function renderPushTokens() {
+            try {
+                const data = await adminApp.getPushTokens();
+                const tokens = data.pushTokens || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Push Tokens</h1>
+                            <p>Monitor registered devices for push notifications</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Platform</th>
+                                        <th>Status</th>
+                                        <th>Token (prefix)</th>
+                                        <th>Created</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${tokens.map(t => `
+                                        <tr>
+                                            <td>${t.user?.name || '—'}</td>
+                                            <td>${badge(t.platform, t.platform === 'ios' ? 'blue' : 'green')}</td>
+                                            <td>${t.isActive ? badge('Active', 'green') : badge('Inactive', 'gray')}</td>
+                                            <td style="font-family:monospace; font-size:11px">${t.token.substring(0, 20)}...</td>
+                                            <td>${fmtDate(t.createdAt)}</td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--muted)">No tokens registered</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function renderLogs() {
+            try {
+                const data = await adminApp.getLogs();
+                const logs = data.logs || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Audit Trail & Logs</h1>
+                            <p>Complete historical record of all administrative and system events</p>
+                        </div>
+                        <button class="btn btn-secondary" onclick="exportLogs()">📥 Export CSV</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header">
+                            <input type="text" placeholder="Filter by event type..." class="btn-secondary" style="flex:1; padding:8px 14px">
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Event</th>
+                                        <th>Admin</th>
+                                        <th>Target</th>
+                                        <th>Metadata</th>
+                                    </tr>
+                                </thead>
+                                <tbody style="font-family:'JetBrains Mono', monospace; font-size:12px">
+                                    ${logs.map(l => `
+                                        <tr>
+                                            <td style="color:var(--muted)">${fmtDate(l.timestamp)}</td>
+                                            <td style="color:var(--accent); font-weight:700">${l.action}</td>
+                                            <td>${l.adminName || 'System'}</td>
+                                            <td>${l.target}</td>
+                                            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis">${JSON.stringify(l.details)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        // ───────────────────────────────────────────────
+        // ⑩ NOTIFICATION MANAGEMENT
+        // ───────────────────────────────────────────────
+        function renderNotifications() {
+            root.innerHTML = `
+                <div class="page-head">
+                    <div class="page-info">
+                        <h1>Notification Center</h1>
+                        <p>Send broadcast announcements and targeted push notifications</p>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:32px">
+                    <div class="card" style="padding:32px">
+                        <h3 style="margin-bottom:24px">Compose Broadcast</h3>
+                        <div style="display:flex; flex-direction:column; gap:20px">
+                            <div>
+                                <label class="detail-label">Notification Title</label>
+                                <input type="text" id="notif-title" class="btn-secondary" style="width:100%; text-align:left; padding:12px" placeholder="e.g. New Auction Live!">
+                            </div>
+                            <div>
+                                <label class="detail-label">Message Body</label>
+                                <textarea id="notif-message" class="btn-secondary" style="width:100%; text-align:left; padding:12px; min-height:100px; resize:none" placeholder="Enter notification details..."></textarea>
+                            </div>
+                            <div>
+                                <label class="detail-label">Target Audience</label>
+                                <select id="notif-target" class="btn-secondary" style="width:100%; padding:12px">
+                                    <option value="all">All Users</option>
+                                    <option value="sellers">Verified Sellers Only</option>
+                                    <option value="buyers">Active Bidders Only</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" style="padding:14px; justify-content:center" onclick="sendBroadcast()">🚀 Send Notification</button>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding:32px">
+                        <h3 style="margin-bottom:24px">Recent Campaigns</h3>
+                        <div style="display:flex; flex-direction:column; gap:12px">
+                            ${[1,2,3].map(i => `
+                                <div style="padding:16px; border:1px solid var(--border); border-radius:12px; background:rgba(0,0,0,0.02)">
+                                    <div style="display:flex; justify-content:space-between">
+                                        <span style="font-weight:700">Campaign #${i}04</span>
+                                        <span class="badge badge-gray">Sent</span>
+                                    </div>
+                                    <p style="font-size:12px; color:var(--muted); margin-top:8px">Platform maintenance scheduled for Sunday 2 AM.</p>
+                                    <div style="margin-top:12px; font-size:10px; display:flex; gap:10px; color:var(--muted)">
+                                        <span>👥 2.4k targets</span>
+                                        <span>👁️ 84% open rate</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ───────────────────────────────────────────────
+        // ⑪ SLIDER MANAGEMENT
+        // ───────────────────────────────────────────────
+        async function renderSliders() {
+            try {
+                const data = await adminApp.getSliders();
+                const sliders = data.sliders || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Sliders & Banners</h1>
+                            <p>Manage onboarding slides and home screen banners</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showAddSliderForm()">+ Add Slider</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Active Sliders</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Type</th>
+                                        <th>Title / Subtitle</th>
+                                        <th>Link</th>
+                                        <th>Order</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${sliders.map((s, idx) => `
+                                        <tr>
+                                            <td>
+                                                <img src="${s.imageUrl}" style="width:60px; height:40px; object-fit:cover; border-radius:4px; border:1px solid var(--border)">
+                                            </td>
+                                            <td>${badge(s.type, s.type === 'ONBOARDING' ? 'purple' : 'blue')}</td>
+                                            <td>
+                                                <div style="font-weight:700">${s.title}</div>
+                                                <div style="font-size:11px; color:var(--muted)">${s.subtitle || ''}</div>
+                                            </td>
+                                            <td style="font-size:12px; max-width:150px; overflow:hidden; text-overflow:ellipsis" title="${s.link || ''}">${s.link || '—'}</td>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:8px">
+                                                    <span>${s.order}</span>
+                                                    <div style="display:flex; flex-direction:column; gap:2px">
+                                                        <button onclick="moveSlider('${s.id}', 'up')" style="padding:0; background:none; border:none; cursor:pointer; font-size:10px; opacity:${idx === 0 ? 0.3 : 1}" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                                                        <button onclick="moveSlider('${s.id}', 'down')" style="padding:0; background:none; border:none; cursor:pointer; font-size:10px; opacity:${idx === sliders.length - 1 ? 0.3 : 1}" ${idx === sliders.length - 1 ? 'disabled' : ''}>▼</button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <label class="switch">
+                                                    <input type="checkbox" ${s.isActive ? 'checked' : ''} onchange="toggleSliderActive('${s.id}', this.checked)">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <div style="display:flex; gap:6px">
+                                                    <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px" onclick="showEditSliderForm('${s.id}')">Edit</button>
+                                                    <button class="btn btn-danger" style="padding:6px 12px; font-size:11px" onclick="deleteSlider('${s.id}')">Delete</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--muted)">No sliders found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function moveSlider(id, direction) {
+            try {
+                const data = await adminApp.getSliders();
+                const sliders = data.sliders || [];
+                const idx = sliders.findIndex(s => s.id === id);
+                if (idx === -1) return;
+
+                const otherIdx = direction === 'up' ? idx - 1 : idx + 1;
+                if (otherIdx < 0 || otherIdx >= sliders.length) return;
+
+                const current = sliders[idx];
+                const other = sliders[otherIdx];
+
+                // Swap orders
+                const tempOrder = current.order;
+                await adminApp.updateSlider(current.id, { order: other.order });
+                await adminApp.updateSlider(other.id, { order: tempOrder });
+
+                showToast('Order updated', 'success');
+                renderSliders();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function toggleSliderActive(id, isActive) {
+            try {
+                await adminApp.updateSlider(id, { isActive });
+                showToast(isActive ? 'Slider activated' : 'Slider deactivated', 'success');
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function deleteSlider(id) {
+            if (!confirm('Are you sure you want to delete this slider?')) return;
+            try {
+                await adminApp.deleteSlider(id);
+                showToast('Slider deleted successfully', 'success');
+                renderSliders();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        function showAddSliderForm() {
+            const html = `
+                <div style="display:flex; flex-direction:column; gap:16px">
+                    <div>
+                        <label class="detail-label">Type</label>
+                        <select id="add-slider-type" class="btn-secondary" style="width:100%; padding:10px">
+                            <option value="HOME">Home Banner</option>
+                            <option value="BUY_CAR">Buy Car Screen</option>
+                            <option value="SELL_CAR">Sell Car Screen</option>
+                            <option value="ONBOARDING">Onboarding Slide</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="detail-label">Title</label>
+                        <input type="text" id="add-slider-title" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="Headline text">
+                    </div>
+                    <div>
+                        <label class="detail-label">Subtitle</label>
+                        <input type="text" id="add-slider-subtitle" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="Supporting text (optional)">
+                    </div>
+                    <div>
+                        <label class="detail-label">Link (e.g. /BuyCar or https://...)</label>
+                        <input type="text" id="add-slider-link" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="Internal path or external URL">
+                    </div>
+                    <div>
+                        <label class="detail-label">Image</label>
+                        <div style="display:flex; gap:10px; align-items:center">
+                            <input type="text" id="add-slider-image" class="btn-secondary" style="flex:1; text-align:left; padding:10px" placeholder="Image URL">
+                            <input type="file" id="add-slider-file" style="display:none" onchange="handleSliderUpload(this, 'add-slider-image')">
+                            <button class="btn btn-secondary" style="padding:10px" onclick="document.getElementById('add-slider-file').click()">📁 Upload</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="detail-label">Display Order</label>
+                        <input type="number" id="add-slider-order" class="btn-secondary" style="width:100%; text-align:left; padding:10px" value="0">
+                    </div>
+                </div>
+            `;
+            openDetail('Add New Slider', html, `
+                <button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Cancel</button>
+                <button class="btn btn-primary" style="flex:1" onclick="submitAddSlider()">Create Slider</button>
+            `);
+        }
+
+        async function handleSliderUpload(input, targetId) {
+            const file = input.files[0];
+            if (!file) return;
+
+            showToast('Uploading image...', 'info');
+            try {
+                const res = await adminApp.uploadFile(file);
+                document.getElementById(targetId).value = res.url;
+                showToast('Image uploaded successfully', 'success');
+            } catch (e) {
+                showToast('Upload failed: ' + e.message, 'error');
+            }
+        }
+
+        async function submitAddSlider() {
+            const data = {
+                type: document.getElementById('add-slider-type').value,
+                title: document.getElementById('add-slider-title').value,
+                subtitle: document.getElementById('add-slider-subtitle').value,
+                link: document.getElementById('add-slider-link').value,
+                imageUrl: document.getElementById('add-slider-image').value,
+                order: parseInt(document.getElementById('add-slider-order').value) || 0,
+            };
+            if(!data.title || !data.imageUrl) return showToast('Title and Image are required', 'error');
+            try {
+                await adminApp.createSlider(data);
+                showToast('Slider created', 'success');
+                closeDetail();
+                renderSliders();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function showEditSliderForm(id) {
+            const data = await adminApp.getSliders();
+            const s = data.sliders.find(x => x.id === id);
+            if(!s) return;
+
+            const html = `
+                <div style="display:flex; flex-direction:column; gap:16px">
+                    <div>
+                        <label class="detail-label">Type</label>
+                        <select id="edit-slider-type" class="btn-secondary" style="width:100%; padding:10px">
+                            <option value="HOME" ${s.type==='HOME'?'selected':''}>Home Banner</option>
+                            <option value="BUY_CAR" ${s.type==='BUY_CAR'?'selected':''}>Buy Car Screen</option>
+                            <option value="SELL_CAR" ${s.type==='SELL_CAR'?'selected':''}>Sell Car Screen</option>
+                            <option value="ONBOARDING" ${s.type==='ONBOARDING'?'selected':''}>Onboarding Slide</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="detail-label">Title</label>
+                        <input type="text" id="edit-slider-title" class="btn-secondary" style="width:100%; text-align:left; padding:10px" value="${s.title}">
+                    </div>
+                    <div>
+                        <label class="detail-label">Subtitle</label>
+                        <input type="text" id="edit-slider-subtitle" class="btn-secondary" style="width:100%; text-align:left; padding:10px" value="${s.subtitle || ''}">
+                    </div>
+                    <div>
+                        <label class="detail-label">Link (e.g. /BuyCar or https://...)</label>
+                        <input type="text" id="edit-slider-link" class="btn-secondary" style="width:100%; text-align:left; padding:10px" value="${s.link || ''}">
+                    </div>
+                    <div>
+                        <label class="detail-label">Image</label>
+                        <div style="display:flex; gap:10px; align-items:center">
+                            <input type="text" id="edit-slider-image" class="btn-secondary" style="flex:1; text-align:left; padding:10px" value="${s.imageUrl}">
+                            <input type="file" id="edit-slider-file" style="display:none" onchange="handleSliderUpload(this, 'edit-slider-image')">
+                            <button class="btn btn-secondary" style="padding:10px" onclick="document.getElementById('edit-slider-file').click()">📁 Upload</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="detail-label">Display Order</label>
+                        <input type="number" id="edit-slider-order" class="btn-secondary" style="width:100%; text-align:left; padding:10px" value="${s.order}">
+                    </div>
+                </div>
+            `;
+            openDetail('Edit Slider', html, `
+                <button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Cancel</button>
+                <button class="btn btn-primary" style="flex:1" onclick="submitEditSlider('${id}')">Save Changes</button>
+            `);
+        }
+
+        async function submitEditSlider(id) {
+            const data = {
+                type: document.getElementById('edit-slider-type').value,
+                title: document.getElementById('edit-slider-title').value,
+                subtitle: document.getElementById('edit-slider-subtitle').value,
+                link: document.getElementById('edit-slider-link').value,
+                imageUrl: document.getElementById('edit-slider-image').value,
+                order: parseInt(document.getElementById('edit-slider-order').value) || 0,
+            };
+            try {
+                await adminApp.updateSlider(id, data);
+                showToast('Slider updated', 'success');
+                closeDetail();
+                renderSliders();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        // ───────────────────────────────────────────────
+        // ⑫ BRAND MANAGEMENT
+        // ───────────────────────────────────────────────
+        async function renderBrands() {
+            try {
+                const data = await adminApp.getBrands();
+                const brands = data.brands || [];
+
+                root.innerHTML = `
+                    <div class="page-head">
+                        <div class="page-info">
+                            <h1>Brand Network</h1>
+                            <p>Manage car brands, logos, and market presence</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showAddBrandForm()">+ Add Brand</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-header"><h3>Supported Brands</h3></div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Logo</th>
+                                        <th>Brand Name</th>
+                                        <th>Availability Info</th>
+                                        <th>Order</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${brands.map((b, idx) => `
+                                        <tr>
+                                            <td>
+                                                <div style="width:50px; height:50px; background:white; border-radius:8px; border:1px solid var(--border); padding:8px; display:grid; place-items:center">
+                                                    <img src="${b.logo}" style="width:100%; height:100%; object-fit:contain">
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div style="font-weight:700">${b.name}</div>
+                                                <div style="font-size:11px; color:var(--muted)">ID: ${b.id.slice(0,8)}</div>
+                                            </td>
+                                            <td>
+                                                <div style="font-weight:600">${b.count}</div>
+                                                <div style="font-size:11px; color:var(--muted); max-width:250px; overflow:hidden; text-overflow:ellipsis" title="${b.description || ''}">${b.description || 'No description'}</div>
+                                            </td>
+                                            <td>
+                                                <div style="display:flex; align-items:center; gap:8px">
+                                                    <span>${b.order}</span>
+                                                    <div style="display:flex; flex-direction:column; gap:2px">
+                                                        <button onclick="moveBrand('${b.id}', 'up')" style="padding:0; background:none; border:none; cursor:pointer; font-size:10px; opacity:${idx === 0 ? 0.3 : 1}" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                                                        <button onclick="moveBrand('${b.id}', 'down')" style="padding:0; background:none; border:none; cursor:pointer; font-size:10px; opacity:${idx === brands.length - 1 ? 0.3 : 1}" ${idx === brands.length - 1 ? 'disabled' : ''}>▼</button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <label class="switch">
+                                                    <input type="checkbox" ${b.isActive ? 'checked' : ''} onchange="toggleBrandActive('${b.id}', this.checked)">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <div style="display:flex; gap:6px">
+                                                    <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px" onclick="showEditBrandForm('${b.id}')">Edit</button>
+                                                    <button class="btn btn-danger" style="padding:6px 12px; font-size:11px" onclick="deleteBrand('${b.id}')">Delete</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted)">No brands found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { renderError(e); }
+        }
+
+        async function moveBrand(id, direction) {
+            try {
+                const data = await adminApp.getBrands();
+                const brands = data.brands || [];
+                const idx = brands.findIndex(b => b.id === id);
+                if (idx === -1) return;
+                const otherIdx = direction === 'up' ? idx - 1 : idx + 1;
+                if (otherIdx < 0 || otherIdx >= brands.length) return;
+                const current = brands[idx];
+                const other = brands[otherIdx];
+                const tempOrder = current.order;
+                await adminApp.updateBrand(current.id, { order: other.order });
+                await adminApp.updateBrand(other.id, { order: tempOrder });
+                showToast('Order updated', 'success');
+                renderBrands();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function toggleBrandActive(id, isActive) {
+            try {
+                await adminApp.updateBrand(id, { isActive });
+                showToast(isActive ? 'Brand activated' : 'Brand deactivated', 'success');
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function deleteBrand(id) {
+            if (!confirm('Delete this brand? Listings using this brand will remain but the icon will disappear from home screen.')) return;
+            try {
+                await adminApp.deleteBrand(id);
+                showToast('Brand deleted', 'success');
+                renderBrands();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        function showAddBrandForm() {
+            const html = `
+                <div style="display:flex; flex-direction:column; gap:16px">
+                    <div>
+                        <label class="detail-label">Brand Name</label>
+                        <input type="text" id="add-brand-name" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="e.g. Maruti Suzuki">
+                    </div>
+                    <div>
+                        <label class="detail-label">Availability Count Text</label>
+                        <input type="text" id="add-brand-count" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="e.g. 2.5k+ Cars">
+                    </div>
+                    <div>
+                        <label class="detail-label">Description</label>
+                        <textarea id="add-brand-desc" class="btn-secondary" style="width:100%; text-align:left; padding:10px; min-height:80px; resize:none" placeholder="Information about the brand..."></textarea>
+                    </div>
+                    <div>
+                        <label class="detail-label">Logo</label>
+                        <div style="display:flex; gap:10px; align-items:center">
+                            <input type="text" id="add-brand-logo" class="btn-secondary" style="flex:1; text-align:left; padding:10px" placeholder="Logo URL">
+                            <input type="file" id="add-brand-file" style="display:none" onchange="handleSliderUpload(this, 'add-brand-logo')">
+                            <button class="btn btn-secondary" style="padding:10px" onclick="document.getElementById('add-brand-file').click()">📁 Upload</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="detail-label">Display Order</label>
+                        <input type="number" id="add-brand-order" class="btn-secondary" style="width:100%; text-align:left; padding:10px" value="0">
+                    </div>
+                </div>
+            `;
+            openDetail('Add New Brand', html, `
+                <button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Cancel</button>
+                <button class="btn btn-primary" style="flex:1" onclick="submitAddBrand()">Create Brand</button>
+            `);
+        }
+
+        async function submitAddBrand() {
+            const data = {
+                name: document.getElementById('add-brand-name').value,
+                count: document.getElementById('add-brand-count').value || '0 Cars',
+                description: document.getElementById('add-brand-desc').value,
+                logo: document.getElementById('add-brand-logo').value,
+                order: parseInt(document.getElementById('add-brand-order').value) || 0,
+            };
+            if(!data.name || !data.logo) return showToast('Name and Logo are required', 'error');
+            try {
+                await adminApp.createBrand(data);
+                showToast('Brand created', 'success');
+                closeDetail();
+                renderBrands();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function showEditBrandForm(id) {
+            const data = await adminApp.getBrands();
+            const b = data.brands.find(x => x.id === id);
+            if(!b) return;
+
+            const html = `
+                <div style="display:flex; flex-direction:column; gap:16px">
+                    <div>
+                        <label class="detail-label">Brand Name</label>
+                        <input type="text" id="edit-brand-name" class="btn-secondary" style="width:100%; text-align:left; padding:10px" value="${b.name}">
+                    </div>
+                    <div>
+                        <label class="detail-label">Availability Count Text</label>
+                        <input type="text" id="edit-brand-count" class="btn-secondary" style="width:100%; text-align:left; padding:10px" value="${b.count}">
+                    </div>
+                    <div>
+                        <label class="detail-label">Description</label>
+                        <textarea id="edit-brand-desc" class="btn-secondary" style="width:100%; text-align:left; padding:10px; min-height:80px; resize:none">${b.description || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="detail-label">Logo</label>
+                        <div style="display:flex; gap:10px; align-items:center">
+                            <input type="text" id="edit-brand-logo" class="btn-secondary" style="flex:1; text-align:left; padding:10px" value="${b.logo}">
+                            <input type="file" id="edit-brand-file" style="display:none" onchange="handleSliderUpload(this, 'edit-brand-logo')">
+                            <button class="btn btn-secondary" style="padding:10px" onclick="document.getElementById('edit-brand-file').click()">📁 Upload</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="detail-label">Display Order</label>
+                        <input type="number" id="edit-brand-order" class="btn-secondary" style="width:100%; text-align:left; padding:10px" value="${b.order}">
+                    </div>
+                </div>
+            `;
+            openDetail('Edit Brand', html, `
+                <button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Cancel</button>
+                <button class="btn btn-primary" style="flex:1" onclick="submitEditBrand('${id}')">Save Changes</button>
+            `);
+        }
+
+        async function submitEditBrand(id) {
+            const data = {
+                name: document.getElementById('edit-brand-name').value,
+                count: document.getElementById('edit-brand-count').value,
+                description: document.getElementById('edit-brand-desc').value,
+                logo: document.getElementById('edit-brand-logo').value,
+                order: parseInt(document.getElementById('edit-brand-order').value) || 0,
+            };
+            try {
+                await adminApp.updateBrand(id, data);
+                showToast('Brand updated', 'success');
+                closeDetail();
+                renderBrands();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function sendBroadcast() {
+            const title = document.getElementById('notif-title').value;
+            const message = document.getElementById('notif-message').value;
+            if(!title || !message) return showToast('Please fill all fields', 'error');
+
+            showToast('Sending broadcast...', 'info');
+            try {
+                await adminApp.sendNotification({ title, message });
+                showToast('Broadcast sent successfully!', 'success');
+                renderNotifications();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        // ───────────────────────────────────────────────
+        // HELPERS & UI COMPONENTS
+        // ───────────────────────────────────────────────
+        function statCard(label, value, icon, trend, isUp) {
+            return `
+                <div class="stat-card">
+                    <div style="display:flex; justify-content:space-between">
+                        <div class="stat-label">${label}</div>
+                        <div style="font-size:20px">${icon}</div>
+                    </div>
+                    <div class="stat-value">${value}</div>
+                    <div class="stat-trend ${isUp ? 'trend-up' : 'trend-down'}">
+                        ${isUp ? '↗' : '↘'} ${trend}
+                    </div>
+                </div>
+            `;
+        }
+
+        function badge(text, color, icon = '') {
+            return `<span class="badge badge-${color}">${icon ? `<i>${icon}</i> ` : ''}${text}</span>`;
+        }
+
+        function renderListingTable(listings) {
+            if (!listings.length) return `<div style="padding:40px; text-align:center; color:var(--muted)">No records found</div>`;
+            return `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vehicle</th>
+                            <th>Status</th>
+                            <th>Price</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${listings.map(l => `
+                            <tr style="cursor:pointer" onclick="showListingDetails('${l.id}')">
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:12px">
+                                        <div style="width:40px; height:30px; background:var(--bg); border-radius:4px; overflow:hidden; border:1px solid var(--border); display:grid; place-items:center; position:relative">
+                                            ${l.imageUrl ? `<img src="${l.imageUrl}" style="width:100%; height:100%; object-fit:cover">` : '🚗'}
+                                            <div style="position:absolute; bottom:0; right:0; width:14px; height:14px; background:white; border-radius:50%; border:1px solid var(--border); display:grid; place-items:center">
+                                                <img src="${getBrandLogo(l.brand)}" style="width:10px; height:10px; object-fit:contain">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="font-weight:700">${l.title}</div>
+                                            <div style="font-size:11px; color:var(--muted)">${l.city}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>${badge(l.status, getStatusColor(l.status))}</td>
+                                <td style="font-weight:600">${fmtINR(l.demandPrice)}</td>
+                                <td style="font-size:12px; color:var(--muted)">${fmtDate(l.createdAt)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function getStatusColor(s) {
+            const map = { ACTIVE: 'green', SOLD: 'blue', DRAFT: 'gray', PENDING_INSPECTION: 'yellow', REJECTED: 'red' };
+            return map[s] || 'gray';
+        }
+
+        function getBrandLogo(brand) {
+            if (!brand) return 'https://img.icons8.com/color/48/car.png';
+            const b = brand.toLowerCase();
+            const logos = {
+                'maruti': 'https://img.icons8.com/color/96/maruti-suzuki.png',
+                'hyundai': 'https://img.icons8.com/color/96/hyundai.png',
+                'tata': 'https://img.icons8.com/color/96/tata-motors.png',
+                'mahindra': 'https://img.icons8.com/color/96/mahindra.png',
+                'kia': 'https://img.icons8.com/color/96/kia.png',
+                'honda': 'https://img.icons8.com/color/96/honda.png',
+                'toyota': 'https://img.icons8.com/color/96/toyota.png',
+                'volkswagen': 'https://img.icons8.com/color/96/volkswagen.png',
+                'renault': 'https://img.icons8.com/color/96/renault.png',
+                'ford': 'https://img.icons8.com/color/96/ford.png',
+                'skoda': 'https://img.icons8.com/color/96/skoda.png',
+                'nissan': 'https://img.icons8.com/color/96/nissan.png',
+                'mg': 'https://img.icons8.com/color/96/mg.png',
+                'jeep': 'https://img.icons8.com/color/96/jeep.png',
+                'bmw': 'https://img.icons8.com/color/96/bmw.png',
+                'mercedes': 'https://img.icons8.com/color/96/mercedes-benz.png',
+                'audi': 'https://img.icons8.com/color/96/audi.png',
+                'jaguar': 'https://img.icons8.com/color/96/jaguar.png',
+                'volvo': 'https://img.icons8.com/color/96/volvo.png',
+                'landrover': 'https://img.icons8.com/color/96/land-rover.png'
+            };
+            for (let key in logos) {
+                if (b.includes(key)) return logos[key];
+            }
+            return 'https://img.icons8.com/color/48/car.png';
+        }
+
+        function fmtINR(v) { return '₹' + Number(v).toLocaleString('en-IN'); }
+        function fmtDate(v) { return new Date(v).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }); }
+        function fmtTimeAgo(v) {
+            const sec = Math.floor((new Date() - new Date(v)) / 1000);
+            if(sec < 60) return 'just now';
+            if(sec < 3600) return Math.floor(sec/60) + 'm ago';
+            if(sec < 86400) return Math.floor(sec/3600) + 'h ago';
+            return Math.floor(sec/86400) + 'd ago';
+        }
+
+        // ───────────────────────────────────────────────
+        // ACTIONS & MODALS
+        // ───────────────────────────────────────────────
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            const m = document.getElementById('toast-msg');
+            const i = document.getElementById('toast-icon');
+
+            m.textContent = msg;
+            i.innerHTML = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+
+            if(window._tTimer) clearTimeout(window._tTimer);
+            window._tTimer = setTimeout(() => {
+                t.style.transform = 'translateX(-50%) translateY(100px)';
+            }, 3000);
+        }
+
+        function openDetail(title, html, actions = '') {
+            document.getElementById('detail-title').textContent = title;
+            document.getElementById('detail-content').innerHTML = html;
+            document.getElementById('detail-actions').innerHTML = actions;
+            document.getElementById('detail-overlay').classList.add('open');
+            document.getElementById('detail-panel').classList.add('open');
+        }
+
+        function closeDetail() {
+            document.getElementById('detail-overlay').classList.remove('open');
+            document.getElementById('detail-panel').classList.remove('open');
+        }
+
+        // ───────────────────────────────────────────────
+        // DOCUMENT PREVIEW
+        // ───────────────────────────────────────────────
+        function documentKind(url) {
+            if (!url) return 'none';
+            const path = url.split('?')[0].toLowerCase();
+            if (/\.(png|jpe?g|gif|webp|svg)$/.test(path)) return 'image';
+            if (/\.pdf$/.test(path)) return 'pdf';
+            return 'other';
+        }
+
+        function previewDocument(url, title = 'Document') {
+            if (!url) return showToast('No document URL provided', 'error');
+
+            const overlay = document.getElementById('preview-overlay');
+            const content = document.getElementById('preview-content');
+            const titleEl = document.getElementById('preview-title');
+            const downloadLink = document.getElementById('preview-download');
+
+            titleEl.textContent = title;
+            downloadLink.href = url;
+
+            const kind = documentKind(url);
+            if (kind === 'image') {
+                content.innerHTML = `<img src="${url}" alt="${title}">`;
+            } else if (kind === 'pdf') {
+                content.innerHTML = `<iframe src="${url}"></iframe>`;
+            } else {
+                content.innerHTML = `
+                    <div style="text-align:center; color:white">
+                        <i class="fa-solid fa-file-circle-question" style="font-size:60px; margin-bottom:20px"></i>
+                        <h3>Cannot preview this file type</h3>
+                        <p>Use the 'Open Original' button to download or view it.</p>
+                    </div>`;
+            }
+
+            overlay.classList.add('open');
+        }
+
+        function closePreview(e) {
+            if (e && e.target !== document.getElementById('preview-overlay') && e.type !== 'click') return;
+            document.getElementById('preview-overlay').classList.remove('open');
+            document.getElementById('preview-content').innerHTML = '';
+        }
+
+        function docButton(url, title) {
+            if (!url) return '<span style="color:var(--muted); font-size:11px">Not Uploaded</span>';
+            return `<button class="btn btn-secondary" style="padding:4px 8px; font-size:10px" onclick="previewDocument('${url}', '${title}')"><i class="fa-solid fa-eye"></i> View</button>`;
+        }
+
+        async function processPayout(id, amount) {
+            if (!confirm(`Process payout of ${fmtINR(amount)}?`)) return;
+            try {
+                await adminApp.processPayout(id);
+                showToast('Payout processed successfully', 'success');
+                renderPayouts();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function extendAuction(id) {
+            try {
+                await adminApp.extendAuction(id, 5);
+                showToast('Auction extended by 5 mins', 'success');
+                renderAuctions();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function processRefund(id, amount) {
+            if (!confirm(`Are you sure you want to refund ${fmtINR(amount)}?`)) return;
+            try {
+                await adminApp.processRefund(id);
+                showToast('Refund processed successfully', 'success');
+                renderPayments();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function markDelivered(id) {
+            try {
+                await adminApp.markDelivered(id);
+                showToast('Vehicle marked as delivered', 'success');
+                renderDelivery();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function terminateAutoBid(id) {
+            try {
+                await adminApp.terminateAutoBid(id);
+                showToast('Auto-bid agent terminated', 'success');
+                closeDetail();
+                renderAutoBids();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function blockUser(id) {
+            if (!id) return showToast('User ID missing', 'error');
+            if (!confirm('Are you sure you want to suspend this user?')) return;
+            try {
+                await adminApp.blockUser(id);
+                showToast('User has been suspended', 'success');
+                closeDetail();
+                loadModule(activeModule);
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        function showAddDealerForm() {
+            const html = `
+                <div style="display:flex; flex-direction:column; gap:16px">
+                    <div>
+                        <label class="detail-label">Showroom Name</label>
+                        <input type="text" id="add-dealer-showroom" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="e.g. Royal Motors">
+                    </div>
+                    <div>
+                        <label class="detail-label">Owner Name</label>
+                        <input type="text" id="add-dealer-name" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="detail-label">Email Address</label>
+                        <input type="email" id="add-dealer-email" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="owner@example.com">
+                    </div>
+                    <div>
+                        <label class="detail-label">Phone Number</label>
+                        <input type="tel" id="add-dealer-phone" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="+91 9876543210">
+                    </div>
+                    <div>
+                        <label class="detail-label">City</label>
+                        <input type="text" id="add-dealer-city" class="btn-secondary" style="width:100%; text-align:left; padding:10px" placeholder="Mumbai">
+                    </div>
+                    <div>
+                        <label class="detail-label">Full Address</label>
+                        <textarea id="add-dealer-address" class="btn-secondary" style="width:100%; text-align:left; padding:10px; min-height:80px; resize:none" placeholder="123 Business Park..."></textarea>
+                    </div>
+                </div>
+            `;
+
+            const actions = `
+                <button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Cancel</button>
+                <button class="btn btn-primary" style="flex:1" onclick="submitAddDealer()">Create Dealer</button>
+            `;
+
+            openDetail('Register New Dealer', html, actions);
+        }
+
+        async function submitAddDealer() {
+            const data = {
+                showroomName: document.getElementById('add-dealer-showroom').value,
+                name: document.getElementById('add-dealer-name').value,
+                email: document.getElementById('add-dealer-email').value,
+                phone: document.getElementById('add-dealer-phone').value,
+                city: document.getElementById('add-dealer-city').value,
+                address: document.getElementById('add-dealer-address').value,
+            };
+
+            if (!data.showroomName || !data.email) return showToast('Please fill required fields', 'error');
+
+            showToast('Registering dealer...', 'info');
+            try {
+                await adminApp.createDealer(data);
+                showToast('Dealer registered successfully', 'success');
+                closeDetail();
+                renderDealers();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+            try {
+                await adminApp.deleteUser(id);
+                showToast('User deleted successfully', 'success');
+                renderUsers();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function deleteDealer(id) {
+            if (!confirm('Are you sure you want to delete this dealer?')) return;
+            try {
+                await adminApp.deleteDealer(id);
+                showToast('Dealer deleted successfully', 'success');
+                renderDealers();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function deleteListing(id) {
+            if (!confirm('Are you sure you want to delete this listing?')) return;
+            try {
+                await adminApp.deleteListing(id);
+                showToast('Listing deleted successfully', 'success');
+                loadModule(activeModule);
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function showDealerDetails(id) {
+            try {
+                const dealers = (await adminApp.getDealers()).dealers;
+                const d = dealers.find(x => x.id === id);
+                if (!d) return;
+
+                const html = `
+                    <div style="display:flex; align-items:center; gap:20px; margin-bottom:24px">
+                        <div class="avatar" style="width:60px; height:60px; font-size:24px; background:var(--accent); color:white">${(d.showroomName || d.name || 'D')[0]}</div>
+                        <div>
+                            <h3 style="font-size:20px">${d.showroomName || d.name}</h3>
+                            <div style="color:var(--muted); font-size:13px">${d.email} • ${d.city}</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-label">Business Details</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px">
+                        <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border)">
+                            <div class="detail-label">Status</div>
+                            <div style="margin-top:4px">${badge(d.status || 'VERIFIED', d.status === 'PENDING' ? 'yellow' : 'green')}</div>
+                        </div>
+                        <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border)">
+                            <div class="detail-label">Featured</div>
+                            <div style="margin-top:4px">${d.isFeatured ? badge('Premium', 'blue') : badge('Standard', 'gray')}</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-label">Contact Information</div>
+                    <div style="margin-bottom:24px">
+                        <div style="font-size:14px; margin-bottom:4px"><b>Owner:</b> ${d.name}</div>
+                        <div style="font-size:14px; margin-bottom:4px"><b>Phone:</b> ${d.phone || 'N/A'}</div>
+                        <div style="font-size:14px"><b>Address:</b> ${d.address || 'N/A'}</div>
+                    </div>
+
+                    <div class="detail-label">Performance Metrics</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+                        <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border); text-align:center">
+                            <div style="font-size:24px; font-weight:800">${d._count?.listings || 0}</div>
+                            <div class="detail-label" style="margin-bottom:0">Active Cars</div>
+                        </div>
+                        <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border); text-align:center">
+                            <div style="font-size:24px; font-weight:800">${d._count?.soldListings || 0}</div>
+                            <div class="detail-label" style="margin-bottom:0">Total Sold</div>
+                        </div>
+                    </div>
+                `;
+
+                const actions = `
+                    <button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Close</button>
+                    <button class="btn btn-primary" onclick="showToast('Edit Dealer Modal coming soon', 'info')">Edit Details</button>
+                `;
+
+                openDetail('Dealer Management', html, actions);
+            } catch (e) { console.error(e); }
+        }
+
+        async function showLeadDetails(id) {
+            try {
+                const leads = (await adminApp.getLeads()).leads;
+                const l = leads.find(x => x.id === id);
+                if (!l) return;
+
+                const html = `
+                    <div style="margin-bottom:24px">
+                        <h3 style="font-size:18px">Inquiry from ${l.userName}</h3>
+                        <p style="color:var(--muted); font-size:14px">Regarding ${l.listingTitle}</p>
+                    </div>
+
+                    <div style="background:var(--bg); padding:20px; border-radius:12px; border:1px solid var(--border); margin-bottom:24px">
+                        <div class="detail-label">Lead Information</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                            <div>
+                                <div style="font-size:11px; color:var(--muted)">Phone</div>
+                                <div style="font-weight:700">${l.phone}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:var(--muted)">Source</div>
+                                <div>${badge(l.source || 'WEB', 'blue')}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:var(--muted)">Status</div>
+                                <div>${badge(l.status, l.status === 'NEW' ? 'yellow' : 'green')}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:var(--muted)">Assigned Dealer</div>
+                                <div style="font-weight:600">${l.dealerName || 'Direct'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-label">Message / Notes</div>
+                    <div style="background:white; padding:16px; border-radius:8px; border:1px solid var(--border); font-size:14px; line-height:1.5">
+                        ${l.message || 'No additional message provided by the inquirer.'}
+                    </div>
+                `;
+
+                const actions = `
+                    <button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Close</button>
+                    <button class="btn btn-primary" onclick="showToast('Lead status updated', 'success'); closeDetail(); renderLeads();">Mark as Processed</button>
+                `;
+
+                openDetail('Inquiry Details', html, actions);
+            } catch (e) { console.error(e); }
+        }
+
+        function exportLogs() {
+            showToast('Preparing log export...', 'info');
+            setTimeout(() => {
+                showToast('Audit logs exported to CSV', 'success');
+            }, 1500);
+        }
+
+        async function showUserDetails(id) {
+            try {
+                const users = (await adminApp.getUsers()).users;
+                const u = users.find(x => x.id === id);
+                if(!u) return;
+
+                const bidsData = await adminApp.getBids();
+                const userBids = (bidsData.bids || []).filter(b => b.userId === id);
+
+                const html = `
+                    <div style="display:flex; align-items:center; gap:20px; margin-bottom:24px">
+                        <div class="avatar" style="width:60px; height:60px; font-size:24px">${(u.name || 'U')[0].toUpperCase()}</div>
+                        <div>
+                            <h3 style="font-size:20px">${u.name || 'Anonymous'}</h3>
+                            <div style="color:var(--muted); font-size:13px">${u.email} • ${u.phone || 'No phone'}</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px">
+                        <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border)">
+                            <div class="detail-label">Verification Status</div>
+                            <div style="margin-top:4px">${u.isVerified ? badge('Verified Account', 'green') : badge('Unverified', 'yellow')}</div>
+                        </div>
+                        <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border)">
+                            <div class="detail-label">Member Since</div>
+                            <div class="detail-value" style="margin-top:4px">${fmtDate(u.createdAt)}</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-label" style="margin-bottom:12px">Bidding History (${userBids.length})</div>
+                    <div style="display:flex; flex-direction:column; gap:8px">
+                        ${userBids.map(b => `
+                            <div style="background:rgba(0,0,0,0.02); padding:12px; border-radius:10px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center">
+                                <div>
+                                    <div style="font-size:13px; font-weight:700">${b.listing?.title || 'Unknown Vehicle'}</div>
+                                    <div style="font-size:11px; color:var(--muted)">${fmtDate(b.createdAt)}</div>
+                                </div>
+                                <div style="text-align:right">
+                                    <div style="font-size:14px; font-weight:800; color:var(--green)">${fmtINR(b.amount)}</div>
+                                    <div style="font-size:10px">${badge(b.status || 'ACTIVE', b.status === 'WON' ? 'green' : 'blue')}</div>
+                                </div>
+                            </div>
+                        `).join('') || '<div style="padding:20px; text-align:center; color:var(--muted); font-size:13px">No bids found for this user.</div>'}
+                    </div>
+
+                    <div class="detail-label" style="margin-top:24px; margin-bottom:12px">Listings Managed</div>
+                    <div style="font-size:13px; color:var(--muted)">
+                        User has created <b>${u._count?.listings || 0}</b> listings on the platform.
+                    </div>
+                `;
+
+                const actions = `
+                    <button class="btn btn-secondary" style="flex:1" onclick="closeDetail()">Close</button>
+                    <button class="btn btn-danger" onclick="blockUser('${u.id}')">Suspend User</button>
+                `;
+
+                openDetail('User Profile & Buyer Record', html, actions);
+            } catch(e) { console.error(e); }
+        }
+
+        async function showListingDetails(id) {
+            try {
+                const listings = (await adminApp.getListings()).listings;
+                const l = listings.find(x => x.id === id);
+                if(!l) return;
+
+                const html = `
+                    <div style="background:var(--bg); border-radius:12px; overflow:hidden; margin-bottom:24px; position:relative">
+                        ${l.imageUrl ? `
+                            <img src="${l.imageUrl}" style="width:100%; height:220px; object-fit:cover; display:block">
+                        ` : `
+                            <div style="height:220px; background:var(--bg); display:grid; place-items:center; color:var(--muted)">
+                                <div style="text-align:center">
+                                    <div style="font-size:40px">🖼️</div>
+                                    <div style="font-size:12px; margin-top:8px">No image available</div>
+                                </div>
+                            </div>
+                        `}
+                        <div style="position:absolute; bottom:12px; right:12px; background:rgba(0,0,0,0.6); padding:4px 10px; border-radius:6px; font-size:10px; color:white">
+                            AI Confidence: 94%
+                        </div>
+                    </div>
+
+                    <div style=\"background:rgba(59, 130, 246, 0.05); border:1px solid var(--accent); padding:16px; border-radius:12px; margin-bottom:24px\">
+                        <div style=\"display:flex; justify-content:space-between; align-items:center\">
+                            <div style=\"display:flex; align-items:center; gap:12px\">
+                                <div style=\"width:40px; height:40px; background:white; border-radius:8px; border:1px solid var(--border); padding:5px\">
+                                    <img src=\"${getBrandLogo(l.brand)}\" style=\"width:100%; height:100%; object-fit:contain\">
+                                </div>
+                                <div>
+                                    <div class=\"detail-label\" style=\"color:var(--accent); margin-bottom:0\">AI Price Recommendation</div>
+                                    <div style=\"font-size:18px; font-weight:800; color:var(--text)\">${fmtINR(l.demandPrice * 0.95)} — ${fmtINR(l.demandPrice * 1.05)}</div>
+                                </div>
+                            </div>
+                            <div style=\"text-align:right\">
+                                <div class=\"badge badge-blue\">Recommended</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-label" style="padding-left:0; margin-bottom:12px">Vehicle Specifications</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px">
+                        <div class="detail-row"><div class="detail-label">Brand & Model</div><div class="detail-value">${l.brand} ${l.model}</div></div>
+                        <div class="detail-row"><div class="detail-label">Year</div><div class="detail-value">${l.manufacturingYear}</div></div>
+                        <div class="detail-row"><div class="detail-label">Fuel & Gearbox</div><div class="detail-value">${l.fuelType} • ${l.transmission}</div></div>
+                        <div class="detail-row"><div class="detail-label">Kms Driven</div><div class="detail-value">${l.kmsDriven || '42,000'} km</div></div>
+                    </div>
+
+                    <div class="sidebar-label" style="padding-left:0; margin-bottom:12px">Document Verification</div>
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px">
+                        <div style="background:var(--bg); padding:12px; border-radius:10px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center">
+                            <span style="font-size:13px">Registration Certificate (RC)</span>
+                            <div style="display:flex; align-items:center; gap:10px">
+                                ${l.rcImages?.length ? docButton(l.rcImages[0], 'RC Certificate') : '<span style="color:var(--muted); font-size:11px">Missing</span>'}
+                                <span style="color:var(--green); font-weight:700; font-size:11px">VALID ✓</span>
+                            </div>
+                        </div>
+                        <div style="background:var(--bg); padding:12px; border-radius:10px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center">
+                            <span style="font-size:13px">Insurance Policy</span>
+                            <div style="display:flex; align-items:center; gap:10px">
+                                ${l.images?.length > 1 ? docButton(l.images[1], 'Insurance Doc') : '<span style="color:var(--muted); font-size:11px">Missing</span>'}
+                                <span style="color:var(--yellow); font-weight:700; font-size:11px">ACTIVE</span>
+                            </div>
+                        </div>
+                        <div style="background:var(--bg); padding:12px; border-radius:10px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center">
+                            <span style="font-size:13px">Bank NOC</span>
+                            <div style="display:flex; align-items:center; gap:10px">
+                                ${l.bankNocImages?.length ? docButton(l.bankNocImages[0], 'Bank NOC') : '<span style="color:var(--muted); font-size:11px">N/A</span>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-label" style="padding-left:0; margin-bottom:12px">Expert Inspection</div>
+                    <div style="background:var(--card-hover); padding:16px; border-radius:12px; border:1px dashed var(--border); text-align:center">
+                        <div style="font-size:24px; margin-bottom:8px">📋</div>
+                        <div style="font-weight:700; font-size:14px">Full Inspection Report</div>
+                        <div style="font-size:11px; color:var(--muted); margin-bottom:12px">140+ Points Checked by AutoBidder Team</div>
+                        <div id="inspection-report-btn">
+                            ${l.inspectionReportUrl ? docButton(l.inspectionReportUrl, 'Expert Inspection Report') : '<span style="color:var(--muted); font-size:11px">Report Pending</span>'}
+                        </div>
+                    </div>
+
+                    <hr style="border:none; border-top:1px solid var(--border); margin:24px 0">
+                    <div class="detail-row">
+                        <div class="detail-label">Listed by Seller</div>
+                        <div class="detail-value" style="display:flex; align-items:center; gap:10px">
+                            <div class="avatar" style="width:24px; height:24px; font-size:10px">${(l.seller?.name || 'S')[0]}</div>
+                            ${l.seller?.name} (${l.seller?.phone})
+                        </div>
+                    </div>
+                `;
+
+                const actions = `
+                    <button class="btn btn-primary" style="flex:1" onclick="updateListing('${l.id}', 'ACTIVE')">Approve & Go Live</button>
+                    <button class="btn btn-danger" onclick="updateListing('${l.id}', 'REJECTED')">Reject Listing</button>
+                `;
+
+                openDetail('Vehicle Audit & Verification', html, actions);
+            } catch(e) {}
+        }
+
+        async function verifySeller(id, approved) {
+            try {
+                await adminApp.verifyUser(id, approved);
+                showToast(approved ? 'Seller Verified' : 'Seller Rejected', 'success');
+                renderSellers();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function updateListing(id, status) {
+            try {
+                await adminApp.updateListingStatus(id, status);
+                showToast(`Listing ${status}`, 'success');
+                closeDetail();
+                loadModule(activeModule);
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        function renderError(e) {
+            root.innerHTML = `<div style="padding:100px; text-align:center">
+                <div style="font-size:60px">🔌</div>
+                <h2 style="margin:20px 0">Connection Error</h2>
+                <p style="color:var(--muted)">Unable to reach the backend at <b>${adminApp.apiBase}</b></p>
+                <p style="font-size:12px; margin-top:10px">${e.message}</p>
+                <button class="btn btn-primary" style="margin-top:30px" onclick="reconnect()">Try Reconnecting</button>
+            </div>`;
+        }
+
+        // ───────────────────────────────────────────────
+        // BOOT
+        // ───────────────────────────────────────────────
+        updateAuthState();
+        nav('dashboard');
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,3 @@
+- [ ] Update `expo-file-system` import in `apps/mobile/src/api.ts`
+- [ ] Verify web bundle success
+- [ ] Confirm fix with user

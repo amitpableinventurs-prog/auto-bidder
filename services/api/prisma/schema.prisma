@@ -1,0 +1,399 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  phone     String?   @unique
+  name      String?
+  avatarUrl String?
+  address    String?
+  city       String?
+  zipCode    String?
+  isVerified Boolean  @default(false)
+  isFeatured Boolean  @default(false)
+  kycStatus  String?   @default("PENDING")
+  kycImageUrl String?
+  role       Role      @default(BUYER)
+  userType   String?   @default("OWNER")
+  businessName String?
+  isDistributor Boolean @default(false)
+  distributorCode String? @unique
+  distributorStatus String? @default("ACTIVE")
+  referralEarnings Int @default(0)
+  referredByDistributorCode String?
+  referredByUserId String?
+  createdAt DateTime  @default(now())
+  bids      Bid[]
+  listings  Listing[]
+  appointments Appointment[]
+  autoBidConfigs AutoBidConfig[]
+  notifications Notification[]
+  pushTokens PushToken[]
+  favorites  Favorite[]
+  payouts    Payout[]
+  commissions Commission[]
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+model Listing {
+  id               String        @id @default(cuid())
+  title            String
+  description      String?
+  brand            String?
+  model            String?
+  variant          String?
+  manufacturingYear Int?
+  fuelType         String?
+  transmission     String?
+  carType          String?
+  color            String?
+  city             String?
+  latitude         Float?
+  longitude        Float?
+  plateNumber      String?
+  ownership        String?
+  kilometersDriven Int?
+  condition        String?
+  demandPrice      Int?
+  startingBid      Int
+  imageUrl         String?
+
+  // Additional details from mobile app
+  rcOwnerName      String?
+  rcOwnerNumber    String?
+  rcAvailability   String?
+  originalInvoice  Boolean? @default(true)
+  bankHypothecation Boolean? @default(false)
+  loanStatus       String?
+  rtoTaxStatus     String?
+  rtoNocIssued     String?
+  rtoNocNumber     String?
+  duplicateKeys    Boolean? @default(false)
+  serviceBookAvailability Boolean? @default(true)
+  remainingFreeService Int? @default(0)
+  remainingOemWarranty String?
+  insuranceType    String?
+  insuranceExpiry  String?
+  listedBy         String?
+  sellingTimeline  String?
+  commission       String?
+  inspectionReportUrl String?
+  inspectionReportStatus String? @default("PENDING")
+  referredByDistributorCode String?
+  referredByUserId String?
+  referralCapturedAt DateTime?
+  referralAttributionExpiresAt DateTime?
+  distributorCommissionAmount Int? @default(0)
+  distributorCommissionStatus String? @default("NONE")
+
+  status           ListingStatus @default(DRAFT)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  sellerId String
+  seller   User     @relation(fields: [sellerId], references: [id])
+
+  bids         Bid[]
+  appointments Appointment[]
+  rtoNoc       RtoNoc?
+  payments     Payment[]
+  autoBidConfigs AutoBidConfig[]
+  favorites    Favorite[]
+  commissions  Commission[]
+
+  @@index([createdAt])
+  @@index([status, city])
+  @@index([brand, model])
+}
+
+model Bid {
+  id        String    @id @default(cuid())
+  amount    Int
+  status    BidStatus @default(SUBMITTED)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User     @relation(fields: [userId], references: [id])
+
+  payment   Payment?
+  autoBidConfig AutoBidConfig? @relation(fields: [autoBidConfigId], references: [id])
+  autoBidConfigId String?
+
+  @@index([listingId, createdAt])
+  @@index([userId, status])
+  @@index([autoBidConfigId])
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  type        AppointmentType
+  status      AppointmentStatus @default(PENDING)
+  scheduledAt DateTime?
+  location    String?
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  @@index([listingId, scheduledAt])
+  @@index([userId, status])
+}
+
+model RtoNoc {
+  id             String    @id @default(cuid())
+  rtoTaxStatus   String?
+  rtoDues        String?
+  rtoNocIssued   String?
+  bankNocStatus  NocStatus @default(NOT_STARTED)
+  rtoNocStatus   NocStatus @default(NOT_STARTED)
+  invoiceStatus  NocStatus @default(NOT_STARTED)
+  ownerIdStatus  NocStatus @default(NOT_STARTED)
+  uploadedCount  Int       @default(0)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  listingId String  @unique
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id                  String   @id @default(cuid())
+  amount              Int
+  currency            String   @default("INR")
+  status              PaymentStatus @default(PENDING)
+  stripePaymentIntentId String? @unique
+  stripeClientSecret  String?
+  metadata            Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  bidId   String?  @unique
+  bid     Bid?     @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  listingId String? @unique
+  listing  Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([bidId])
+  @@index([listingId])
+}
+
+model AutoBidConfig {
+  id            String   @id @default(cuid())
+  maxLimit      Int
+  increment     Int      @default(5000)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId     String
+  listing       Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  bids          Bid[]
+
+  @@unique([userId, listingId])
+  @@index([listingId, isActive])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  platform  String   @default("android")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_INSPECTION
+  ACTIVE
+  SOLD
+  REJECTED
+}
+
+enum BidStatus {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  SUPERSEDED
+}
+
+enum AppointmentType {
+  BUYER_INSPECTION
+  AUTOBIDDER_INSPECTION
+  AUTHORIZED_CENTER
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum NocStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  REQUIRES_ACTION
+  FAILED
+  CANCELLED
+}
+
+enum NotificationType {
+  OUTBID
+  BID_ACCEPTED
+  BID_REJECTED
+  PAYMENT_CONFIRMED
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_CANCELLED
+  AUTO_BID_TRIGGERED
+  LISTING_SOLD
+  SYSTEM
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  adminName String?
+  target    String?
+  details   Json?
+  timestamp DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([action])
+}
+
+model FraudAlert {
+  id          String   @id @default(cuid())
+  severity    String   @default("MEDIUM")
+  type        String
+  description String
+  userId      String?
+  userName    String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model Slider {
+  id        String   @id @default(cuid())
+  type      String   @default("HOME") // "ONBOARDING" or "HOME"
+  title     String
+  subtitle  String?
+  imageUrl  String
+  link      String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Brand {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  logo        String
+  count       String   @default("0 Cars")
+  description String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payout {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  amount        Int
+  status        String   @default("PENDING") // "PENDING", "PROCESSED", "REJECTED"
+  bankDetails   Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Commission {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  listingId     String?
+  listing       Listing? @relation(fields: [listingId], references: [id])
+  amount        Int
+  rate          Float?
+  type          String   // "PLATFORM", "DISTRIBUTOR", "DEALER"
+  status        String   @default("ACCRUED") // "ACCRUED", "PENDING", "PAID"
+  details       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([listingId])
+  @@index([type])
+}

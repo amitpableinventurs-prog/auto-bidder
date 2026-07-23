@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "auto-bidder",
+    "slug": "auto-bidder",
+    "version": "1.0.0",
+    "scheme": "autobidder",
+<<<<<<< HEAD
+=======
+    "newArchEnabled": true,
+>>>>>>> 2ce57fb (Update project)
+    "android": {
+      "package": "com.anonymous.autobidder",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE"
+      ],
+      "usesCleartextTraffic": false
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow Auto Bidder to use the camera to capture car photos for listings."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Auto Bidder to use your location to find cars and auctions near you."
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.autobidder",
+          "enableGooglePay": true
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Auto Bidder to use the camera to capture car photos for listings."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+<<<<<<< HEAD
+            "newArchEnabled": true
+=======
+            "newArchEnabled": true,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0",
+            "ndkVersion": "26.1.10909125"
+>>>>>>> 2ce57fb (Update project)
+          }
+        }
+      ]
+    ]
+  }
+}

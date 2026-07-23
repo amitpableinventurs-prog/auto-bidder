@@ -1,0 +1,17 @@
+- `[x]` Mobile App: Deep link attribution
+    - `[x]` Capture `ref` in `MainHome.tsx`
+    - `[x]` Persist `ref` in `AsyncStorage`
+    - `[x]` Pass `ref` to `Register.tsx`
+    - `[x]` Pass `ref` to `FillCarDetails.tsx`
+- `[x]` Admin Module: Management UI
+    - `[x]` Update `apps/admin/app.js` with new API methods (Verified: already present)
+    - `[x]` Add "Distributors" tab to `apps/admin/index.html` (Verified: already present)
+    - `[x]` Implement `renderDistributors` (Verified: already present)
+    - `[x]` Update Commissions & Payouts rendering (Updated to use real data models)
+- `[x]` Backend API: Admin Routes & Logic
+    - `[x]` Add Admin Distributor routes in `services/api/src/routes/index.ts` (Verified: present/updated)
+    - `[x]` Add Payout processing routes (Added `Payout` and `Commission` models and routes)
+    - `[x]` Verify/Refine commission logic in `devStore.ts` (Verified)
+- `[/]` Verification
+    - `[ ]` Manual test of deep link attribution
+    - `[ ]` Verify Admin dashboard updates

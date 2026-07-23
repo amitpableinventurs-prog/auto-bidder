@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: autobidder-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: autobidder
+      POSTGRES_PASSWORD: autobidder
+      POSTGRES_DB: autobidder
+    ports:
+      - "5432:5432"
+    volumes:
+      - autobidder_pg:/var/lib/postgresql/data
+
+volumes:
+  autobidder_pg:

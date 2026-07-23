@@ -1,0 +1,13 @@
+* [33m21d241e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Resolve merge conflicts
+* [33m2ce57fb[m Update project
+* [33m34f6a2b[m Backup before Expo SDK 54 alignment
+* [33mdea122c[m Backup before Expo SDK 54 upgrade
+[31m|[m *   [33mf76cfbb[m[33m ([m[1;31morigin/main[m[33m)[m Merge pull request #1 from amit8931/ci-cd-pipeline
+[31m|[m [32m|[m[33m\[m  
+[31m|[m [32m|[m * [33m3a885bc[m Add GitHub Actions CI/CD pipeline for services/api
+[31m|[m [32m|[m[32m/[m  
+[31m|[m * [33m4f94da6[m Update package.json
+[31m|[m * [33m7e0c688[m Remove large Figma file
+[31m|[m * [33m2daaa83[m Merge branch 'main' of https://github.com/amit8931/auto-bidder
+[31m|[m[31m/[m[35m|[m 
+[31m|[m * [33meee37d3[m Add FAQ, Help Center, bottom select modal; fix app.json merge conflict

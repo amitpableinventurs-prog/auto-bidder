@@ -1,0 +1,7 @@
+- `[x]` Update Header styling in `FillCarDetails.tsx`
+- `[x]` Update Tabs styling in `FillCarDetails.tsx`
+- `[x]` Update Form Labels and Inputs styling
+- `[x]` Update Brand Grid layout and item styling
+- `[x]` Update Car Images upload box styling
+- `[x]` Refine general spacing and typography in `styles`
+- `[x]` Verify UI against mockup

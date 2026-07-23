@@ -1,0 +1,5 @@
+- [x] Enable New Architecture
+    - [x] Update root app.json
+    - [x] Update apps/mobile/app.json
+    - [x] Update android/gradle.properties
+- [ ] Verify build

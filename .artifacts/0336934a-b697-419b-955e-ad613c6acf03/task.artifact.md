@@ -1,0 +1,5 @@
+- `[x]` Setup assets directory for admin
+- `[x]` Copy `hdlogo.png` to `apps/admin/assets/`
+- `[x]` Update `apps/admin/index.html` with new logo
+- `[x]` Update `apps/admin/style.css` for new logo styling
+- `[x]` Verify changes

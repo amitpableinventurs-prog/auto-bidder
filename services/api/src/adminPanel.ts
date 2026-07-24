@@ -1,4 +1,4 @@
-export function renderAdminPanel() {
+export function renderAdminPanel(apiBaseUrl = '') {
   return /* html */`<!doctype html>
 <html lang="en" data-theme="dark">
 <head>
@@ -529,12 +529,14 @@ const badge = (v,c) => \`<span class="badge badge-\${c||STATUS_MAP[v]||'gray'}">
 const statusBadge = v => badge(v.replace(/_/g,' '),STATUS_MAP[v]||'gray');
 
 // ── API ────────────────────────────────────────────────────────────────────
+const _apiBaseUrl = '${apiBaseUrl || ''}';
 async function apiFetch(path, opts={}) {
   const el = $('api-status');
   try {
     const headers = {'Content-Type':'application/json', ...(opts.headers||{})};
     if (adminToken) headers.Authorization = 'Bearer '+adminToken;
-    const r = await fetch('/api'+path, { ...opts, headers });
+    const url = _apiBaseUrl ? _apiBaseUrl + '/api' + path : '/api' + path;
+    const r = await fetch(url, { ...opts, headers });
     if (r.status === 401 && path !== '/admin/login') {
       adminLogout();
       throw new Error('Your session has expired. Please sign in again.');

@@ -66,8 +66,9 @@ export function createHttpApp() {
     }
   });
 
-  app.get('/admin', (_req, res) => {
-    res.type('html').send(renderAdminPanel());
+  app.get('/admin', (req, res) => {
+    const apiBaseUrl = process.env.ADMIN_API_URL || `${req.protocol}://${req.get('host')}`;
+    res.type('html').send(renderAdminPanel(apiBaseUrl));
   });
 
   app.use('/api', createApiRouter());

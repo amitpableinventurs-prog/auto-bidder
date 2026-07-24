@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
-=======
-﻿import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 import {
   Image,
   Pressable,
@@ -21,17 +16,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useResponsive, getResponsiveCardWidth } from '../utils/responsive';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-<<<<<<< HEAD
 import * as DocumentPicker from 'expo-document-picker';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-=======
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
->>>>>>> 2ce57fb (Update project)
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-import { type CreateListingPayload, uploadFile } from '../api';
+import { type CreateListingPayload, uploadFile, getBrands } from '../api';
 import { ALL_BRANDS } from '../utils/brands';
 import { ALL_RTO_CODES } from '../utils/rto-codes';
 import CalendarModal from '../components/CalendarModal';
@@ -81,7 +71,6 @@ const MODELS_BY_BRAND: Record<string, string[]> = {
   mini: ['Cooper', 'Countryman', 'Clubman'],
 };
 
-<<<<<<< HEAD
 const VARIANTS_BY_MODEL: Record<string, string[]> = {
   'Alto': ['LXi', 'VXi', 'VXi+', 'STD', 'LXi (O)'],
   'Baleno': ['Sigma', 'Delta', 'Zeta', 'Alpha'],
@@ -162,15 +151,7 @@ const LOAN_STATUS_OPTIONS = [
   'Bank Kit Available',
   'Will Clear The Loan with Sell Process',
 ];
-<<<<<<< HEAD
-=======
-const YEARS = Array.from({ length: 25 }, (_, i) => (2025 - i).toString());
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
-=======
 
-const TEXT_DARK = '#0b1020';
-const MUTED = '#64748b';
-const BLUE_BTN = COLORS.secondary;
 const CARD_BG = '#ffffff';
 const BORDER_COLOR = '#e2e8f0';
 const ACCENT_BG = '#f8fafc';
@@ -191,7 +172,6 @@ const YELLOW_BG = '#fff9e6';
 const YELLOW_BORDER = '#fbbf24';
 const HORIZONTAL_PADDING = 20;
 const GRID_GAP = 12;
->>>>>>> 2ce57fb (Update project)
 
 /* Helper UI Components */
 
@@ -199,17 +179,11 @@ function Label({ text, dark = false }: { text: string, dark?: boolean }) {
   return <Text style={[styles.label, dark && { color: '#cbd5e1' }]}>{text}</Text>;
 }
 
-<<<<<<< HEAD
+// BottomSelectModal imported from components
+
 function SelectInput({ placeholder, value, onPress, icon = "chevron-down", dark = false, error = false }: { placeholder: string; value?: string; onPress?: () => void; icon?: any; dark?: boolean; error?: boolean }) {
   return (
     <Pressable style={[styles.inputBox, dark && styles.inputBoxDark, error && styles.inputBoxError]} onPress={onPress}>
-=======
-// BottomSelectModal imported from components
-
-function SelectInput({ placeholder, value, onPress, icon = "chevron-down", dark = false }: { placeholder: string; value?: string; onPress?: () => void; icon?: any; dark?: boolean }) {
-  return (
-    <Pressable style={[styles.inputBox, dark && styles.inputBoxDark]} onPress={onPress}>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
       <Text style={[value ? styles.inputText : styles.inputTextMuted, dark && value && { color: '#fff' }]}>
         {value || placeholder}
       </Text>
@@ -253,13 +227,7 @@ function TextInputBox({
   );
 }
 
-<<<<<<< HEAD
 function GridToggle({ options, value, onSelect, columns = 2, dark = false }: { options: string[]; value?: any; onSelect?: (val: any) => void, columns?: number, dark?: boolean }) {
-=======
-function GridToggle({ options, value, onSelect, columns = 2 }: { options: string[]; value?: any; onSelect?: (val: any) => void, columns?: number }) {
-  const isTwoColumn = columns === 2;
-
->>>>>>> 2ce57fb (Update project)
   return (
     <View style={styles.toggleGrid}>
       {options.map((opt) => (
@@ -267,12 +235,8 @@ function GridToggle({ options, value, onSelect, columns = 2 }: { options: string
           key={opt}
           style={[
             styles.toggleItem,
-<<<<<<< HEAD
             { width: `${100 / columns - 1.5}%` },
             dark && styles.toggleItemDark,
-=======
-            isTwoColumn ? styles.toggleItemTwoColumn : styles.toggleItemThreeColumn,
->>>>>>> 2ce57fb (Update project)
             value === opt && styles.toggleItemActive
           ]}
           onPress={() => onSelect?.(opt)}
@@ -284,24 +248,15 @@ function GridToggle({ options, value, onSelect, columns = 2 }: { options: string
   );
 }
 
-<<<<<<< HEAD
 function UploadBox({ label = "Upload Image", icon = "car", dark = false, onPress, loading = false, error = false }: { label?: string; icon?: any; dark?: boolean, onPress?: () => void, loading?: boolean, error?: boolean }) {
-=======
-function UploadBox({ label = "Upload Image", icon = "camera", dark = false, onPress, loading = false }: { label?: string; icon?: any; dark?: boolean, onPress?: () => void, loading?: boolean }) {
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   return (
     <Pressable style={[styles.uploadBox, dark && styles.uploadBoxDark, error && styles.uploadBoxError]} onPress={onPress} disabled={loading}>
       {loading ? (
         <ActivityIndicator color={BLUE_BTN} />
       ) : (
         <>
-<<<<<<< HEAD
           <View style={[styles.uploadIconCircle, error && { backgroundColor: '#ef4444' }]}>
             <MaterialCommunityIcons name="car-cog" size={24} color="#fff" />
-=======
-          <View style={styles.uploadIconCircle}>
-            <Ionicons name={icon} size={24} color={BLUE_BTN} />
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
           </View>
           <Text style={[styles.uploadLabel, dark && { color: '#cbd5e1' }, error && { color: '#ef4444' }]}>{label}</Text>
         </>
@@ -316,20 +271,16 @@ export default function FillCarDetails() {
   const route = useRoute<RouteProp<RootStackParamList, 'FillDetails' | 'ListingDocuments'>>();
   const { listingToEdit, initialTab = 'basic', listingData, brand: passedBrand, carType } = (route.params as any) || {};
   const [activeTab, setActiveTab] = useState<string>(initialTab);
-<<<<<<< HEAD
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const scrollRef = React.useRef<ScrollView>(null);
   const manualBrandRef = React.useRef<TextInput>(null);
   const manualModelRef = React.useRef<TextInput>(null);
   const manualVariantRef = React.useRef<TextInput>(null);
-=======
   const [showAllBrands, setShowAllBrands] = useState(false);
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
   const initialData = listingToEdit || listingData || {};
 
   // Basic Details State
-<<<<<<< HEAD
   const [selectedBrand, setSelectedBrand] = useState(() => {
     const b = passedBrand || initialData?.brand?.toLowerCase();
     if (!b) return 'maruti';
@@ -362,10 +313,6 @@ export default function FillCarDetails() {
       console.warn("Failed to fetch brands in fill details", err);
     }
   };
-=======
-  const [selectedBrand, setSelectedBrand] = useState(passedBrand || initialData?.brand?.toLowerCase() || 'maruti');
-  const [regNumber, setRegNumber] = useState(initialData?.regNumber || '');
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
   const getModels = (brandId: string) => {
     return [...(MODELS_BY_BRAND[brandId] || []), 'Other'];
@@ -450,7 +397,6 @@ export default function FillCarDetails() {
 
   const [modalType, setModalType] = useState<string | null>(null);
 
-<<<<<<< HEAD
   useEffect(() => {
     if (selectedBrand === 'other') {
         setTimeout(() => manualBrandRef.current?.focus(), 100);
@@ -487,8 +433,6 @@ export default function FillCarDetails() {
     }
   }, [listingData, initialTab, initialData]);
 
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   const formatDate = (date: Date) => {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -496,18 +440,6 @@ export default function FillCarDetails() {
     return `${day}/${month}/${year}`;
   };
 
-<<<<<<< HEAD
-  const pickImage = async (type: 'car' | 'rc' | 'invoice' | 'bankNoc') => {
-    if (type === 'car') {
-        launchCamera(type);
-    } else {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 0.8,
-        });
-=======
   const pickImage = async (type: 'rc' | 'invoice' | 'bankNoc') => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -515,11 +447,9 @@ export default function FillCarDetails() {
       aspect: [4, 3],
       quality: 0.8,
     });
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
-        if (!result.canceled && result.assets[0].uri) {
-            handleImageResult(result.assets[0].uri, result.assets[0].mimeType ?? undefined, result.assets[0].fileName ?? undefined, type);
-        }
+    if (!result.canceled && result.assets[0].uri) {
+        handleImageResult(result.assets[0].uri, result.assets[0].mimeType ?? undefined, result.assets[0].fileName ?? undefined, type);
     }
   };
 
@@ -566,7 +496,6 @@ export default function FillCarDetails() {
     else if (type === 'bankNoc') setBankNocImages(bankNocImages.filter(img => img !== url));
   };
 
-<<<<<<< HEAD
   const buildPayload = (): CreateListingPayload & { id?: string } => {
     const currentBrand = selectedBrand === 'other' ? manualBrand : (brands.find(b => b.id === selectedBrand)?.name || selectedBrand);
     const currentModel = selectedModel === 'Other' ? manualModel : selectedModel;
@@ -597,8 +526,8 @@ export default function FillCarDetails() {
         plateNumber: regNumber || undefined,
         carType: carType || undefined,
         listedBy,
-        sellerContactName: friendName || undefined,
-        sellerContactNumber: friendNumber || undefined,
+        sellerContactName: listedByName || undefined,
+        sellerContactNumber: listedByPhone || undefined,
         rcOwnerName,
         rcOwnerNumber,
         rcAvailability,
@@ -689,60 +618,6 @@ export default function FillCarDetails() {
             </Pressable>
         </View>
     );
-=======
-  const buildPayload = (): CreateListingPayload & { id?: string } => ({
-    ...initialData,
-    title: `${selectedBrand.toUpperCase()} ${selectedModel} ${variant}`.trim(),
-    brand: selectedBrand,
-    model: selectedModel,
-    variant: variant || undefined,
-    fuelType,
-    manufacturingYear: parseInt(manufacturingYear),
-    transmission,
-    color: colour.trim(),
-    city,
-    ownership,
-    kilometersDriven: parseInt(kilometersDriven.replace(/,/g, '') || '0') || 0,
-    demandPrice: parseInt(demandPrice.replace(/,/g, '')) || 0,
-    insuranceType,
-    listedBy,
-    regNumber,
-    rcOwnerName: rcOwnerName || undefined,
-    rcOwnerNumber: rcOwnerNumber || undefined,
-    rcAvailability,
-    originalInvoice,
-    bankHypothecation: bankHypo,
-    loanStatus: bankHypo ? loanStatus : undefined,
-    rtoTaxStatus: rtoTaxStatus || undefined,
-    rtoNocIssued: rtoNoc,
-    rtoNocNumber: rtoNoc === 'Yes' ? rtoNocNumber : undefined,
-    duplicateKeys,
-    serviceBookAvailability: serviceBook,
-    remainingFreeService: freeService === 'None' ? 0 : parseInt(freeService),
-    remainingOemWarranty: oemWarranty,
-    condition: vehicleCondition || undefined,
-    description: accidentalHistory || undefined,
-  });
-
-  const navigateToImages = () => {
-    navigation.navigate('ChooseCarType', { listingData: buildPayload() });
-  };
-
-  const handleBasicSubmit = () => {
-    if (!selectedBrand || !selectedModel) {
-      Alert.alert('Required', 'Please select brand and model.');
-      return;
-    }
-    if (!kilometersDriven) {
-      Alert.alert('Required', 'Please enter kilometers driven.');
-      return;
-    }
-    setActiveTab('more');
-  };
-
-  const handleFinalSubmit = () => {
-    navigateToImages();
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   };
 
   return (
@@ -766,7 +641,6 @@ export default function FillCarDetails() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === 'basic' ? (
           <>
-<<<<<<< HEAD
             <Label text="Registration Number" />
             <TextInputBox placeholder="DL 01 AB12XX" value={regNumber} onChangeText={setRegNumber} error={errors.regNumber} />
 
@@ -780,64 +654,12 @@ export default function FillCarDetails() {
                 value={brandSearch}
                 onChangeText={setBrandSearch}
               />
-=======
-            <Label text="Registration Number" mandatory />
-            <TextInputBox
-              placeholder="Enter Registration Number"
-              value={regNumber}
-              onChangeText={setRegNumber}
-              error={errors.regNumber}
-            />
-
-            <Label text="Select Car brand" />
-            <View style={styles.brandGrid}>
-              {ALL_BRANDS
-                .filter(b => PRIMARY_BRANDS.includes(b.id))
-                .map((brand) => (
-                  <Pressable
-                    key={brand.id}
-                    style={[
-                      styles.brandItem,
-                      { width: getResponsiveCardWidth(width, isDesktop ? 5 : isTablet ? 4 : 4, 10, 24), height: getResponsiveCardWidth(width, isDesktop ? 5 : isTablet ? 4 : 4, 10, 24) + 8 },
-                      selectedBrand === brand.id && styles.brandItemActive,
-                    ]}
-                    onPress={() => {
-                      setSelectedBrand(brand.id);
-                      const models = getModels(brand.id);
-                      setSelectedModel(models[0]);
-                      const variants = getVariants(models[0]);
-                      setVariant(variants[0]);
-                    }}
-                  >
-                    <Image source={brand.logo} style={styles.brandLogo} resizeMode="contain" />
-                    <Text style={[styles.brandName, selectedBrand === brand.id && styles.brandNameActive]} numberOfLines={1}>
-                      {brand.name}
-                    </Text>
-                  </Pressable>
-                ))}
-              <Pressable
-                style={[styles.brandItem, { width: getResponsiveCardWidth(width, isDesktop ? 5 : isTablet ? 4 : 4, 10, 24), height: getResponsiveCardWidth(width, isDesktop ? 5 : isTablet ? 4 : 4, 10, 24) + 8 }, selectedBrand === 'other' && styles.brandItemActive]}
-                onPress={() => {
-                  setSelectedBrand('other');
-                  setSelectedModel('Other');
-                  setVariant('Other');
-                }}
-              >
-                <View style={styles.otherBrandBadge}>
-                  <Text style={styles.otherBrandBadgeText}>?</Text>
-                </View>
-                <Text style={styles.otherBrandText}>Other</Text>
-              </Pressable>
->>>>>>> 2ce57fb (Update project)
             </View>
             <View style={styles.brandGrid}>
-<<<<<<< HEAD
-              {ALL_BRANDS
-                .filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase()))
-                .map((brand) => (
-=======
-              {(showAllBrands ? ALL_BRANDS : ALL_BRANDS.slice(0, 8)).map((brand) => (
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
+              {(brandSearch
+                ? ALL_BRANDS.filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase()))
+                : (showAllBrands ? ALL_BRANDS : ALL_BRANDS.slice(0, 8))
+              ).map((brand) => (
                 <Pressable
                   key={brand.id}
                   style={[
@@ -910,7 +732,6 @@ export default function FillCarDetails() {
               ))}
             </View>
 
-<<<<<<< HEAD
             {selectedModel === 'Other' && (
               <View style={{ marginTop: 8 }}>
                 <TextInputBox
@@ -937,8 +758,6 @@ export default function FillCarDetails() {
               {carImages.map((img) => renderFilePreview(img, 'car'))}
             </ScrollView>
 
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
             <Label text="Car Variant" />
             <SelectInput
                 placeholder="Select Variant"
@@ -978,11 +797,7 @@ export default function FillCarDetails() {
             <GridToggle options={['1st Owner', '2nd Owner', '3rd Owner', '4th Owner']} value={ownership} onSelect={setOwnership} />
 
             <Label text="Kilometers Driven By Your Car" />
-<<<<<<< HEAD
             <SelectInput placeholder="Select KM Driven" value={kilometersDriven} onPress={() => setModalType('kmDriven')} />
-=======
-            <TextInputBox placeholder="Enter exact km (e.g. 45000)" value={kilometersDriven} onChangeText={setKilometersDriven} keyboardType="numeric" />
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
             <Label text="Car Insurance Type" />
             <GridToggle options={['Lapsed', 'Third-party insurance', 'Comprehensive', 'Zero Depth']} value={insuranceType} onSelect={setInsuranceType} />
@@ -992,20 +807,7 @@ export default function FillCarDetails() {
 
             <Label text="Listed By" />
             <SelectInput placeholder="Select Listed By" value={listedBy} onPress={() => setModalType('listedBy')} />
-<<<<<<< HEAD
 
-            {['Selling for a Friend', "Company's Car", 'Bought But RC not in my name', 'Showroom Staff', 'Brokership', 'AB Network Partner'].includes(listedBy) && (
-              <>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 8, justifyContent: 'space-between' }}>
-                   <Text style={{ color: TEXT_DARK, fontSize: 14, fontWeight: '700' }}>
-                     Enter Your Contact Details
-                   </Text>
-                   <Ionicons name="information-circle-outline" size={18} color={TEXT_DARK} />
-                </View>
-                <View style={{ gap: 10 }}>
-                  <TextInputBox placeholder="Enter Name" value={friendName} onChangeText={setFriendName} />
-                  <TextInputBox placeholder="Enter Number" value={friendNumber} onChangeText={setFriendNumber} keyboardType="phone-pad" />
-=======
             {(listedBy === 'Dealer' || listedBy === 'Broker' || listedBy === 'Showroom / Agency') && (
               <>
                 <Label text={listedBy === 'Dealer' ? "Dealer Name" : listedBy === 'Broker' ? "Broker Name" : "Agency / Showroom Name"} />
@@ -1017,7 +819,6 @@ export default function FillCarDetails() {
                   <Text style={styles.disclaimerText}>
                     Listing on behalf of a dealer or agency. Buyer will be informed this is a commercial listing.
                   </Text>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
                 </View>
               </>
             )}
@@ -1026,13 +827,8 @@ export default function FillCarDetails() {
             <TextInputBox placeholder="Enter city" value={city} onChangeText={setCity} />
 
             <Label text="Demand Price" />
-<<<<<<< HEAD
             <View style={[styles.priceInputBox, errors.demandPrice && styles.inputBoxError]}>
                <MaterialCommunityIcons name="currency-inr" size={20} color="#fb923c" style={{ marginRight: 8 }} />
-=======
-            <View style={styles.priceInputBox}>
-               <Ionicons name="alert-circle-outline" size={20} color="#f97316" style={{ marginRight: 8 }} />
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
                <TextInput
                     placeholder="Enter Price"
                     placeholderTextColor={MUTED}
@@ -1043,9 +839,7 @@ export default function FillCarDetails() {
                 />
             </View>
 
-<<<<<<< HEAD
             <View style={styles.footerRow}>
-<<<<<<< HEAD
               <Pressable
                 style={[styles.skipBtn]}
                 onPress={() => handleFinalSubmit(true)}
@@ -1062,19 +856,7 @@ export default function FillCarDetails() {
               >
                 <Text style={styles.skipBtnText}>MORE DETAILS</Text>
               </Pressable>
-=======
-              <Pressable style={styles.submitBtnBasic} onPress={() => handleFinalSubmit(true)}><Text style={styles.submitBtnText}>SUBMIT</Text></Pressable>
-              <Pressable style={styles.moreDetailsBtn} onPress={() => { setErrors({}); setActiveTab('more'); }}><Text style={styles.submitBtnText}>MORE DETAILS</Text></Pressable>
->>>>>>> 2ce57fb (Update project)
             </View>
-=======
-            <Pressable style={styles.submitBtn} onPress={handleBasicSubmit}>
-              <Text style={styles.submitBtnText}>SUBMIT</Text>
-            </Pressable>
-            <Pressable style={styles.skipBtn} onPress={() => setActiveTab('more')}>
-              <Text style={styles.skipBtnText}>Add More Details (Optional)</Text>
-            </Pressable>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
           </>
         ) : (
           <>
@@ -1090,11 +872,7 @@ export default function FillCarDetails() {
             <Label text="RC Availability" />
             <SelectInput placeholder="Select" value={rcAvailability} onPress={() => setModalType('rcAvail')} error={errors.rcAvailability} />
 
-<<<<<<< HEAD
             <Label text="RC Photos (Mandatory)" />
-=======
-            <Label text="Upload RC (Image or PDF)" />
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
             <View style={styles.uploadActionsRow}>
                 <Pressable style={styles.miniUploadBtn} onPress={() => pickImage('rc')} disabled={!!uploading}>
                     <Ionicons name="camera" size={20} color={BLUE_BTN} />
@@ -1106,46 +884,14 @@ export default function FillCarDetails() {
                 </Pressable>
                 {uploading === 'rc' && <ActivityIndicator size="small" color={BLUE_BTN} />}
             </View>
-<<<<<<< HEAD
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previewRow}>
               {rcImages.map((img) => renderFilePreview(img, 'rc'))}
             </ScrollView>
-=======
-            <View style={styles.previewRow}>
-              {rcImages.map((img, idx) => {
-                const lower = img.toLowerCase();
-                const isPdf = lower.endsWith('.pdf');
-                const isDoc = lower.endsWith('.doc') || lower.endsWith('.docx');
-                return (
-                  <View key={idx} style={styles.previewWrap}>
-                    {isPdf ? (
-                      <View style={[styles.previewImg, { backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }]}>
-                        <MaterialCommunityIcons name="file-pdf-box" size={32} color="#ef4444" />
-                      </View>
-                    ) : isDoc ? (
-                      <View style={[styles.previewImg, { backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }]}>
-                        <MaterialCommunityIcons name="file-word-box" size={32} color="#2873c3" />
-                      </View>
-                    ) : (
-                      <Image source={{ uri: img }} style={styles.previewImg} />
-                    )}
-                    <Pressable style={styles.previewCross} onPress={() => removeImage(img, 'rc')}>
-                      <Ionicons name="close-circle" size={20} color="#ef4444" />
-                    </Pressable>
-                  </View>
-                );
-              })}
-            </View>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
             <Label text="Original Invoice" />
             <GridToggle options={['Yes, Available', 'No']} value={originalInvoice ? 'Yes, Available' : 'No'} onSelect={(v) => setOriginalInvoice(v === 'Yes, Available')} />
 
-<<<<<<< HEAD
             <Label text="Invoice Photos" />
-=======
-            <Label text="Upload Invoice (Image or PDF)" />
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
             <View style={styles.uploadActionsRow}>
                 <Pressable style={styles.miniUploadBtn} onPress={() => pickImage('invoice')} disabled={!!uploading}>
                     <Ionicons name="camera" size={20} color={BLUE_BTN} />
@@ -1157,37 +903,9 @@ export default function FillCarDetails() {
                 </Pressable>
                 {uploading === 'invoice' && <ActivityIndicator size="small" color={BLUE_BTN} />}
             </View>
-<<<<<<< HEAD
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previewRow}>
               {invoiceImages.map((img) => renderFilePreview(img, 'invoice'))}
             </ScrollView>
-=======
-            <View style={styles.previewRow}>
-              {invoiceImages.map((img, idx) => {
-                const lower = img.toLowerCase();
-                const isPdf = lower.endsWith('.pdf');
-                const isDoc = lower.endsWith('.doc') || lower.endsWith('.docx');
-                return (
-                  <View key={idx} style={styles.previewWrap}>
-                    {isPdf ? (
-                      <View style={[styles.previewImg, { backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }]}>
-                        <MaterialCommunityIcons name="file-pdf-box" size={32} color="#ef4444" />
-                      </View>
-                    ) : isDoc ? (
-                      <View style={[styles.previewImg, { backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }]}>
-                        <MaterialCommunityIcons name="file-word-box" size={32} color="#2873c3" />
-                      </View>
-                    ) : (
-                      <Image source={{ uri: img }} style={styles.previewImg} />
-                    )}
-                    <Pressable style={styles.previewCross} onPress={() => removeImage(img, 'invoice')}>
-                      <Ionicons name="close-circle" size={20} color="#ef4444" />
-                    </Pressable>
-                  </View>
-                );
-              })}
-            </View>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
             <Label text="Bank Hypothecation" />
             <GridToggle options={['Yes', 'No']} value={bankHypo ? 'Yes' : 'No'} onSelect={(v) => { setBankHypo(v === 'Yes'); if (v === 'No') setLoanStatus(''); }} />
@@ -1199,11 +917,7 @@ export default function FillCarDetails() {
               </>
             )}
 
-<<<<<<< HEAD
             <Label text="Bank NOC Photos" />
-=======
-            <Label text="Upload Bank NOC (Image or PDF)" />
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
             <View style={styles.uploadActionsRow}>
                 <Pressable style={styles.miniUploadBtn} onPress={() => pickImage('bankNoc')} disabled={!!uploading}>
                     <Ionicons name="camera" size={20} color={BLUE_BTN} />
@@ -1215,37 +929,9 @@ export default function FillCarDetails() {
                 </Pressable>
                 {uploading === 'bankNoc' && <ActivityIndicator size="small" color={BLUE_BTN} />}
             </View>
-<<<<<<< HEAD
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previewRow}>
               {bankNocImages.map((img) => renderFilePreview(img, 'bankNoc'))}
             </ScrollView>
-=======
-            <View style={styles.previewRow}>
-              {bankNocImages.map((img, idx) => {
-                const lower = img.toLowerCase();
-                const isPdf = lower.endsWith('.pdf');
-                const isDoc = lower.endsWith('.doc') || lower.endsWith('.docx');
-                return (
-                  <View key={idx} style={styles.previewWrap}>
-                    {isPdf ? (
-                      <View style={[styles.previewImg, { backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }]}>
-                        <MaterialCommunityIcons name="file-pdf-box" size={32} color="#ef4444" />
-                      </View>
-                    ) : isDoc ? (
-                      <View style={[styles.previewImg, { backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }]}>
-                        <MaterialCommunityIcons name="file-word-box" size={32} color="#2873c3" />
-                      </View>
-                    ) : (
-                      <Image source={{ uri: img }} style={styles.previewImg} />
-                    )}
-                    <Pressable style={styles.previewCross} onPress={() => removeImage(img, 'bankNoc')}>
-                      <Ionicons name="close-circle" size={20} color="#ef4444" />
-                    </Pressable>
-                  </View>
-                );
-              })}
-            </View>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
             <Label text="RTO Tax Status" />
             <SelectInput placeholder="Select" value={rtoTaxStatus} onPress={() => setModalType('rtoTax')} error={errors.rtoTaxStatus} />
@@ -1288,17 +974,9 @@ export default function FillCarDetails() {
             <Label text="Please mention if any accidental history or any other major issues" />
             <TextInputBox placeholder="Type Here" multiline value={accidentalHistory} onChangeText={setAccidentalHistory} />
 
-<<<<<<< HEAD
             <Pressable style={[styles.submitBtn, { marginBottom: 40, backgroundColor: BLUE_BTN }]} onPress={() => handleFinalSubmit(false)}>
               <Text style={styles.submitBtnText}>SUBMIT</Text>
               <MaterialCommunityIcons name="send" size={22} color="#fff" style={{ marginLeft: 8 }} />
-=======
-            <Pressable style={[styles.submitBtn, { marginBottom: 12 }]} onPress={handleFinalSubmit}>
-              <Text style={styles.submitBtnText}>SUBMIT WITH DETAILS</Text>
-            </Pressable>
-            <Pressable style={[styles.skipBtn, { marginBottom: 40 }]} onPress={navigateToImages}>
-              <Text style={styles.skipBtnText}>SKIP — Submit Without More Details</Text>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
             </Pressable>
           </>
         )}
@@ -1331,10 +1009,6 @@ export default function FillCarDetails() {
           onSelect={setManufacturingYear}
           onClose={() => setModalType(null)}
       />
-<<<<<<< HEAD
-
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
       <BottomSelectModal
           visible={modalType === 'listedBy'}
           title="Listed By"
@@ -1383,8 +1057,6 @@ export default function FillCarDetails() {
           onClose={() => setModalType(null)}
       />
       <BottomSelectModal
-<<<<<<< HEAD
-=======
           visible={modalType === 'rtoNocNumber'}
           title="Select Issuing RTO Office"
           data={ALL_RTO_CODES}
@@ -1393,7 +1065,6 @@ export default function FillCarDetails() {
           onClose={() => setModalType(null)}
       />
       <BottomSelectModal
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
           visible={modalType === 'cngLpg'}
           title="CNG/LPG Status"
           data={[
@@ -1418,7 +1089,6 @@ export default function FillCarDetails() {
           onClose={() => setModalType(null)}
       />
       <BottomSelectModal
-<<<<<<< HEAD
           visible={modalType === 'kmDriven'}
           title="Select KM Driven"
           data={[
@@ -1439,8 +1109,6 @@ export default function FillCarDetails() {
           onClose={() => setModalType(null)}
       />
       <BottomSelectModal
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
           visible={modalType === 'oemWarranty'}
           title="Remaining OEM Warranty"
           data={[
@@ -1492,8 +1160,6 @@ export default function FillCarDetails() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
-<<<<<<< HEAD
-<<<<<<< HEAD
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1568,16 +1234,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#eff6ff',
     borderWidth: 2,
   },
-  viewAllBrandsBtn: {
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: BLUE_BTN,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  viewAllBrandsText: { color: BLUE_BTN, fontWeight: '700', fontSize: 14 },
+  viewAllBtn: { marginTop: 10, height: 40, borderRadius: 8, borderWidth: 1, borderColor: BLUE_BTN, alignItems: 'center', justifyContent: 'center' },
+  viewAllText: { color: BLUE_BTN, fontSize: 14, fontWeight: '700' },
   brandItemError: {
     borderColor: '#ef4444',
     borderWidth: 1,
@@ -1633,38 +1291,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: '#fff',
   },
-=======
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', backgroundColor: '#fff' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: TEXT_DARK, marginLeft: 15 },
-
-  tabsRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 14, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: BLUE_BTN },
-  tabText: { fontSize: 16, fontWeight: '600', color: MUTED },
-  tabTextActive: { color: BLUE_BTN },
-
-  content: { padding: 16, backgroundColor: '#fff' },
-  label: { fontSize: 14, fontWeight: '600', color: TEXT_DARK, marginTop: 24, marginBottom: 12 },
-
-  brandGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
-  brandItem: { width: '23%', aspectRatio: 1.4, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, alignItems: 'center', justifyContent: 'center', padding: 8 },
-  brandItemActive: { borderColor: BLUE_BTN, backgroundColor: '#eff6ff' },
-  brandLogo: { width: '80%', height: '80%' },
-  viewAllBtn: { marginTop: 10, height: 40, borderRadius: 8, borderWidth: 1, borderColor: BLUE_BTN, alignItems: 'center', justifyContent: 'center' },
-  viewAllText: { color: BLUE_BTN, fontSize: 14, fontWeight: '700' },
-
-  modelGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  modelItem: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, minWidth: '30%', alignItems: 'center' },
-  modelItemActive: { borderColor: BLUE_BTN, backgroundColor: '#eff6ff' },
-  modelText: { fontSize: 14, color: MUTED, fontWeight: '500' },
-  modelTextActive: { color: BLUE_BTN, fontWeight: '700' },
-
-  inputBox: { height: 44, borderWidth: 1, borderColor: '#CCCCCC', borderRadius: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, backgroundColor: '#fff' },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   inputBoxDark: { backgroundColor: '#1e293b', borderColor: '#334155' },
   inputBoxError: { borderColor: '#ef4444', borderWidth: 1 },
   inputBoxMulti: { height: 100, alignItems: 'flex-start', paddingTop: 12 },
-<<<<<<< HEAD
   inputText: { fontSize: 15, color: TEXT_DARK },
   inputTextMuted: { fontSize: 15, color: MUTED },
   textInput: { flex: 1, fontSize: 15, color: TEXT_DARK, fontWeight: '500' },
@@ -1672,21 +1301,11 @@ const styles = StyleSheet.create({
 
   toggleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   toggleItem: { height: 48, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', width: '48.5%' },
-=======
-  inputText: { fontSize: 16, color: TEXT_DARK },
-  inputTextMuted: { fontSize: 16, color: MUTED },
-  textInput: { flex: 1, fontSize: 16, color: TEXT_DARK },
-  textInputMulti: { textAlignVertical: 'top' },
-
-  toggleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  toggleItem: { height: 46, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   toggleItemDark: { backgroundColor: '#1e293b', borderColor: '#334155' },
   toggleItemActive: { borderColor: BLUE_BTN, backgroundColor: '#eff6ff' },
   toggleText: { fontSize: 14, color: MUTED, fontWeight: '500' },
   toggleTextActive: { color: BLUE_BTN, fontWeight: '600' },
 
-<<<<<<< HEAD
   uploadBox: {
     height: 120,
     backgroundColor: '#fffbeb',
@@ -1714,18 +1333,6 @@ const styles = StyleSheet.create({
     color: TEXT_DARK,
   },
 
-=======
-  uploadBox: { height: 100, backgroundColor: '#f0f7ff', borderWidth: 1.5, borderColor: '#bfdbfe', borderRadius: 12, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
-  uploadBoxDark: { backgroundColor: '#f0f7ff', borderColor: '#bfdbfe' },
-  uploadIconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginBottom: 8, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
-  uploadLabel: { fontSize: 12, fontWeight: '700', color: TEXT_DARK },
-
-  previewRow: { flexDirection: 'row', gap: 12, marginTop: 15 },
-  previewWrap: { width: 100, height: 80, borderRadius: 8, overflow: 'hidden' },
-  previewImg: { width: '100%', height: '100%' },
-  previewCross: { position: 'absolute', top: 2, right: 2 },
-
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   uploadActionsRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
   miniUploadBtn: {
     flex: 1,
@@ -1746,7 +1353,6 @@ const styles = StyleSheet.create({
   previewImg: { width: 100, height: 80, borderRadius: 8 },
   previewCross: { position: 'absolute', top: -5, right: -5, backgroundColor: '#ef4444', borderRadius: 12, padding: 2, borderWidth: 1, borderColor: '#fff' },
 
-<<<<<<< HEAD
   priceInputBox: {
     height: 56,
     backgroundColor: '#fffbeb',
@@ -1777,14 +1383,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-=======
   submitBtn: { height: 50, backgroundColor: BLUE_BTN, borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 32 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  skipBtn: { height: 44, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
-  skipBtnText: { color: BLUE_BTN, fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' },
   disclaimerBox: { flexDirection: 'row', gap: 8, backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa', borderRadius: 8, padding: 12, marginTop: 8, alignItems: 'flex-start' },
   disclaimerText: { flex: 1, fontSize: 12, color: '#92400e', lineHeight: 18 },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
   /* Modals */
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
@@ -1824,67 +1426,4 @@ const styles = StyleSheet.create({
   calBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
   calBtnTextCancel: { color: MUTED, fontWeight: '600' },
   calBtnTextConfirm: { color: '#fff', fontWeight: '700' },
-=======
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 14, backgroundColor: '#fff' },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: TEXT_DARK, marginLeft: 12 },
-  tabsRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#e5e7eb', marginHorizontal: 10, marginBottom: 8 },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 14, borderBottomWidth: 2, borderBottomColor: 'transparent', marginBottom: -1 },
-  tabActive: { borderBottomColor: BLUE_BTN },
-  tabText: { fontSize: 16, fontWeight: '600', color: '#8a94a6' },
-  tabTextActive: { color: TEXT_DARK, fontWeight: '700' },
-  content: { paddingHorizontal: 12, paddingTop: 6, paddingBottom: 26, backgroundColor: '#fff' },
-  label: { fontSize: 13, fontWeight: '700', color: '#4b5563' },
-  labelRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 8 },
-  brandGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: 10, marginTop: 4 },
-  brandItem: { backgroundColor: '#f3f8ff', borderWidth: 1, borderColor: '#dde7f3', borderRadius: 12, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, paddingTop: 10, paddingBottom: 8, shadowColor: '#0f172a', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
-  brandItemActive: { borderColor: BLUE_BTN, borderWidth: 1.5, backgroundColor: '#eaf3ff', shadowOpacity: 0.12, elevation: 2 },
-  brandLogo: { width: '72%', height: 34, marginBottom: 6 },
-  brandName: { fontSize: 10, lineHeight: 13, fontWeight: '600', color: '#334155', textAlign: 'center' },
-  brandNameActive: { color: BLUE_BTN, fontWeight: '700' },
-  otherBrandBadge: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#d8e3f0', alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  otherBrandBadgeText: { fontSize: 18, fontWeight: '800', color: '#64748b' },
-  otherBrandText: { fontSize: 10, lineHeight: 13, fontWeight: '700', color: TEXT_DARK, textAlign: 'center' },
-  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 2 },
-  chipItem: { minHeight: 36, borderRadius: 6, borderWidth: 1, borderColor: '#d9dee7', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', paddingHorizontal: 8, paddingVertical: 7 },
-  chipItemActive: { borderColor: BLUE_BTN, backgroundColor: '#eef6ff' },
-  chipText: { fontSize: 13, color: '#4b5563', fontWeight: '500', textAlign: 'center' },
-  chipTextActive: { color: BLUE_BTN, fontWeight: '700' },
-
-  inputBox: { height: 44, borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, backgroundColor: '#fff' },
-  inputBoxError: { borderColor: ERROR, borderWidth: 1.5 },
-  inputBoxMulti: { height: 102, alignItems: 'flex-start', paddingTop: 10 },
-  inputText: { fontSize: 13, color: TEXT_DARK, fontWeight: '500' },
-  inputTextMuted: { fontSize: 13, color: '#94a3b8' },
-  textInput: { flex: 1, fontSize: 13, color: TEXT_DARK, fontWeight: '500', paddingVertical: 7 },
-  textInputMulti: { textAlignVertical: 'top' },
-  toggleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', marginTop: 4 },
-  toggleItem: { height: 36, borderWidth: 1, borderColor: BORDER_COLOR, borderRadius: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', paddingHorizontal: 8 },
-  toggleItemTwoColumn: { width: '48.5%' },
-  toggleItemThreeColumn: { width: '31.8%' },
-  toggleItemActive: { borderColor: BLUE_BTN, backgroundColor: '#fff', borderWidth: 1.5 },
-  toggleText: { fontSize: 11, color: '#64748b', fontWeight: '500', textAlign: 'center' },
-  toggleTextActive: { color: BLUE_BTN, fontWeight: '700' },
-  card: { backgroundColor: '#fff', marginBottom: 24, borderRadius: 16, borderWidth: 1, borderColor: '#f1f5f9', overflow: 'hidden' },
-  cardContent: { padding: 16, paddingTop: 0 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f8fafc', marginBottom: 8 },
-  sectionIconContainer: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#f0f7ff', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  sectionTitle: { fontSize: 17, fontWeight: '800', color: TEXT_DARK, textTransform: 'uppercase', letterSpacing: 0.5 },
-  modernUploadContainer: { marginTop: 4, borderRadius: 8, borderWidth: 1.5, borderColor: YELLOW_BORDER, backgroundColor: '#fffdf5', borderStyle: 'solid' },
-  modernUploadError: { borderColor: ERROR, backgroundColor: '#fff5f5' },
-  modernUploadInner: { padding: 18, alignItems: 'center', justifyContent: 'center' },
-  modernUploadIconBox: { width: 56, height: 56, borderRadius: 28, backgroundColor: BLUE_BTN, alignItems: 'center', justifyContent: 'center', marginBottom: 12, elevation: 2, shadowColor: BLUE_BTN, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
-  modernUploadTitle: { fontSize: 16, fontWeight: '700', color: TEXT_DARK },
-  uploadCountText: { fontSize: 13, color: BLUE_BTN, fontWeight: '700', marginTop: 6 },
-  previewRow: { flexDirection: 'row', marginTop: 10, marginBottom: 6 },
-  previewWrap: { marginRight: 10, position: 'relative', marginTop: 6 },
-  previewImg: { width: 88, height: 66, borderRadius: 8 },
-  previewCross: { position: 'absolute', top: -8, right: -8, backgroundColor: ERROR, borderRadius: 12, padding: 3, borderWidth: 2, borderColor: '#fff' },
-  priceInputBox: { height: 46, backgroundColor: '#fffdf5', borderWidth: 1.5, borderColor: YELLOW_BORDER, borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginTop: 4 },
-  priceIconCircle: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.2, borderColor: '#fb923c', alignItems: 'center', justifyContent: 'center', marginRight: 8, backgroundColor: '#fff' },
-  footerRow: { flexDirection: 'row', gap: 10, marginTop: 22, marginBottom: 28 },
-  submitBtnBasic: { flex: 1, height: 40, backgroundColor: BLUE_BTN, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
-  moreDetailsBtn: { flex: 1, height: 40, backgroundColor: BLUE_BTN, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
-  submitBtnText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.4 },
-  submitBtn: { height: 42, backgroundColor: BLUE_BTN, borderRadius: 4, alignItems: 'center', justifyContent: 'center', marginTop: 22, marginBottom: 28, flexDirection: 'row' },
->>>>>>> 2ce57fb (Update project)
 });

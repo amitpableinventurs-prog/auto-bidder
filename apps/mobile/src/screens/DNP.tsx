@@ -515,10 +515,7 @@ function StatItem({ value, label, color }: { value: any, label: string, color: s
         {hasRupee && <Text style={{ fontFamily: undefined }}>₹</Text>}
         {hasRupee ? strVal.slice(1) : strVal}
       </Text>
-<<<<<<< HEAD
-=======
       <Text style={styles.statLabel}>{label}</Text>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     </View>
   );
 }

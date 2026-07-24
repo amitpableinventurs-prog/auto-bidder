@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { useState, useEffect } from 'react';
-=======
-﻿import React, { useState } from 'react';
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -238,13 +234,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
-<<<<<<< HEAD
-  avatarHint: { fontSize: 12, color: '#94A3B8', marginTop: 12, fontFamily: FONTS.poppins.regular },
-  form: { gap: 20 },
-  inputGroup: { gap: 8 },
-  label: { fontSize: 12, fontWeight: '800', color: '#1E293B', fontFamily: FONTS.poppins.extraBold, marginLeft: 4 },
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   inputContainer: {
     backgroundColor: COLORS.white,
     borderRadius: 14,

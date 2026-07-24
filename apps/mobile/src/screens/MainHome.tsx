@@ -66,63 +66,6 @@ const REVIEWS = [
   },
 ];
 
-<<<<<<< HEAD
-const SEED_DATA: ApiListing[] = [
-  {
-    id: 'seed1',
-    title: '2022 Honda City ZX',
-    imageUrl: 'https://images.unsplash.com/photo-1542362567-b055002b91f4?auto=format&fit=crop&w=600&q=80',
-    demandPrice: 1250000,
-    startingBid: 1100000,
-    transmission: 'Automatic',
-    status: 'ACTIVE',
-    fuelType: 'Petrol',
-    manufacturingYear: 2022,
-    images: [],
-    kilometersDriven: 15000,
-    city: 'Mumbai',
-    sellerId: 's1',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'seed2',
-    title: '2021 Hyundai Creta SX',
-    imageUrl: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=600&q=80',
-    demandPrice: 1450000,
-    startingBid: 1300000,
-    transmission: 'Manual',
-    status: 'ACTIVE',
-    fuelType: 'Diesel',
-    manufacturingYear: 2021,
-    images: [],
-    kilometersDriven: 25000,
-    city: 'Delhi',
-    sellerId: 's2',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'seed3',
-    title: '2023 Maruti Swift VXI',
-    imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
-    demandPrice: 650000,
-    startingBid: 580000,
-    transmission: 'Manual',
-    status: 'ACTIVE',
-    fuelType: 'CNG',
-    manufacturingYear: 2023,
-    images: [],
-    kilometersDriven: 5000,
-    city: 'Indore',
-    sellerId: 's3',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-];
-
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 function SectionHeader({ title, viewAll, onViewAll }: { title: string; viewAll?: boolean; onViewAll?: () => void }) {
   return (
     <View style={styles.sectionHeader}>
@@ -168,44 +111,10 @@ export default function MainHome() {
   const heroTimerRef = useRef<NodeJS.Timeout | null>(null);
   const reviewsTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-<<<<<<< HEAD
-  useFocusEffect(
-    React.useCallback(() => {
-        // Handle deep links for referral attribution
-        const handleDeepLink = (event: { url: string }) => {
-          const { queryParams } = Linking.parse(event.url);
-          if (queryParams?.ref) {
-            console.log('Referral code captured:', queryParams.ref);
-            AsyncStorage.setItem('distributor_referral_code', queryParams.ref as string);
-          }
-        };
-
-        // Check for initial URL
-        Linking.getInitialURL().then(url => {
-          if (url) handleDeepLink({ url });
-        });
-
-        const subscription = Linking.addEventListener('url', handleDeepLink);
-
-        fetchHeroBanners();
-        fetchFeaturedCars();
-        fetchFavorites();
-        fetchBrands();
-        startHeroAutoPlay();
-        startReviewsAutoPlay();
-        return () => {
-          subscription.remove();
-          stopHeroAutoPlay();
-          stopReviewsAutoPlay();
-        };
-    }, [cityName, user?.id, heroBanners?.length])
-  );
-=======
   useEffect(() => {
     fetchFeaturedCars();
     if (user?.id) fetchFavorites();
   }, [cityName, user?.id]);
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
   const fetchFavorites = async () => {
     try {
@@ -403,21 +312,6 @@ export default function MainHome() {
           </View>
         </View>
 
-<<<<<<< HEAD
-      <View style={styles.searchSection}>
-        <View style={styles.searchRow}>
-          <Pressable style={styles.menuBtn} onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
-            <Ionicons name="menu-outline" size={32} color={COLORS.black1} />
-          </Pressable>
-          <Pressable style={styles.searchBarContainer} onPress={() => navigation.navigate('CarFilter')}>
-            <View style={styles.searchInputWrapper}>
-              <Ionicons name="search-outline" size={22} color={COLORS.textDim} />
-              <View style={styles.searchPlaceholderBox}>
-                <Text style={styles.searchPlaceholderText}>Search for </Text>
-                <Text style={styles.placeholderHighlight}>"New Cars"</Text>
-              </View>
-            </View>
-=======
         {/* Hero Banner Carousel */}
         <View style={styles.heroSection}>
           <FlatList
@@ -601,124 +495,12 @@ export default function MainHome() {
             onPress={() => setShowAllBrands(!showAllBrands)}
           >
             <Text style={[styles.viewAllBrandsText, showAllBrands && { color: COLORS.secondary }]}>{showAllBrands ? "VIEW LESS" : "VIEW ALL BRANDS"}</Text>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
           </Pressable>
         </View>
 
-<<<<<<< HEAD
-      {/* Hero Banner Carousel */}
-      <View style={styles.heroSection}>
-        <FlatList
-          ref={heroFlatListRef}
-          data={heroBanners}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          getItemLayout={getItemLayout}
-          onScrollToIndexFailed={(info) => {
-            console.warn("Hero scroll to index failed", info);
-            heroFlatListRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
-          }}
-          onScroll={(e) => {
-            const x = e.nativeEvent.contentOffset.x;
-            const idx = Math.round(x / (SCREEN_W - 30));
-            if (idx !== activeHero) setActiveHero(idx);
-          }}
-          onScrollBeginDrag={stopHeroAutoPlay}
-          onScrollEndDrag={startHeroAutoPlay}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <Pressable style={{ width: SCREEN_W - 30 }} onPress={() => handleSliderPress(item)}>
-              <Image
-                source={{ uri: item.image }}
-                style={styles.heroImage}
-                resizeMode="cover"
-              />
-              <View style={styles.heroOverlay}>
-                <Text style={styles.heroTitle} numberOfLines={2}>
-                  {item.title || "Feature Your Listing And Sell Faster!"}
-                </Text>
-                <Text style={styles.heroSubtitle}>
-                  {item.subtitle || "FEATURE MY LISTING"} {">"}
-                </Text>
-              </View>
-            </Pressable>
-          )}
-        />
-        <View style={styles.heroPagination}>
-          {heroBanners.map((_, i) => (
-            <View key={i} style={[styles.heroDot, i === activeHero && styles.heroDotActive]} />
-          ))}
-        </View>
-      </View>
-
-      {/* Our Services */}
-      <View style={styles.section}>
-        <SectionHeader title="Our Services" />
-        <FlatList
-          data={SERVICES}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.horizontalList}
-          renderItem={({ item }) => (
-            <View style={styles.serviceCard}>
-              <Image source={{ uri: item.image }} style={styles.serviceImage} />
-              <View style={styles.serviceInfo}>
-                <Text style={styles.serviceTitle}>{item.title}</Text>
-                <Text style={styles.serviceDesc}>{item.description}</Text>
-              </View>
-              <Pressable style={styles.serviceBtn} onPress={item.id === "1" ? () => navigation.navigate('SellCarNew') : () => (navigation as any).navigate('MainTabs', { screen: 'BuyCar' })}>
-                <Text style={styles.serviceBtnText}>{item.cta}</Text>
-              </Pressable>
-            </View>
-          )}
-        />
-      </View>
-
-      {/* Car Collections */}
-      <View style={styles.section}>
-        <SectionHeader title="Car Collections" />
-        <FlatList
-          data={COLLECTIONS}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.horizontalList}
-          onScroll={(e) => {
-            const x = e.nativeEvent.contentOffset.x;
-            const idx = Math.round(x / 165); // 150 card width + 15 gap
-            if (idx !== activeCollection) setActiveCollection(idx);
-          }}
-          renderItem={({ item }) => (
-            <Pressable style={styles.collectionCard} onPress={() => (navigation as any).navigate('MainTabs', { screen: 'BuyCar', params: { filters: { carType: item.name } } })}>
-              <Image source={{ uri: item.image }} style={styles.collectionImage} />
-              <View style={styles.collectionOverlay}>
-                <Text style={styles.collectionName}>{item.name}</Text>
-              </View>
-            </Pressable>
-          )}
-        />
-        <View style={styles.paginationDots}>
-          {COLLECTIONS.map((_, i) => (
-            <View key={i} style={[styles.dot, i === activeCollection && styles.dotActive]} />
-          ))}
-        </View>
-      </View>
-
-      {/* Featured Cars */}
-      <View style={styles.section}>
-        <SectionHeader title="Featured Cars" viewAll onViewAll={() => (navigation as any).navigate('MainTabs', { screen: 'BuyCar' })} />
-        {loading ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
-            {[1, 2, 3].map(i => <SkeletonCar key={i} />)}
-          </ScrollView>
-        ) : (
-=======
         {/* Customer Review */}
         <View style={styles.section}>
           <SectionHeader title="Customer Review" />
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
           <FlatList
             ref={reviewsFlatListRef}
             data={REVIEWS}

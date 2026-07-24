@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { useState, useEffect } from 'react';
-=======
-﻿import React, { useState } from 'react';
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -73,10 +69,7 @@ export default function CompleteProfile() {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-<<<<<<< HEAD
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
         >
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <View style={styles.form}>
@@ -221,13 +214,8 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   inputContainer: {
-<<<<<<< HEAD
     height: 58,
     borderWidth: 1.5,
-=======
-    height: 44,
-    borderWidth: 1,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     borderColor: COLORS.border,
     borderRadius: 4,
     flexDirection: 'row',
@@ -244,13 +232,8 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     backgroundColor: COLORS.secondary,
-<<<<<<< HEAD
     height: 58,
     borderRadius: 16,
-=======
-    height: 50,
-    borderRadius: 5,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

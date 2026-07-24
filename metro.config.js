@@ -2,7 +2,6 @@ const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const projectRoot = __dirname;
-<<<<<<< HEAD
 const mobileRoot = path.resolve(projectRoot, 'apps/mobile');
 
 // Get the base config from the mobile app root to ensure it picks up correct app.json/package.json
@@ -118,64 +117,4 @@ config.transformer.getTransformOptions = async (...args) => {
   };
 };
 
-=======
-const workspaceRoot = __dirname;
-
-const config = getDefaultConfig(projectRoot);
-
-// Exclude native build folders from the watcher to prevent ENOENT errors
-config.resolver.blacklistRE = /android\/.*/;
-config.resolver.blockList = [
-  /.*\/android\/.*/,
-  /.*\/ios\/.*/,
-  /.*\/\.gradle\/.*/,
-  /.*\/node_modules\/.*\/android\/.*/,
-];
-
-config.watchFolders = [workspaceRoot];
-
-config.resolver.nodeModulesPaths = [
-  path.resolve(projectRoot, 'node_modules'),
-  path.resolve(workspaceRoot, 'node_modules'),
-];
-
-// Handle web-specific resolution issues
-const originalResolveRequest = config.resolver.resolveRequest;
-config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (platform === 'web') {
-    // Specifically target the modules that cause failures on web when imported as internals
-    // Stripe incorrectly imports these from 'react-native/Libraries/...'
-    if (
-      moduleName.includes('codegenNativeComponent') ||
-      moduleName.includes('codegenNativeCommands') ||
-      moduleName.includes('Libraries/Components/TextInput/TextInputState')
-    ) {
-      return {
-        type: 'sourceFile',
-        filePath: path.resolve(__dirname, 'scripts/mock.js'),
-      };
-    }
-
-    // Only mock Platform if it's explicitly looking for the internal native version
-    if (moduleName.endsWith('Libraries/Utilities/Platform')) {
-       return {
-        type: 'sourceFile',
-        filePath: path.resolve(__dirname, 'scripts/platform-mock.js'),
-      };
-    }
-
-    // Ensure 'react-native' maps to 'react-native-web'
-    if (moduleName === 'react-native') {
-      return context.resolveRequest(context, 'react-native-web', platform);
-    }
-  }
-
-  if (originalResolveRequest) {
-    return originalResolveRequest(context, moduleName, platform);
-  }
-
-  return context.resolveRequest(context, moduleName, platform);
-};
-
->>>>>>> 2ce57fb (Update project)
 module.exports = config;

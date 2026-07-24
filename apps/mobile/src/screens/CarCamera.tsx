@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { useState, useEffect, useRef } from 'react';
-=======
 import React, { useRef, useState } from 'react';
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 import {
   StyleSheet,
   View,
@@ -11,12 +7,8 @@ import {
   Dimensions,
   Alert,
   FlatList,
-<<<<<<< HEAD
-  Image,
-=======
   NativeSyntheticEvent,
   NativeScrollEvent,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -24,11 +16,6 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { uploadFile } from '../api';
-<<<<<<< HEAD
-import * as ScreenOrientation from 'expo-screen-orientation';
-import * as ImagePicker from 'expo-image-picker';
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
 const { width, height } = Dimensions.get('window');
 
@@ -36,40 +23,6 @@ type Angle = { label: string; mandatory: boolean };
 
 const ANGLES_BY_CATEGORY: Record<string, Angle[]> = {
   Exterior: [
-<<<<<<< HEAD
-    { id: 'front', label: 'Front', instruction: 'Try to Fit your Car inside borders', outline: require('../../assets/Satate=1, Name=Exterior.png'), mandatory: false },
-    { id: 'leftFront', label: 'Left Front 45°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=2, Name=Exterior.png'), mandatory: true },
-    { id: 'leftSide', label: 'Left Side 90°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=3, Name=Exterior.png'), mandatory: false },
-    { id: 'leftBack', label: 'Left Back 135°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=4, Name=Exterior.png'), mandatory: false },
-    { id: 'back', label: 'Back 180°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=5, Name=Exterior.png'), mandatory: false },
-    { id: 'rightBack', label: 'Right Back 225°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=6, Name=Exterior.png'), mandatory: false },
-    { id: 'rightSide', label: 'Right Side 270°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=7, Name=Exterior.png'), mandatory: false },
-    { id: 'rightFront', label: 'Right Front 315°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=8, Name=Exterior.png'), mandatory: false },
-  ],
-  Interior: [
-    { id: 'odometer', label: 'Odometer', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=1, Name=Interior.png'), mandatory: false },
-    { id: 'frontPassDoor', label: 'Front Passenger Door', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=2, Name=Interior.png'), mandatory: false },
-    { id: 'rightRearDoor', label: 'Right Rear Door', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=3, Name=Interior.png'), mandatory: false },
-    { id: 'rearSeat', label: 'Rear Seat', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=4, Name=Interior.png'), mandatory: false },
-    { id: 'trunk', label: 'Trunk', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=5, Name=Interior.png'), mandatory: false },
-    { id: 'dashboard', label: 'Dashboard', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=6, Name=Interior.png'), mandatory: false },
-    { id: 'centralDash', label: 'Central Dash', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=7, Name=Interior.png'), mandatory: false },
-    { id: 'steering', label: 'Steering Wheel', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=8, Name=Interior.png'), mandatory: false },
-  ],
-  Detail: [
-    { id: 'engine', label: 'Engine & Bonnet', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=1, Name=Detail.png'), mandatory: false },
-    { id: 'spareTyre', label: 'Spare Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=2, Name=Detail.png'), mandatory: false },
-    { id: 'pedals', label: 'Pedals', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=3, Name=Detail.png'), mandatory: false },
-    { id: 'keys', label: 'Keys', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=4, Name=Detail.png'), mandatory: false },
-    { id: 'rightFrontTyre', label: 'Right Front Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=5, Name=Detail.png'), mandatory: false },
-    { id: 'rightRearTyre', label: 'Right Rear Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=6, Name=Detail.png'), mandatory: false },
-    { id: 'leftFrontTyre', label: 'Left Front Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=7, Name=Detail.png'), mandatory: false },
-    { id: 'leftRearTyre', label: 'Left Rear Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=8, Name=Detail.png'), mandatory: false },
-  ],
-  Custom: [
-    { id: 'custom', label: 'Custom', instruction: 'Click here to upload Car\'s Custom Images', outline: require('../../assets/Satate=1, Name=Custom.png'), mandatory: false },
-  ]
-=======
     { label: 'Front', mandatory: true },
     { label: 'Front Left 45°', mandatory: true },
     { label: 'Left Side', mandatory: true },
@@ -96,7 +49,6 @@ const ANGLES_BY_CATEGORY: Record<string, Angle[]> = {
     { label: 'Roof / Sunroof', mandatory: false },
   ],
   Custom: [{ label: 'Any Angle', mandatory: false }],
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 };
 
 const CATEGORIES = ['Exterior', 'Interior', 'Detail', 'Custom'];
@@ -194,33 +146,18 @@ export default function CarCamera() {
   const handlePickFromGallery = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-<<<<<<< HEAD
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-=======
         mediaTypes: ['images'],
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
         allowsMultipleSelection: true,
         quality: 0.8,
       });
       if (!result.canceled && result.assets.length > 0) {
         setUploading(true);
-<<<<<<< HEAD
-        for (const asset of result.assets) {
-          const key = `${selectedCategory}_${currentAngle.id}`;
-          const { url } = await uploadFile(asset.uri, 'image/jpeg', `picked_${key}_${Date.now()}.jpg`);
-          setCapturedImages(prev => ({
-            ...prev,
-            [key]: [...(prev[key] || []), url]
-          }));
-        }
-=======
         const urls: string[] = [];
         for (const asset of result.assets) {
           const { url } = await uploadFile(asset.uri, asset.mimeType, asset.fileName || undefined);
           urls.push(url);
         }
         setCapturedImages(prev => [...prev, ...urls]);
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
       }
     } catch {
       Alert.alert('Error', 'Failed to pick images from gallery.');
@@ -229,81 +166,17 @@ export default function CarCamera() {
     }
   };
 
-<<<<<<< HEAD
-  const handleNext = () => {
-    if (selectedAngleIndex < currentAngles.length - 1) {
-      setSelectedAngleIndex(selectedAngleIndex + 1);
-    } else {
-      const catIdx = CATEGORIES.indexOf(selectedCategory);
-      if (catIdx < CATEGORIES.length - 1) {
-        setSelectedCategory(CATEGORIES[catIdx + 1]);
-        setSelectedAngleIndex(0);
-      } else {
-        handleFinish();
-      }
-    }
-  };
-
-  const handleFinish = () => {
-    // Check mandatory photos
-    const missingMandatory: string[] = [];
-    Object.keys(GUIDANCE_CONFIG).forEach(cat => {
-        GUIDANCE_CONFIG[cat].forEach((angle: any) => {
-            if (angle.mandatory && !capturedImages[`${cat}_${angle.id}`]?.length) {
-                missingMandatory.push(`${cat} ${angle.label}`);
-            }
-        });
-    });
-
-    if (missingMandatory.length > 0) {
-        Alert.alert(
-<<<<<<< HEAD
-            'Incomplete',
-            'Please capture the following mandatory photos:\n\n' + missingMandatory.join('\n'),
-            [{ text: 'OK' }]
-=======
-            'Mandatory Photos Required',
-            'Please capture the following mandatory photos to proceed:\n\n' + missingMandatory.join('\n'),
-            [
-              { text: 'Capture Now', style: 'default' },
-              {
-                text: 'Exit Anyway',
-                style: 'destructive',
-                onPress: () => {
-                   const allUrls = Object.values(capturedImages).flat();
-                   const updatedListingData = {
-                     ...listingData,
-                     images: [...(listingData?.images || []), ...allUrls],
-                     imageUrl: allUrls[0] || listingData?.imageUrl,
-                     carType: selectedType,
-                   };
-                   navigation.navigate('FillDetails', { listingData: updatedListingData, initialTab: 'basic' } as any);
-                }
-              }
-            ]
->>>>>>> 2ce57fb (Update project)
-        );
-        return;
-    }
-
-    const allUrls = Object.values(capturedImages).flat();
-=======
   const handleDone = () => {
     if (capturedImages.length === 0) {
       Alert.alert('No Photos', 'Please capture or select at least one car photo.');
       return;
     }
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     const updatedListingData = {
       ...listingData,
       images: capturedImages,
       imageUrl: capturedImages[0],
     };
-<<<<<<< HEAD
-    navigation.navigate('AuctionSetup', { listingData: updatedListingData });
-=======
     navigation.navigate('FillDetails', { listingData: updatedListingData, initialTab: 'basic' } as any);
->>>>>>> 2ce57fb (Update project)
   };
 
   const renderSuggestion = ({ item, index }: { item: Angle; index: number }) => {
@@ -334,160 +207,6 @@ export default function CarCamera() {
       {/* Green framing guide — sits within safe area, inset from edges */}
       <View style={styles.greenFrame} pointerEvents="none" />
 
-<<<<<<< HEAD
-        {/* Green Guide Box - Edge to Edge */}
-        <View style={[
-            styles.edgeGuideBox,
-            isAngleCorrect && styles.edgeGuideBoxGreen,
-            { pointerEvents: 'none' }
-        ]} />
-
-        {/* Top Controls */}
-        <View style={styles.topControls}>
-          <Pressable onPress={handleBack} style={styles.iconBtn}>
-            <Ionicons name="arrow-back" size={28} color="#fff" />
-          </Pressable>
-          <View style={styles.categoryBarLandscape}>
-            {CATEGORIES.map((cat) => (
-              <Pressable
-                key={cat}
-                onPress={() => {
-                  setSelectedCategory(cat);
-                  setSelectedAngleIndex(0);
-                }}
-                style={[styles.categoryTab, selectedCategory === cat && styles.categoryTabActive]}
-              >
-                <Text style={[styles.categoryTabText, selectedCategory === cat && styles.categoryTabTextActive]}>
-                  {cat}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          <Pressable style={styles.iconBtn}>
-            <MaterialCommunityIcons name="flash" size={28} color="#fff" />
-          </Pressable>
-        </View>
-
-        {/* Center Content / Instructions */}
-        <View style={styles.centerContentLandscape}>
-          <View style={styles.instructionWrap}>
-              <Text style={styles.instructionText}>
-                {currentAngle.instruction}
-              </Text>
-          </View>
-
-          <View style={styles.outlineWrapperLandscape}>
-            {capturedImages[`${selectedCategory}_${currentAngle.id}`]?.length > 0 ? (
-              <Image source={{ uri: capturedImages[`${selectedCategory}_${currentAngle.id}`][0] }} style={styles.capturedImg} resizeMode="cover" />
-            ) : (
-              <>
-                {selectedCategory === 'Exterior' ? (
-                   <Image
-                      source={currentAngle.outline}
-                      style={[styles.mainCarOutlineLandscape, { tintColor: isAngleCorrect ? "#22c55e" : "rgba(255,255,255,0.4)" }]}
-                      resizeMode="contain"
-                    />
-                ) : (
-                  <MaterialCommunityIcons name="camera-outline" size={100} color="rgba(255,255,255,0.2)" />
-                )}
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* Sliding Angle Selector (Bottom) */}
-        <View style={styles.angleSelectorContainer}>
-            <FlatList
-                ref={angleListRef}
-                data={currentAngles}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.angleListContent}
-                snapToAlignment="center"
-                snapToInterval={110}
-                decelerationRate="fast"
-                onMomentumScrollEnd={(e) => {
-                    const index = Math.round(e.nativeEvent.contentOffset.x / 110);
-                    if (index !== selectedAngleIndex && index >= 0 && index < currentAngles.length) {
-                        setSelectedAngleIndex(index);
-                    }
-                }}
-                renderItem={({ item, index }) => (
-                    <Pressable
-                        onPress={() => setSelectedAngleIndex(index)}
-                        style={[
-                            styles.angleItem,
-                            selectedAngleIndex === index && styles.angleItemActive
-                        ]}
-                    >
-                        {capturedImages[`${selectedCategory}_${item.id}`]?.length > 0 && (
-                            <View style={styles.checkBadge}>
-                                <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
-                            </View>
-                        )}
-                        <View style={styles.angleMiniPreview}>
-                             <Image
-                                source={item.outline}
-                                style={[styles.miniOutlineImg, { tintColor: selectedAngleIndex === index ? "#fff" : "rgba(255,255,255,0.3)" }]}
-                                resizeMode="contain"
-                            />
-                        </View>
-                        <Text style={[styles.angleItemLabel, selectedAngleIndex === index && styles.angleItemLabelActive]} numberOfLines={1}>
-                            {item.label}
-                        </Text>
-                    </Pressable>
-                )}
-            />
-        </View>
-
-        {/* Right Controls - Capture & Zoom */}
-        <View style={styles.rightControlsLandscape}>
-            <View style={styles.zoomContainerLandscape}>
-                <Pressable style={styles.zoomBtn}><Ionicons name="add" size={24} color="#fff" /></Pressable>
-                <View style={styles.zoomLevel}><Text style={styles.zoomText}>1.0x</Text></View>
-                <Pressable style={styles.zoomBtn}><Ionicons name="remove" size={24} color="#fff" /></Pressable>
-            </View>
-
-            <Pressable style={styles.cameraBtnOuter} onPress={handleCapture} disabled={uploading}>
-                <View style={styles.cameraBtnInner}>
-                    {uploading ? (
-                    <View style={{ alignItems: 'center' }}>
-                        <ActivityIndicator size="small" color="#1e6bd6" />
-                        {burstCount > 0 && <Text style={styles.burstText}>{burstCount}/5</Text>}
-                    </View>
-                    ) : (
-                    <MaterialCommunityIcons name="camera-iris" size={40} color="#0b2447" />
-                    )}
-                </View>
-            </Pressable>
-
-            <Pressable style={styles.galleryBtn} onPress={handlePickFromGallery} disabled={uploading}>
-                <Ionicons name="images-outline" size={24} color="#fff" />
-            </Pressable>
-
-            {/* Bottom Right Info Box */}
-            <View style={styles.angleInfoBox}>
-                <Text style={styles.angleInfoLabel}>{currentAngle.label}</Text>
-                <View style={styles.angleInfoPreview}>
-                    <Image
-                        source={currentAngle.outline}
-                        style={styles.angleInfoOutline}
-                        resizeMode="contain"
-                    />
-                </View>
-                <Text style={styles.angleInfoMandatory}>
-                    {currentAngle.mandatory ? 'Mandatory' : 'Non-mandatory'}
-                </Text>
-            </View>
-
-            <Pressable style={styles.nextPreviewBoxLandscape} onPress={nextAngle ? handleNext : handleFinish}>
-                <Ionicons name={nextAngle ? "chevron-forward" : "checkmark-done"} size={32} color="#fff" />
-                <Text style={styles.nextActionTextLandscape}>{nextAngle ? 'NEXT' : 'FINISH'}</Text>
-            </Pressable>
-        </View>
-      </CameraView>
-=======
       {/* Category tabs */}
       <View style={styles.header}>
         <View style={styles.categoriesContainer}>
@@ -570,7 +289,6 @@ export default function CarCamera() {
 
         <View style={styles.bottomSpacer} />
       </View>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     </View>
   );
 }
@@ -631,167 +349,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-<<<<<<< HEAD
-  mainCarOutlineLandscape: {
-      width: '100%',
-      height: '100%',
-      opacity: 0.8
-  },
-  capturedImg: {
-      width: '100%',
-      height: '100%',
-      borderRadius: 12,
-  },
-
-  angleSelectorContainer: {
-      position: 'absolute',
-      bottom: 20,
-      left: 20,
-      right: 120, // Leave room for right controls
-      height: 100,
-      zIndex: 10
-  },
-  angleListContent: {
-      paddingHorizontal: (SCREEN_H - 120 - 110) / 2, // Centering logic for landscape (width becomes height)
-      alignItems: 'center'
-  },
-  angleItem: {
-      width: 100,
-      height: 80,
-      marginHorizontal: 5,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.2)'
-  },
-  angleItemActive: {
-      borderColor: '#1e6bd6',
-      borderWidth: 2,
-      backgroundColor: 'rgba(30,107,214,0.2)'
-  },
-  checkBadge: { position: 'absolute', top: -5, right: -5, zIndex: 5, backgroundColor: '#fff', borderRadius: 10 },
-  angleMiniPreview: {
-      width: 60,
-      height: 40,
-      marginBottom: 5
-  },
-  miniOutlineImg: {
-      width: '100%',
-      height: '100%'
-  },
-  angleItemLabel: {
-      color: 'rgba(255,255,255,0.6)',
-      fontSize: 10,
-      fontWeight: '700'
-  },
-  angleItemLabelActive: {
-      color: '#fff'
-  },
-
-  rightControlsLandscape: {
-      position: 'absolute',
-      right: 20,
-      top: 0,
-      bottom: 0,
-      width: 80,
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: 20,
-      zIndex: 10
-  },
-  cameraBtnOuter: {
-      width: 74,
-      height: 74,
-      borderRadius: 37,
-      backgroundColor: 'rgba(30,107,214,0.3)',
-      padding: 4,
-      alignItems: 'center',
-      justifyContent: 'center'
-  },
-  cameraBtnInner: {
-      width: 60,
-      height: 60,
-      backgroundColor: '#fff',
-      borderRadius: 30,
-      alignItems: 'center',
-      justifyContent: 'center'
-  },
-
-  zoomContainerLandscape: {
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      borderRadius: 25,
-      padding: 6,
-      alignItems: 'center',
-      gap: 10
-  },
-  zoomBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      alignItems: 'center',
-      justifyContent: 'center'
-  },
-  zoomLevel: {
-      paddingVertical: 4
-  },
-  zoomText: {
-      color: '#fff',
-      fontSize: 12,
-      fontWeight: '700'
-  },
-  galleryBtn: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      alignItems: 'center',
-      justifyContent: 'center'
-  },
-
-  nextPreviewBoxLandscape: {
-      alignItems: 'center',
-      marginTop: 20
-  },
-  nextActionTextLandscape: {
-      color: '#fff',
-      fontSize: 12,
-      fontWeight: '800',
-      marginTop: 4
-  },
-  burstText: { fontSize: 10, color: '#1e6bd6', fontWeight: 'bold', marginTop: 2 },
-
-  angleInfoBox: {
-      alignItems: 'center',
-      marginTop: 'auto',
-      marginBottom: 10,
-  },
-  angleInfoLabel: {
-      color: '#fff',
-      fontSize: 10,
-      fontWeight: '600',
-      marginBottom: 5,
-  },
-  angleInfoPreview: {
-      width: 60,
-      height: 40,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      borderRadius: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 5,
-  },
-  angleInfoOutline: {
-      width: '80%',
-      height: '80%',
-      tintColor: 'rgba(255,255,255,0.6)'
-  },
-  angleInfoMandatory: {
-      color: 'rgba(255,255,255,0.6)',
-      fontSize: 9,
-      fontWeight: '700'
-=======
   suggestionCardCaptured: { borderColor: '#22c55e' },
   capturedTag: {
     position: 'absolute',
@@ -866,6 +423,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   },
 });

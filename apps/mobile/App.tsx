@@ -9,10 +9,6 @@ import { registerForPushNotificationsAsync } from './src/utils/notifications';
 import { View, ActivityIndicator, LogBox } from 'react-native';
 import Logo from './src/components/Logo';
 import ErrorBoundary from './src/components/ErrorBoundary';
-<<<<<<< HEAD
-=======
-import { StripeProvider } from './src/components/StripeWrapper';
->>>>>>> 2ce57fb (Update project)
 
 // Ignore specific warnings if necessary
 LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);

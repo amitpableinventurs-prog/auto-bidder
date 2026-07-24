@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-<<<<<<< HEAD
 import Constants from 'expo-constants';
 
 const getApiBaseUrl = () => {
@@ -25,11 +24,6 @@ const getApiBaseUrl = () => {
 };
 
 const API_BASE_URL = getApiBaseUrl();
-=======
-import * as FileSystem from 'expo-file-system';
-import { FileSystemUploadType, uploadAsync } from 'expo-file-system/legacy';
-import { API_BASE_URL } from './config';
->>>>>>> 2ce57fb (Update project)
 
 export { API_BASE_URL };
 
@@ -135,21 +129,14 @@ export type CreateListingPayload = {
   insuranceExpiry?: string;
   listedBy?: string;
   startingBid?: number;
-<<<<<<< HEAD
   carType?: string;
   plateNumber?: string;
   registrationDate?: string;
   regNumber?: string;
   sellingTimeline?: string;
-<<<<<<< HEAD
-=======
-  regNumber?: string;
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
-=======
   referralCode?: string;
   referredByDistributorCode?: string;
   referredByUserId?: string;
->>>>>>> 2ce57fb (Update project)
 };
 
 let authToken: string | null = null;
@@ -211,16 +198,6 @@ export function requestOtp(phone: string) {
   });
 }
 
-<<<<<<< HEAD
-=======
-export function register(phone: string, name: string, email: string, userType: string, referralCode?: string) {
-  return request<{ user: ApiUser; token: string }>('/api/auth/register', {
-    method: 'POST',
-    body: JSON.stringify({ phone, name, email, userType, referralCode }),
-  });
-}
-
->>>>>>> 2ce57fb (Update project)
 export function verifyOtp(phone: string, otp: string, name?: string, userType?: string) {
   return request<{ user: ApiUser; token: string }>('/api/auth/otp/verify', {
     method: 'POST',
@@ -478,8 +455,6 @@ export function registerPushToken(token: string, platform: string = 'android') {
   });
 }
 
-<<<<<<< HEAD
-=======
 // Sliders
 export function getSliders(type?: 'ONBOARDING' | 'HOME' | 'BUY_CAR' | 'SELL_CAR') {
   const query = type ? `?type=${type}` : '';
@@ -520,7 +495,6 @@ export function getBrands() {
   });
 }
 
->>>>>>> 2ce57fb (Update project)
 // Notifications for a user
 export function getUserNotifications(userId: string) {
   if (!userId) return Promise.reject(new Error('User ID is required'));
@@ -631,23 +605,10 @@ export async function uploadFile(uri: string, mimeType?: string, name?: string):
   }
 
   try {
-<<<<<<< HEAD
     const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: 'POST',
       body: formData,
       headers,
-=======
-    const result = await uploadAsync(`${API_BASE_URL}/api/upload`, uri, {
-      httpMethod: 'POST',
-      uploadType: FileSystemUploadType.MULTIPART,
-      fieldName: 'file',
-      headers: authToken ? {
-        'Authorization': `Bearer ${authToken}`,
-        'Accept': 'application/json',
-      } : {
-        'Accept': 'application/json',
-      },
->>>>>>> 2ce57fb (Update project)
     });
 
     if (!response.ok) {

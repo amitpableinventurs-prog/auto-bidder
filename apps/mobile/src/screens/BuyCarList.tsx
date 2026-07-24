@@ -361,35 +361,6 @@ export default function BuyCarList() {
               <Text style={styles.cardSpecText}>{l.transmission || 'Manual'}</Text>
            </View>
 
-<<<<<<< HEAD
-           <View style={styles.chipsRow}>
-              <View style={styles.specChip}><Text style={styles.specChipText}>1st Owner</Text></View>
-              <View style={styles.specChip}><Text style={styles.specChipText}>{l.kilometersDriven?.toLocaleString() || '42,455'} km</Text></View>
-              <View style={styles.specChip}><Text style={styles.specChipText}>{l.transmission || 'Manual'}</Text></View>
-              <View style={styles.specChip}><Text style={styles.specChipText}>{l.fuelType || 'CNG'}</Text></View>
-           </View>
-
-           <Pressable
-              style={styles.mainActionBtn}
-              onPress={(e) => {
-                e.stopPropagation();
-                setSelectedListing(l);
-                navigation.navigate('UpdateOffer', { listingId: l.id });
-              }}
-           >
-              <Text style={styles.mainActionBtnText}>GET BEST OFFER :- ₹{(l.startingBid || 0).toLocaleString()}</Text>
-           </Pressable>
-
-           <View style={styles.footerRow}>
-              <Image source={{ uri: 'https://img.icons8.com/color/48/verified-account.png' }} style={styles.verifiedIcon} />
-              <Text style={styles.footerMsg}>RC Owner Negotiation Deal</Text>
-              {l.seller?.isVerified && (
-                  <View style={styles.cardVerifiedTag}>
-                      <Ionicons name="checkmark-circle" size={12} color="#22C55E" />
-                      <Text style={styles.cardVerifiedTagText}>VERIFIED</Text>
-                  </View>
-              )}
-=======
            <View style={styles.cardPriceRow}>
               <View>
                 <Text style={styles.cardPriceLabel}>Starting Bid</Text>
@@ -408,7 +379,6 @@ export default function BuyCarList() {
                 <Ionicons name="calendar-outline" size={16} color={COLORS.white} />
                 <Text style={styles.cardActionBtnText}>Schedule</Text>
               </Pressable>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
            </View>
         </View>
       </Pressable>

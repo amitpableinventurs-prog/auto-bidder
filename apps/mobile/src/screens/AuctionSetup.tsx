@@ -202,13 +202,7 @@ const styles = StyleSheet.create({
   chipTextActive: { color: '#fff' },
   infoCard: { flexDirection: 'row', backgroundColor: '#fffbeb', padding: 15, borderRadius: 12, gap: 12, marginTop: 10 },
   infoText: { flex: 1, fontSize: 12, color: '#92400e', lineHeight: 18 },
-<<<<<<< HEAD
-  footer: { padding: 20, paddingBottom: 20 },
-  launchBtn: { backgroundColor: '#2563eb', height: 52, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  launchBtnText: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 0.5 }
-=======
   footer: { padding: 20, paddingBottom: 40 },
   launchBtn: { backgroundColor: BLUE, height: 50, borderRadius: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   launchBtnText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 1 }
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 });

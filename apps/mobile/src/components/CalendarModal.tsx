@@ -89,20 +89,6 @@ export default function CalendarModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent={true}>
-<<<<<<< HEAD
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable style={styles.calendarCard} onPress={e => e.stopPropagation()}>
-          <View style={styles.monthNav}>
-            <Text style={styles.monthText}>
-              {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-            </Text>
-            <View style={styles.navArrows}>
-              <Pressable onPress={() => changeMonth(-1)} hitSlop={10} style={styles.navBtn}>
-                <Ionicons name="chevron-back" size={24} color="#161829" />
-              </Pressable>
-              <Pressable onPress={() => changeMonth(1)} hitSlop={10} style={styles.navBtn}>
-                <Ionicons name="chevron-forward" size={24} color="#161829" />
-=======
       <View style={styles.modalOverlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.calendarCard}>
@@ -134,7 +120,6 @@ export default function CalendarModal({
               </Text>
               <Pressable onPress={() => changeMonth(1)} hitSlop={10} style={styles.navBtn}>
                 <Ionicons name="chevron-forward" size={20} color={COLORS.black2} />
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
               </Pressable>
             </View>
           </View>
@@ -214,21 +199,11 @@ const styles = StyleSheet.create({
   monthNav: {
     flexDirection: 'column',
     justifyContent: 'space-between',
-<<<<<<< HEAD
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 5,
-  },
-  navArrows: {
-    flexDirection: 'row',
-    gap: 15,
-=======
     alignItems: 'stretch',
     marginBottom: 12,
     backgroundColor: '#f8fafc',
     borderRadius: 12,
     padding: 10,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   },
   navBtn: {
     padding: 5,

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-=======
-﻿import React, { useState, useEffect, useRef } from 'react';
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Image,
   Pressable,
@@ -28,13 +24,8 @@ import { useAppStore } from '../store/useAppStore';
 import StarPointsModal from '../components/StarPointsModal';
 import Logo from '../components/Logo';
 import NeedAssistance from '../components/NeedAssistance';
-<<<<<<< HEAD
-
-const { width: SCREEN_W } = Dimensions.get('window');
-=======
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useResponsive, getResponsiveCardWidth } from '../utils/responsive';
->>>>>>> 2ce57fb (Update project)
 
 const COLORS = {
   bg: "#F8FAFC",
@@ -153,8 +144,6 @@ export default function CarDetails() {
       );
   }
 
-<<<<<<< HEAD
-=======
   if (!listing) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -178,7 +167,6 @@ export default function CarDetails() {
   }
 
   const listingDetails = listing as any;
->>>>>>> 2ce57fb (Update project)
   const overviewData = [
     { label: 'Registration Year', value: listingDetails?.registrationDate || listing?.manufacturingYear?.toString() || '—' },
     { label: 'RTO', value: listing?.city ? `${listing.city}` : '—' },
@@ -305,19 +293,6 @@ export default function CarDetails() {
 
            <Text style={styles.carTitle}>{listing?.title || 'Mahindra Thar(2019) - AX (0) D 2WD HT'}</Text>
 
-<<<<<<< HEAD
-         <View style={styles.overviewSection}>
-            <Text style={styles.sectionTitleLeft}>Car Overview</Text>
-            <View style={styles.overviewGrid}>
-               {overviewData.map((item, index) => (
-                  <View key={index} style={[styles.overviewItem, (isTablet || isDesktop) && { width: getResponsiveCardWidth(Math.min(SCREEN_W, 1100), isDesktop ? 3 : 2, 8, horizontalPadding) }]}>
-                     <Text style={styles.overviewLabel}>{item.label}:</Text>
-                     <Text style={styles.overviewValue}>{item.value}</Text>
-                  </View>
-               ))}
-            </View>
-         </View>
-=======
            <View style={styles.chipsRow}>
                 <View style={styles.specChip}><Text style={styles.chipText}>{listing?.ownership || '1st Owner'}</Text></View>
                 <View style={styles.specChip}><Text style={styles.chipText}>{listing?.kilometersDriven?.toLocaleString() || '45,455'} km</Text></View>
@@ -359,7 +334,6 @@ export default function CarDetails() {
                  ))}
               </View>
            </View>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
            <View style={styles.collectionsSection}>
               <Text style={styles.sectionTitle}>Car Collections</Text>
@@ -399,13 +373,6 @@ export default function CarDetails() {
                 onFAQ={() => (navigation as any).navigate('FAQ')}
               />
            </View>
-<<<<<<< HEAD
-         ) : (
-           <Pressable style={styles.bestOfferStickyBtn} onPress={onBid}>
-              <Text style={styles.bestOfferStickyText}>TELL BEST OFFER :- ₹{(listing?.demandPrice || 0).toLocaleString()}</Text>
-           </Pressable>
-         )}
-=======
         </View>
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -414,7 +381,6 @@ export default function CarDetails() {
          <Pressable style={styles.bestOfferStickyBtn} onPress={onBid}>
             <Text style={styles.bestOfferStickyText}>PLACE YOUR BID :- <Text style={{ fontFamily: undefined }}>₹</Text>{(listing?.demandPrice || 0).toLocaleString('en-IN')}</Text>
          </Pressable>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
       </View>
 
       <StarPointsModal
@@ -490,34 +456,11 @@ const styles = StyleSheet.create({
   locationBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#23263A', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 5, gap: 5 },
   locationText: { color: '#FFF', fontSize: 11, fontWeight: '700' },
 
-<<<<<<< HEAD
   carTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B', marginBottom: 15 },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   specChip: { borderWidth: 1, borderColor: '#D0E1F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, backgroundColor: '#FFF' },
   chipText: { fontSize: 14, color: '#64748B', fontWeight: '600' },
-=======
-  carTitle: { fontSize: 14, lineHeight: 20, fontWeight: '800', color: '#263244', flex: 1 },
-  titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10, gap: 10 },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    gap: 4,
-  },
-  verifiedBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#166534',
-  },
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  specChip: { borderWidth: 1, borderColor: '#93B9ED', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4, backgroundColor: '#F8FBFF' },
-  chipText: { fontSize: 12, color: '#556274', fontWeight: '600' },
->>>>>>> 2ce57fb (Update project)
 
-<<<<<<< HEAD
   myOfferCard: {
     backgroundColor: '#D5F0C7',
     borderRadius: 8,
@@ -531,23 +474,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#7BC96B'
   },
-<<<<<<< HEAD
-  myOfferLabel: { fontSize: 24, fontWeight: '600', color: '#1E293B' },
-  myOfferValue: { fontSize: 24, fontWeight: '700', color: '#22C55E' },
-  priceCard: { backgroundColor: '#EEF4FF', borderRadius: 12, paddingVertical: 15, paddingHorizontal: 12, marginBottom: 12 },
-  priceCenteredRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  askingLabel: { fontSize: 18, fontWeight: '600', color: '#1E293B' },
-  askingValue: { fontSize: 22, fontWeight: '800', color: '#22C55E' },
-  additionalCenteredRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
-  additionalLabel: { fontSize: 12, color: '#64748B', fontWeight: '500' },
-=======
   priceCard: { backgroundColor: '#EEF4FF', borderRadius: 12, padding: 15, marginBottom: 15 },
   priceMainRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   askingLabel: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
   askingValue: { fontSize: 20, fontWeight: '800', color: COLORS.green },
   additionalChargesRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   additionalLabel: { fontSize: 14, color: '#64748B', fontWeight: '500' },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   additionalValue: { fontSize: 14, fontWeight: '700', color: '#1E293B' },
 
   emiCard: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, overflow: 'hidden', marginBottom: 25 },
@@ -558,50 +490,14 @@ const styles = StyleSheet.create({
   interestText: { color: '#FFF', fontSize: 12 },
 
   overviewSection: { marginBottom: 30 },
-<<<<<<< HEAD
   sectionTitleLeft: { fontSize: 18, fontWeight: '800', color: '#1E293B', marginBottom: 15, textAlign: 'left' },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B', marginBottom: 12, textAlign: 'center' },
   overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   overviewItem: { width: '48%', backgroundColor: '#EEF4FF', padding: 12, borderRadius: 8, marginBottom: 2 },
   overviewLabel: { fontSize: 11, color: '#64748B', fontWeight: '500', marginBottom: 4 },
   overviewValue: { fontSize: 13, fontWeight: '700', color: '#1E293B' },
-=======
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B', marginBottom: 15, textAlign: 'center' },
-  overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  overviewItem: { width: '48%', backgroundColor: '#EEF4FF', padding: 12, borderRadius: 8 },
-  overviewLabel: { fontSize: 12, color: '#64748B', fontWeight: '500', marginBottom: 4 },
-  overviewValue: { fontSize: 14, fontWeight: '700', color: '#1E293B' },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
   collectionsSection: { marginBottom: 30 },
-=======
-  myOfferLabel: { fontSize: 17, fontWeight: '700', color: '#243244' },
-  myOfferValue: { fontSize: 17, fontWeight: '800', color: '#47A447' },
-  priceCard: { backgroundColor: '#EEF4FF', borderRadius: 10, paddingVertical: 14, paddingHorizontal: 12, marginBottom: 10 },
-  priceCenteredRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8, flexWrap: 'wrap' },
-  askingLabel: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
-  askingValue: { fontSize: 17, fontWeight: '800', color: '#41AF4B' },
-  additionalCenteredRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderTopWidth: 1, borderTopColor: '#D9E3F1', paddingTop: 10 },
-  additionalLabel: { fontSize: 11, color: '#6B7280', fontWeight: '500' },
-  additionalValue: { fontSize: 13, fontWeight: '700', color: '#1E293B' },
-
-  emiCard: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, overflow: 'hidden', marginBottom: 18, backgroundColor: '#FFF' },
-  emiMainRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
-  emiLabel: { fontSize: 12, fontWeight: '600', color: '#3A4657', flex: 1 },
-  emiValue: { fontSize: 13, fontWeight: '800', color: '#1E293B' },
-  interestBanner: { backgroundColor: '#2F6FC3', paddingVertical: 8, alignItems: 'center' },
-  interestText: { color: '#FFF', fontSize: 11 },
-
-  overviewSection: { marginBottom: 28 },
-  sectionTitleLeft: { fontSize: 16, fontWeight: '800', color: '#374151', marginBottom: 14, textAlign: 'left' },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#1E293B', marginBottom: 14, textAlign: 'center' },
-  overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, justifyContent: 'space-between' },
-  overviewItem: { width: '49.1%', backgroundColor: '#EAF1FB', paddingHorizontal: 10, paddingVertical: 12, borderRadius: 4, marginBottom: 0, minHeight: 80 },
-  overviewLabel: { fontSize: 11, color: '#6B7280', fontWeight: '600', marginBottom: 6 },
-  overviewValue: { fontSize: 12, lineHeight: 18, fontWeight: '800', color: '#374151' },
-
-  collectionsSection: { backgroundColor: '#EEF4FF', paddingVertical: 28, marginHorizontal: -12, paddingHorizontal: 12, marginBottom: 22 },
->>>>>>> 2ce57fb (Update project)
   collectionsScroll: { marginBottom: 15 },
   collectionCard: { width: 104, height: 118, borderRadius: 10, overflow: 'hidden', marginRight: 8 },
   collectionImg: { width: '100%', height: '100%' },
@@ -613,14 +509,8 @@ const styles = StyleSheet.create({
 
   assistanceSection: { marginBottom: 18 },
 
-<<<<<<< HEAD
   footerSticky: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, padding: 15, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
-<<<<<<< HEAD
   footerRow: { flexDirection: 'row', gap: 12 },
-=======
-  footerSticky: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.white, paddingHorizontal: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#E5EAF1' },
-  footerRow: { flexDirection: 'row', gap: 8 },
->>>>>>> 2ce57fb (Update project)
   scheduleBtn: {
     flex: 1,
     borderWidth: 1,
@@ -639,8 +529,4 @@ const styles = StyleSheet.create({
   errorMsg: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 22 },
   backHomeBtn: { backgroundColor: '#1E6BD6', paddingHorizontal: 30, paddingVertical: 12, borderRadius: 10, marginTop: 10 },
   backHomeText: { color: '#FFF', fontWeight: '800', fontSize: 14 },
-=======
-  bestOfferStickyBtn: { backgroundColor: '#FF8474', paddingVertical: 15, borderRadius: 10, alignItems: 'center' },
-  bestOfferStickyText: { color: '#FFF', fontWeight: '800', fontSize: 16 },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 });

@@ -12,10 +12,6 @@ import {
   DrawerContentComponentProps,
   DrawerContentScrollView,
 } from '@react-navigation/drawer';
-<<<<<<< HEAD
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../AuthContext';
@@ -112,11 +108,7 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
         <DrawerItem
           label="Favourite"
           icon="heart-outline"
-<<<<<<< HEAD
           onPress={() => navigation.navigate('MainTabs', { screen: 'Activity', params: { initialTab: 'Saved Cars' } } as any)}
-=======
-          onPress={() => goTo('Wishlist')}
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
         />
         <DrawerItem
           label="Seller Dashboard"
@@ -126,11 +118,7 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
         <DrawerItem
           label="Offers & Activity"
           icon="time-outline"
-<<<<<<< HEAD
           onPress={() => navigation.navigate('MainTabs', { screen: 'Activity', params: { initialTab: 'Bids Placed' } } as any)}
-=======
-          onPress={() => goToTab('Activity')}
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
         />
 
         <View style={styles.divider} />

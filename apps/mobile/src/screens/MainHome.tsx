@@ -533,102 +533,10 @@ export default function MainHome() {
               </View>
             )}
           />
-<<<<<<< HEAD
-        )}
-        <View style={styles.paginationDots}>
-          {featuredCars.map((_, i) => (
-            <View key={i} style={[styles.dot, i === activeFeatured && styles.dotActive]} />
-          ))}
-        </View>
-      </View>
-
-      {/* Explore Popular Brands */}
-      <View style={styles.section}>
-        <SectionHeader title="Explore Popular Brands" />
-        <View style={[styles.brandsGrid, isDesktop && styles.brandsGridDesktop]}>
-          {(showAllBrands ? brands : brands.slice(0, isTablet ? 12 : 9)).map(brand => (
-            <Pressable key={brand.id} style={[styles.brandItem, { width: getResponsiveCardWidth(Math.min(SCREEN_W, 1200), isDesktop ? 5 : isTablet ? 4 : 3, 12, horizontalPadding + 8) }]} onPress={() => navigation.navigate('BrandDetails', { brand })}>
-              <View style={styles.brandLogoWrap}>
-                <Image source={typeof brand.logo === 'string' ? { uri: brand.logo } : brand.logo} style={styles.brandLogo} resizeMode="contain" />
-              </View>
-              <Text style={styles.brandName} numberOfLines={2}>{brand.name}</Text>
-              <Text style={styles.brandCount}>{brand.count || '500+ Cars'}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Pressable
-          style={styles.viewAllBrandsBtn}
-          onPress={() => setShowAllBrands(!showAllBrands)}
-        >
-          <Text style={styles.viewAllBrandsText}>{showAllBrands ? "VIEW LESS" : "VIEW ALL BRANDS"}</Text>
-        </Pressable>
-      </View>
-
-      {/* Customer Review */}
-      <View style={styles.section}>
-        <SectionHeader title="Customer Review" />
-        <FlatList
-          ref={reviewsFlatListRef}
-          data={REVIEWS}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScrollToIndexFailed={(info) => {
-            console.warn("Reviews scroll to index failed", info);
-          }}
-          onScroll={(e) => {
-            const x = e.nativeEvent.contentOffset.x;
-            const idx = Math.round(x / SCREEN_W);
-            if (idx !== activeReview) setActiveReview(idx);
-          }}
-          onScrollBeginDrag={stopReviewsAutoPlay}
-          onScrollEndDrag={startReviewsAutoPlay}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={[styles.reviewCard, { width: Math.min(SCREEN_W - 30, 900), marginHorizontal: isDesktop ? 0 : 15, alignSelf: 'center' }]}>
-              <View style={styles.reviewHeader}>
-                <Image source={{ uri: item.avatar }} style={styles.reviewAvatar} />
-                <View style={styles.reviewInfo}>
-                  <Text style={styles.reviewName}>{item.name}</Text>
-                  <View style={styles.stars}>
-                    {[1, 2, 3, 4, 5].map(s => (
-                      <Ionicons key={s} name="star" size={14} color={COLORS.primary} />
-                    ))}
-                  </View>
-                </View>
-                <FontAwesome name="quote-right" size={30} color={COLORS.lightBlue1} style={styles.quoteIcon} />
-              </View>
-              <Text style={styles.reviewComment}>{item.comment}</Text>
-            </View>
-          )}
-        />
-        <View style={styles.paginationDots}>
-          {REVIEWS.map((_, i) => (
-            <View key={i} style={[styles.dot, i === activeReview && styles.dotActive]} />
-          ))}
-        </View>
-      </View>
-
-      {/* Financing */}
-      <View style={styles.section}>
-        <SectionHeader title="Explore More" />
-        <Pressable style={styles.financingBanner} onPress={() => navigation.navigate('PlaceholderScreen', { title: 'Financing' })}>
-          <Image
-            source={{ uri: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=800&q=80" }}
-            style={styles.financingBg}
-          />
-          <View style={styles.financingOverlay}>
-            <View style={styles.financingBadge}>
-              <Text style={styles.financingBadgeText}>Get Your Offers</Text>
-            </View>
-            <Text style={styles.financingTitle}>Get Easy Financing For Your Car</Text>
-            <Text style={styles.financingLink}>APPLY FOR A LOAN {">"}</Text>
-=======
           <View style={styles.paginationDots}>
             {REVIEWS.map((_, i) => (
               <View key={i} style={[styles.dot, i === activeReview && styles.dotActive]} />
             ))}
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
           </View>
         </View>
 
@@ -706,20 +614,13 @@ const styles = StyleSheet.create({
   menuBtn: { padding: 0 },
   searchBarContainer: {
     flex: 1,
-<<<<<<< HEAD
     height: 48,
     backgroundColor: COLORS.white,
     borderRadius: 12,
-=======
-    height: 44,
-    backgroundColor: COLORS.white,
-    borderRadius: 4,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
     borderWidth: 1,
-<<<<<<< HEAD
     borderColor: COLORS.lightGrey1,
     ...Platform.select({
       web: { boxShadow: '0px 2px 5px rgba(0,0,0,0.05)' },
@@ -731,9 +632,6 @@ const styles = StyleSheet.create({
       }
     }),
     elevation: 2,
-=======
-    borderColor: COLORS.border,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   },
   searchInputWrapper: { flex: 1, flexDirection: "row", alignItems: "center" },
   searchPlaceholderBox: { flexDirection: 'row', alignItems: 'center', marginLeft: 10 },
@@ -743,23 +641,13 @@ const styles = StyleSheet.create({
   heroSection: { marginHorizontal: 15, height: 180, borderRadius: 12, overflow: "hidden", marginBottom: 10 },
   heroImage: { width: "100%", height: "100%" },
   heroOverlay: {
-<<<<<<< HEAD
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.45)",
-=======
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0,0,0,0.3)",
->>>>>>> 2ce57fb (Update project)
     justifyContent: "center",
     padding: 24
   },
-<<<<<<< HEAD
   heroTitle: { color: COLORS.white, fontSize: 26, fontFamily: FONTS.poppins.bold, width: "100%", lineHeight: 34 },
   heroSubtitle: { color: COLORS.white, fontSize: 16, fontFamily: FONTS.poppins.bold, marginTop: 12 },
-=======
-  heroTitle: { color: COLORS.white, fontSize: 24, fontFamily: FONTS.poppins.bold, width: "80%", lineHeight: 32 },
-  heroSubtitle: { color: COLORS.white, fontSize: 16, fontFamily: FONTS.poppins.bold, marginTop: 10 },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   heroPagination: {
     position: "absolute",
     bottom: 12,
@@ -898,7 +786,6 @@ const styles = StyleSheet.create({
     maxWidth: 1200,
   },
   brandItem: {
-<<<<<<< HEAD
     width: "30%",
     backgroundColor: COLORS.lightBlue1,
     borderRadius: 12,
@@ -906,44 +793,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-<<<<<<< HEAD
   brandLogo: { width: 34, height: 34 },
   brandName: { fontSize: 11, color: COLORS.black2, marginTop: 4, textAlign: "center", fontFamily: FONTS.poppins.bold },
-  brandCount: { fontSize: 9, color: COLORS.textMuted, fontFamily: FONTS.openSans.regular },
-=======
-  brandLogo: { width: 45, height: 45, resizeMode: "contain" },
-  brandName: { fontSize: 12, color: "#333", marginTop: 8, textAlign: "center", fontFamily: FONTS.openSans.semiBold },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
-=======
-    minHeight: 132,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E7EDF5',
-    marginBottom: 0,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  brandLogoWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#F8FBFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  brandLogo: { width: 36, height: 36 },
-  brandName: { fontSize: 11, lineHeight: 15, color: COLORS.black2, marginTop: 2, textAlign: "center", fontFamily: FONTS.poppins.bold, minHeight: 30 },
-  brandCount: { fontSize: 10, color: COLORS.textMuted, fontFamily: FONTS.openSans.regular, marginTop: 4 },
->>>>>>> 2ce57fb (Update project)
   viewAllBrandsBtn: {
     marginHorizontal: 15,
     paddingVertical: 14,

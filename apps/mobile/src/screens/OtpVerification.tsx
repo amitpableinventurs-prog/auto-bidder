@@ -288,19 +288,11 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   otpCell: {
-<<<<<<< HEAD
     width: 60,
     height: 60,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D1D5DB',
-=======
-    width: 65,
-    height: 65,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     backgroundColor: COLORS.white,
     textAlign: 'center',
     fontSize: 24,
@@ -308,13 +300,8 @@ const styles = StyleSheet.create({
     color: COLORS.black2,
   },
   verifyBtn: {
-<<<<<<< HEAD
     height: 56,
     borderRadius: 8,
-=======
-    height: 50,
-    borderRadius: 5,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     backgroundColor: COLORS.secondary,
     alignItems: 'center',
     justifyContent: 'center',

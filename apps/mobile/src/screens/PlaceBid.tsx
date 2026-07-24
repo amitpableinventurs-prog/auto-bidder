@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { useState, useEffect, useMemo } from 'react';
-=======
-﻿import React, { useState, useEffect } from 'react';
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
+import React, { useState, useEffect } from 'react';
 import {
   Dimensions,
   Image,
@@ -16,7 +12,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -26,11 +21,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { ApiListing, placeBid, getListing } from '../api';
 import { useAuth } from '../AuthContext';
-<<<<<<< HEAD
-import { COLORS, FONTS, TYPOGRAPHY } from '../theme';
-=======
 import { COLORS, TYPOGRAPHY, FONTS } from '../theme';
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 import { socketService } from '../utils/socket';
 
 import { useAppStore } from '../store/useAppStore';
@@ -43,19 +34,6 @@ export default function PlaceBid() {
   const { listingId } = route.params;
   const { user } = useAuth();
   const userId = user?.id;
-<<<<<<< HEAD
-
-  const [listing, setListing] = useState<ApiListing | null>(null);
-  const [fetching, setFetching] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'bid' | 'history'>('bid');
-  const [offerAmount, setOfferAmount] = useState(0);
-  const stepRate = 10000;
-
-  useEffect(() => {
-    if (listingId) {
-      setFetching(true);
-=======
   const { selectedListing } = useAppStore();
 
   const [listing, setListing] = useState<ApiListing | null>(
@@ -78,7 +56,6 @@ export default function PlaceBid() {
     if (listingId) {
       // If we don't have the listing, or even if we do, we might want to refresh the latest bids
       if (!listing) setFetching(true);
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
       getListing(listingId)
         .then(res => {
           setListing(res.listing);
@@ -114,26 +91,8 @@ export default function PlaceBid() {
 
   const currentMax = listing?.bids?.[0]?.amount || listing?.startingBid || 0;
 
-<<<<<<< HEAD
-  const currentMax = useMemo(() => {
-    return listing?.bids?.[0]?.amount || listing?.startingBid || 0;
-  }, [listing]);
-
-  const handleAdjust = (type: 'plus' | 'minus') => {
-    if (type === 'plus') {
-      setOfferAmount(prev => prev + stepRate);
-    } else {
-      const minPossible = currentMax + 1000;
-      setOfferAmount(prev => Math.max(minPossible, prev - stepRate));
-    }
-  };
-
-  const handleQuickAdd = (val: number) => {
-    setOfferAmount(prev => prev + val);
-=======
   const handleQuickIncrease = (inc: number) => {
     setAmount(prev => Math.max(prev, currentMax) + inc);
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   };
 
   const handlePlaceBid = async () => {
@@ -143,31 +102,15 @@ export default function PlaceBid() {
     }
     if (!listing) return;
 
-<<<<<<< HEAD
-    if (offerAmount <= currentMax) {
-        Alert.alert('Invalid Offer', `Offer must be greater than current highest ₹${currentMax.toLocaleString()}`);
-=======
     if (amount <= currentMax) {
         Alert.alert('Invalid Bid', `Bid must be greater than current bid ₹${currentMax.toLocaleString()}`);
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
         return;
     }
 
     setLoading(true);
     try {
-<<<<<<< HEAD
-        try {
-            await placeBidApi(listing.id, userId, offerAmount);
-        } catch (apiError: any) {
-            console.warn('REST API Bid failed, trying socket', apiError);
-            await socketService.placeBid(listing.id, userId, offerAmount);
-        }
-
-        Alert.alert('Success', 'Your offer has been submitted successfully!');
-=======
         await socketService.placeBid(listing.id, userId, amount);
         Alert.alert('Success', 'Congratulations! Your bid has been placed successfully.');
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
         navigation.goBack();
     } catch (e: any) {
         Alert.alert('Error', e.message);

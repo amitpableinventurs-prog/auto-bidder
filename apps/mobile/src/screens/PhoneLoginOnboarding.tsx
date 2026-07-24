@@ -408,20 +408,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 10,
-<<<<<<< HEAD
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderColor: 'rgba(255,255,255,0.2)',
-    flexDirection: 'row',
-=======
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: 'rgba(36, 110, 185, 0.2)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -481,22 +473,12 @@ const styles = StyleSheet.create({
   inputContainer: {
     borderWidth: 1,
     borderColor: COLORS.border,
-<<<<<<< HEAD
     borderRadius: 16,
     height: 64,
     paddingHorizontal: 10,
     justifyContent: 'center',
     backgroundColor: COLORS.lightGrey2,
     marginBottom: 16,
-=======
-    borderRadius: 4,
-    minHeight: 52,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    justifyContent: 'center',
-    backgroundColor: COLORS.white,
-    marginBottom: 24,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   },
   inputRow: {
     flexDirection: 'row',
@@ -508,7 +490,6 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   flag: {
-<<<<<<< HEAD
     fontSize: 20,
     marginRight: 4,
   },
@@ -518,17 +499,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.poppins.semiBold,
     marginRight: 2,
   },
-=======
-    fontSize: 22,
-    marginRight: 8,
-  },
-  prefix: {
-    fontSize: 18,
-    color: COLORS.black2,
-    fontFamily: FONTS.poppins.semiBold,
-    marginRight: 4,
-  },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   divider: {
     width: 1.5,
     height: 28,
@@ -537,11 +507,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-<<<<<<< HEAD
     fontSize: 18,
-=======
-    fontSize: 16,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     color: COLORS.black2,
     fontFamily: FONTS.poppins.semiBold,
     includeFontPadding: false,

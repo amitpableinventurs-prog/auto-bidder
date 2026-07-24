@@ -152,18 +152,6 @@ export default function PlaceBid() {
                 </View>
             </View>
 
-<<<<<<< HEAD
-        {/* Auction Stats */}
-        <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-                <Text style={styles.statLabel}>CURRENT HIGHEST</Text>
-                <Text style={[styles.statValue, { color: COLORS.secondary }]}>₹{currentMax.toLocaleString('en-IN')}</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-                <Text style={styles.statLabel}>TIME REMAINING</Text>
-                <Text style={[styles.statValue, { color: COLORS.coral }]}>04:22:10</Text>
-=======
             {/* Auction Stats */}
             <View style={styles.statsRow}>
                 <View style={styles.statItem}>
@@ -175,11 +163,9 @@ export default function PlaceBid() {
                     <Text style={styles.statLabel}>TIME REMAINING</Text>
                     <Text style={[styles.statValue, { color: COLORS.coral }]}>04:22:10</Text>
                 </View>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
             </View>
-        </View>
 
-        <View style={styles.tabBar}>
+            <View style={styles.tabBar}>
             <Pressable
                 style={[styles.tab, activeTab === 'bid' && styles.tabActive]}
                 onPress={() => setActiveTab('bid')}
@@ -192,17 +178,8 @@ export default function PlaceBid() {
             >
                 <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>Bid History</Text>
             </Pressable>
-        </View>
+            </View>
 
-<<<<<<< HEAD
-        {activeTab === 'bid' ? (
-            <View style={styles.bidPanel}>
-                <View style={styles.inputContainer}>
-                    <Text style={styles.currencySymbol}>₹</Text>
-                    <Text style={styles.amountDisplay}>{offerAmount.toLocaleString('en-IN')}</Text>
-                    <View style={styles.editIcon}>
-                        <Ionicons name="pencil" size={14} color={COLORS.textMuted} />
-=======
             {activeTab === 'bid' ? (
                 <View style={styles.bidPanel}>
                     <View style={styles.inputContainer}>
@@ -249,28 +226,10 @@ export default function PlaceBid() {
                         <Text style={styles.disclaimerText}>
                             By placing a bid, you agree to pay the amount if you win the auction. A security deposit may be locked.
                         </Text>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
                     </View>
                 </View>
-
-                <Text style={styles.quickLabel}>Quick Increments</Text>
-                <View style={styles.quickRow}>
-                    {[5000, 10000, 25000, 50000].map(inc => (
-                        <Pressable key={inc} style={styles.quickBtn} onPress={() => handleQuickAdd(inc)}>
-                            <Text style={styles.quickBtnText}>+₹{inc >= 1000 ? (inc/1000)+'k' : inc}</Text>
-                        </Pressable>
-                    ))}
-                </View>
-
-                <View style={styles.disclaimer}>
-                    <Ionicons name="information-circle-outline" size={16} color={COLORS.textMuted} />
-                    <Text style={styles.disclaimerText}>
-                        By placing a bid, you agree to pay the amount if you win the auction. A security deposit may be locked.
-                    </Text>
-                </View>
-            </View>
-        ) : (
-            <View style={styles.historyPanel}>
+            ) : (
+                <View style={styles.historyPanel}>
                 <ScrollView style={{maxHeight: 300}}>
                     {(listing.bids || []).map((b: any, i: number) => (
                         <View key={b.id || i} style={styles.historyItem}>
@@ -290,20 +249,15 @@ export default function PlaceBid() {
                             <Text style={styles.emptyHistoryText}>No bids placed yet. Be the first!</Text>
                         </View>
                     )}
-<<<<<<< HEAD
                 </ScrollView>
             </View>
-        )}
-=======
-                </View>
             )}
         </ScrollView>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
         <View style={styles.footer}>
             <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Your Total Bid</Text>
-                <Text style={styles.totalValue}>₹{offerAmount.toLocaleString('en-IN')}</Text>
+                <Text style={styles.totalValue}>₹{amount.toLocaleString('en-IN')}</Text>
             </View>
             <Pressable
                 style={[styles.confirmBtn, loading && { opacity: 0.7 }]}
@@ -320,15 +274,7 @@ export default function PlaceBid() {
                 )}
             </Pressable>
         </View>
-<<<<<<< HEAD
-
-        <Pressable style={styles.closeBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.closeBtnText}>CLOSE</Text>
-        </Pressable>
-      </View>
-=======
       </KeyboardAvoidingView>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     </SafeAreaView>
   );
 }
@@ -355,19 +301,6 @@ const styles = StyleSheet.create({
   miniTitle: { ...TYPOGRAPHY.bodyMedium, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
   miniSub: { ...TYPOGRAPHY.bodySmall, color: COLORS.textMuted, marginTop: 2 },
 
-<<<<<<< HEAD
-  statsRow: { flexDirection: 'row', backgroundColor: COLORS.white, borderRadius: 12, padding: 15, marginBottom: 20, borderWidth: 1, borderColor: COLORS.border },
-  statItem: { flex: 1, alignItems: 'center' },
-  statDivider: { width: 1, height: '100%', backgroundColor: COLORS.border },
-  statLabel: { fontSize: 10, fontFamily: FONTS.poppins.bold, color: COLORS.textMuted, letterSpacing: 0.5, marginBottom: 4 },
-  statValue: { fontSize: 16, fontFamily: FONTS.poppins.bold },
-
-  tabBar: { flexDirection: 'row', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center' },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: COLORS.secondary },
-  tabText: { fontSize: 14, color: COLORS.textMuted, fontFamily: FONTS.poppins.medium },
-  tabTextActive: { color: COLORS.secondary, fontFamily: FONTS.poppins.bold },
-=======
   statsRow: { flexDirection: 'row', backgroundColor: COLORS.white, borderRadius: 24, padding: 20, marginBottom: 24, borderWidth: 1.5, borderColor: COLORS.border },
   statItem: { flex: 1, alignItems: 'center' },
   statDivider: { width: 1.5, height: '100%', backgroundColor: COLORS.border },
@@ -396,13 +329,6 @@ const styles = StyleSheet.create({
   amountDisplay: { ...TYPOGRAPHY.h2, color: COLORS.black2, letterSpacing: -1 },
   editIcon: { marginLeft: 10, width: 24, height: 24, borderRadius: 12, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center' },
   amountInput: { ...TYPOGRAPHY.h2, color: COLORS.black2, flex: 1, textAlign: 'center', letterSpacing: -1, paddingVertical: 0 },
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
-
-  bidPanel: { },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  currencySymbol: { fontSize: 24, color: COLORS.secondary, marginRight: 8, fontFamily: FONTS.poppins.bold },
-  amountDisplay: { fontSize: 32, color: '#000', fontFamily: FONTS.poppins.bold },
-  editIcon: { marginLeft: 10 },
 
   quickLabel: { fontSize: 12, fontFamily: FONTS.poppins.bold, color: COLORS.textMuted, textAlign: 'center', marginBottom: 12 },
   quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: 20 },
@@ -429,26 +355,6 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
     flexDirection: 'row',
     alignItems: 'center',
-<<<<<<< HEAD
-  },
-  totalRow: { flex: 1 },
-  totalLabel: { fontSize: 10, fontFamily: FONTS.poppins.bold, color: COLORS.textMuted, textTransform: 'uppercase' },
-  totalValue: { fontSize: 18, fontFamily: FONTS.poppins.bold, color: COLORS.secondary, marginTop: 2 },
-  confirmBtn: { backgroundColor: COLORS.secondary, paddingHorizontal: 20, height: 44, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  confirmText: { color: '#fff', fontSize: 14, fontFamily: FONTS.poppins.bold },
-
-  closeBtn: {
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 10
-  },
-  closeBtnText: {
-    fontSize: 12,
-    fontFamily: FONTS.poppins.bold,
-    color: '#64748B'
-  }
-});
-=======
     justifyContent: 'space-between'
   },
   totalRow: { flex: 1 },
@@ -457,5 +363,3 @@ const styles = StyleSheet.create({
   confirmBtn: { backgroundColor: COLORS.secondary, paddingHorizontal: 24, height: 50, borderRadius: 5, flexDirection: 'row', alignItems: 'center', gap: 10, elevation: 6, shadowColor: COLORS.secondary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   confirmText: { color: COLORS.white, fontSize: 16, fontFamily: FONTS.poppins.bold }
 });
-
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b

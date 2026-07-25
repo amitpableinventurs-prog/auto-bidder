@@ -1,0 +1,3 @@
+- `[x]` Rename "SKIP SUBMIT" to "SUBMIT"
+- `[x]` Update "MORE DETAILS" button color to blue
+- `[x]` Update "SUBMIT" (formerly skip) button color to blue

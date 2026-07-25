@@ -1,0 +1,3 @@
+- [x] Update `babel.config.js` in root and `apps/mobile`
+- [x] Update `polyfill.js` with robust initialization and TurboModule mocks
+- [/] Verify fix by monitoring logs and app state

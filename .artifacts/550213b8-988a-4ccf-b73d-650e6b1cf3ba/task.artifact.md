@@ -1,0 +1,8 @@
+- [x] Update `package.json` dependencies
+- [x] Install dependencies (`expo-secure-store`, `expo-updates`)
+- [x] Configure `app.json` for production (metadata, OTA, ProGuard)
+- [x] Migrate `AuthContext.tsx` to use `SecureStore`
+- [x] Create environment variable validator `src/utils/env-check.ts`
+- [x] Update `App.tsx` to perform env validation
+- [x] Enhance `ErrorBoundary.tsx` for production
+- [x] Improve `EditProfile.tsx` with `zod` validation

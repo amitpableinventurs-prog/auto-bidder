@@ -1,0 +1,61 @@
+{
+  "name": "auto-bidder",
+  "private": true,
+  "main": "App.js",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:mobile\" \"npm run dev:admin\"",
+    "dev:api": "npm run dev -w @autobidder/api",
+    "dev:mobile": "npx jiti ./node_modules/expo/bin/cli start",
+    "dev:admin": "npx serve apps/admin",
+    "build:api": "npm --workspace=@autobidder/api run build",
+    "build:mobile:web": "cd apps/mobile && npx jiti ../../node_modules/expo/bin/cli export --output-dir web-build",
+    "build": "npm run build:api",
+    "start:api": "npm --workspace=@autobidder/api run start",
+    "start:admin": "npx serve apps/admin -l 8080",
+    "prod": "npm run build && npm run start:api",
+    "kill-ports": "powershell -Command \"Stop-Process -Id (Get-NetTCPConnection -LocalPort 4000, 8081 -ErrorAction SilentlyContinue).OwningProcess -Force\"",
+    "android": "powershell -Command \"& ($env:LOCALAPPDATA + '\\Android\\Sdk\\platform-tools\\adb.exe') kill-server; & ($env:LOCALAPPDATA + '\\Android\\Sdk\\platform-tools\\adb.exe') start-server; echo 'Waiting for device...'; sleep 2; & ($env:LOCALAPPDATA + '\\Android\\Sdk\\platform-tools\\adb.exe') devices; npx jiti ./node_modules/expo/bin/cli run:android\"",
+    "ios": "npx jiti ./node_modules/expo/bin/cli run:ios",
+    "start": "npm run dev:mobile",
+    "start:clear": "npm run dev:mobile -- --clear",
+    "clean": "powershell -Command \"Remove-Item -Recurse -Force node_modules, package-lock.json, apps/mobile/node_modules, apps/mobile/package-lock.json, services/api/node_modules\""
+  },
+  "version": "1.0.0",
+  "dependencies": {
+    "@expo/metro-runtime": "~56.0.15",
+    "@prisma/client": "^7.9.0",
+    "@stripe/stripe-react-native": "0.64.0",
+    "cross-env": "^7.0.3",
+    "expo": "^56.0.17",
+    "expo-build-properties": "~56.0.19",
+    "expo-camera": "~56.0.8",
+    "expo-image-manipulator": "~56.0.22",
+    "expo-image-picker": "~56.0.21",
+    "expo-location": "~56.0.21",
+    "expo-secure-store": "~56.0.4",
+    "expo-web-browser": "~56.0.5",
+    "react-error-boundary": "^6.1.2",
+    "react-native-gesture-handler": "~2.31.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "~0.21.0"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "^20.1.3",
+    "concurrently": "^10.0.3",
+    "jiti": "^2.4.2",
+    "typescript": "~6.0.3"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "prisma@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.1": true
+  }
+}

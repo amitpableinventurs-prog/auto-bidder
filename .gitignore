@@ -1,0 +1,71 @@
+# dependencies
+node_modules/
+
+# env
+.env
+.env.*
+!.env.example
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.codex-*.log
+*.log
+
+# Runtime uploads and generated artifacts
+services/api/uploads/
+app-release.apk
+output-metadata.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Expo / React Native
+.expo/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# TypeScript
+*.tsbuildinfo
+
+# build output
+dist/
+android/.gradle_home/
+
+# Prisma
+services/api/prisma/dev.db
+services/api/prisma/dev.db-journal
+
+# Stakpak session files
+.stakpak/session*
+node_modules/
+
+.expo/
+.expo-shared/
+
+android/.gradle/
+android/.gradle_home/
+android/build/
+android/app/build/
+
+.idea/
+.vscode/
+
+*.apk
+*.aab
+
+*.log
+
+.env
+.env.*
+
+.DS_Store
+Thumbs.db

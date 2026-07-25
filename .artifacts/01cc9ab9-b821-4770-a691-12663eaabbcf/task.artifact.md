@@ -1,0 +1,6 @@
+- [x] Revert `PRIMARY_BRANDS` order
+- [x] Revert `brandItem` and `brandItemActive` styles
+- [x] Revert Search Bar styling
+- [x] Revert Form Inputs styling
+- [x] Revert Upload Box styling
+- [x] Revert Tab active state styling

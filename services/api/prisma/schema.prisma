@@ -1,0 +1,732 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  phone     String?   @unique
+  name      String?
+  avatarUrl String?
+  address    String?
+  city       String?
+  zipCode    String?
+  isVerified Boolean  @default(false)
+  isFeatured Boolean  @default(false)
+  kycStatus  String?   @default("PENDING")
+  kycImageUrl String?
+  role       Role      @default(BUYER)
+  userType   String?   @default("OWNER")
+  businessName String?
+  createdAt DateTime  @default(now())
+  bids      Bid[]
+  listings  Listing[]
+  appointments Appointment[]
+  autoBidConfigs AutoBidConfig[]
+  notifications Notification[]
+  pushTokens PushToken[]
+  favorites  Favorite[]
+  dnpProfile DNPProfile?
+  referrals Referral[]
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+model Listing {
+  id               String        @id @default(cuid())
+  title            String
+  description      String?
+  brand            String?
+  model            String?
+  variant          String?
+  manufacturingYear Int?
+  fuelType         String?
+  transmission     String?
+  carType          String?
+  color            String?
+  city             String?
+  latitude         Float?
+  longitude        Float?
+  plateNumber      String?
+  ownership        String?
+  kilometersDriven Int?
+  condition        String?
+  demandPrice      Int?
+  startingBid      Int
+  imageUrl         String?
+
+  // Additional details from mobile app
+  rcOwnerName      String?
+  rcOwnerNumber    String?
+  rcAvailability   String?
+  originalInvoice  Boolean? @default(true)
+  bankHypothecation Boolean? @default(false)
+  loanStatus       String?
+  rtoTaxStatus     String?
+  rtoNocIssued     String?
+  rtoNocNumber     String?
+  duplicateKeys    Boolean? @default(false)
+  serviceBookAvailability Boolean? @default(true)
+  remainingFreeService Int? @default(0)
+  remainingOemWarranty String?
+  insuranceType    String?
+  insuranceExpiry  String?
+  listedBy         String?
+  sellingTimeline  String?
+  commission       String?
+  inspectionReportUrl String?
+  inspectionReportStatus String? @default("PENDING")
+
+  status           ListingStatus @default(DRAFT)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  sellerId String
+  seller   User     @relation(fields: [sellerId], references: [id])
+
+  bids         Bid[]
+  appointments Appointment[]
+  rtoNoc       RtoNoc?
+  payments     Payment[]
+  autoBidConfigs AutoBidConfig[]
+  favorites    Favorite[]
+  referrals    Referral[]
+  sharedListings SharedListing[]
+  commissions  Commission[]
+
+  @@index([createdAt])
+  @@index([status, city])
+  @@index([brand, model])
+}
+
+model Bid {
+  id        String    @id @default(cuid())
+  amount    Int
+  status    BidStatus @default(SUBMITTED)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User     @relation(fields: [userId], references: [id])
+
+  payment   Payment?
+  autoBidConfig AutoBidConfig? @relation(fields: [autoBidConfigId], references: [id])
+  autoBidConfigId String?
+
+  @@index([listingId, createdAt])
+  @@index([userId, status])
+  @@index([autoBidConfigId])
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  type        AppointmentType
+  status      AppointmentStatus @default(PENDING)
+  scheduledAt DateTime?
+  location    String?
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  @@index([listingId, scheduledAt])
+  @@index([userId, status])
+}
+
+model RtoNoc {
+  id             String    @id @default(cuid())
+  rtoTaxStatus   String?
+  rtoDues        String?
+  rtoNocIssued   String?
+  bankNocStatus  NocStatus @default(NOT_STARTED)
+  rtoNocStatus   NocStatus @default(NOT_STARTED)
+  invoiceStatus  NocStatus @default(NOT_STARTED)
+  ownerIdStatus  NocStatus @default(NOT_STARTED)
+  uploadedCount  Int       @default(0)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  listingId String  @unique
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id                  String   @id @default(cuid())
+  amount              Int
+  currency            String   @default("INR")
+  status              PaymentStatus @default(PENDING)
+  stripePaymentIntentId String? @unique
+  stripeClientSecret  String?
+  metadata            Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  bidId   String?  @unique
+  bid     Bid?     @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  listingId String? @unique
+  listing  Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([bidId])
+  @@index([listingId])
+}
+
+model AutoBidConfig {
+  id            String   @id @default(cuid())
+  maxLimit      Int
+  increment     Int      @default(5000)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId     String
+  listing       Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  bids          Bid[]
+
+  @@unique([userId, listingId])
+  @@index([listingId, isActive])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  platform  String   @default("android")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_INSPECTION
+  ACTIVE
+  SOLD
+  REJECTED
+}
+
+enum BidStatus {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  SUPERSEDED
+}
+
+enum AppointmentType {
+  BUYER_INSPECTION
+  AUTOBIDDER_INSPECTION
+  AUTHORIZED_CENTER
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum NocStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  REQUIRES_ACTION
+  FAILED
+  CANCELLED
+}
+
+enum NotificationType {
+  OUTBID
+  BID_ACCEPTED
+  BID_REJECTED
+  PAYMENT_CONFIRMED
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_CANCELLED
+  AUTO_BID_TRIGGERED
+  LISTING_SOLD
+  SYSTEM
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  adminName String?
+  target    String?
+  details   Json?
+  timestamp DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([action])
+}
+
+model FraudAlert {
+  id          String   @id @default(cuid())
+  severity    String   @default("MEDIUM")
+  type        String
+  description String
+  userId      String?
+  userName    String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model Slider {
+  id        String   @id @default(cuid())
+  type      String   @default("HOME") // "ONBOARDING" or "HOME"
+  title     String
+  subtitle  String?
+  imageUrl  String
+  link      String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Brand {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  logo        String
+  count       String   @default("0 Cars")
+  description String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  imageUrl    String
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// DNP (Distributor Network Partner) Models
+
+model DNPProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  referralCode          String   @unique
+  referralLink          String
+  
+  activationDate        DateTime?
+  agreementAccepted     Boolean  @default(false)
+  agreementAcceptedAt   DateTime?
+  
+  membershipStatus      DNPStatus @default(PENDING)
+  deferredFeeStatus     String   @default("PENDING") // PENDING, DEDUCTED, WAIVED
+  membershipFee         Int      @default(5000)
+  membershipFeeDeducted Boolean  @default(false)
+  membershipFeeDeductedAt DateTime?
+  
+  totalEarnings         Int      @default(0)
+  pendingEarnings       Int      @default(0)
+  paidEarnings          Int      @default(0)
+  availableBalance      Int      @default(0)
+  
+  totalReferrals        Int      @default(0)
+  activeListings        Int      @default(0)
+  sharedListingsCount   Int      @default(0)
+  soldVehicles          Int      @default(0)
+  
+  isActive              Boolean  @default(true)
+  isSuspended           Boolean  @default(false)
+  suspendedReason       String?
+  suspendedAt           DateTime?
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  referrals             Referral[]
+  sharedListings        SharedListing[]
+  commissions           Commission[]
+  withdrawalRequests    WithdrawalRequest[]
+  dnpAgreements         DNPAgreement[]
+  dnpWalletTransactions DNPWalletTransaction[]
+  
+  @@index([userId])
+  @@index([referralCode])
+  @@index([membershipStatus])
+  @@index([isActive])
+}
+
+model DNPAgreement {
+  id                String   @id @default(cuid())
+  dnpProfileId      String
+  dnpProfile        DNPProfile @relation(fields: [dnpProfileId], references: [id], onDelete: Cascade)
+  
+  version           String
+  terms             String
+  acceptedAt        DateTime
+  ipAddress         String?
+  userAgent         String?
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([dnpProfileId])
+}
+
+model Referral {
+  id                String   @id @default(cuid())
+  dnpProfileId      String
+  dnpProfile        DNPProfile @relation(fields: [dnpProfileId], references: [id], onDelete: Cascade)
+  
+  referredUserId    String?  @unique
+  referredUser      User?    @relation(fields: [referredUserId], references: [id])
+  
+  referralCode      String
+  referralSource    String?  // WHATSAPP, FACEBOOK, TELEGRAM, SMS, DIRECT, QR_CODE
+  attributionExpiry DateTime
+  
+  listingId         String?
+  listing           Listing? @relation(fields: [listingId], references: [id])
+  
+  status            ReferralStatus @default(PENDING)
+  commission        Int      @default(0)
+  commissionPaid    Boolean  @default(false)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  referralClicks    ReferralClick[]
+  commissions       Commission[] @relation("ReferralCommissions")
+  
+  @@index([dnpProfileId])
+  @@index([referredUserId])
+  @@index([referralCode])
+  @@index([status])
+  @@index([attributionExpiry])
+}
+
+model ReferralClick {
+  id                String   @id @default(cuid())
+  referralId        String
+  referral          Referral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  
+  ipAddress         String?
+  userAgent         String?
+  deviceFingerprint String?
+  
+  converted         Boolean  @default(false)
+  convertedAt       DateTime?
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([referralId])
+  @@index([createdAt])
+}
+
+model SharedListing {
+  id                String   @id @default(cuid())
+  dnpProfileId      String
+  dnpProfile        DNPProfile @relation(fields: [dnpProfileId], references: [id], onDelete: Cascade)
+  
+  listingId         String
+  listing           Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  shareLink         String
+  shareSource       String?  // WHATSAPP, FACEBOOK, TELEGRAM, SMS, COPY_LINK, QR_CODE
+  
+  totalViews        Int      @default(0)
+  totalLeads        Int      @default(0)
+  convertedLeads    Int      @default(0)
+  
+  commission        Int      @default(0)
+  commissionPaid    Boolean  @default(false)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  buyerLeads        BuyerLead[]
+  commissions       Commission[] @relation("SharedListingCommissions")
+  
+  @@index([dnpProfileId])
+  @@index([listingId])
+  @@index([createdAt])
+}
+
+model BuyerLead {
+  id                String   @id @default(cuid())
+  sharedListingId   String
+  sharedListing     SharedListing @relation(fields: [sharedListingId], references: [id], onDelete: Cascade)
+  
+  buyerName         String?
+  buyerPhone        String?
+  buyerEmail        String?
+  
+  status            LeadStatus @default(SHARED)
+  
+  lastActivity      DateTime?
+  lastActivityType  String?  // VIEWED, CONTACTED, TEST_DRIVE, NEGOTIATION, BOOKING
+  
+  expectedCommission Int      @default(0)
+  actualCommission  Int      @default(0)
+  
+  notes             String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([sharedListingId])
+  @@index([status])
+  @@index([buyerPhone])
+  @@index([createdAt])
+}
+
+model Commission {
+  id                String   @id @default(cuid())
+  dnpProfileId      String
+  dnpProfile        DNPProfile @relation(fields: [dnpProfileId], references: [id], onDelete: Cascade)
+  
+  type              CommissionType // LISTING_APPROVAL, VEHICLE_SOLD, BONUS
+  
+  referralId        String?
+  referral          Referral? @relation("ReferralCommissions", fields: [referralId], references: [id])
+  
+  sharedListingId   String?
+  sharedListing     SharedListing? @relation("SharedListingCommissions", fields: [sharedListingId], references: [id])
+  
+  listingId         String?
+  listing           Listing? @relation(fields: [listingId], references: [id])
+  
+  amount            Int
+  percentage        Float?
+  
+  status            CommissionStatus @default(PENDING)
+  
+  calculatedAt      DateTime @default(now())
+  paidAt            DateTime?
+  
+  withdrawalRequestId String?  @unique
+  withdrawalRequest   WithdrawalRequest? @relation(fields: [withdrawalRequestId], references: [id])
+  
+  metadata          Json?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([dnpProfileId])
+  @@index([status])
+  @@index([type])
+  @@index([calculatedAt])
+}
+
+model CommissionRule {
+  id                String   @id @default(cuid())
+  
+  type              CommissionType
+  name              String
+  description       String?
+  
+  flatAmount        Int?
+  percentage        Float?
+  minAmount         Int?
+  maxAmount         Int?
+  
+  isActive          Boolean  @default(true)
+  priority          Int      @default(0)
+  
+  validFrom         DateTime @default(now())
+  validUntil        DateTime?
+  
+  conditions        Json?    // Additional conditions for complex rules
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([type])
+  @@index([isActive])
+  @@index([validFrom, validUntil])
+}
+
+model WithdrawalRequest {
+  id                String   @id @default(cuid())
+  dnpProfileId      String
+  dnpProfile        DNPProfile @relation(fields: [dnpProfileId], references: [id], onDelete: Cascade)
+  
+  amount            Int
+  status            WithdrawalStatus @default(PENDING)
+  
+  bankAccountNumber String?
+  bankIfsc          String?
+  bankName          String?
+  accountHolderName String?
+  
+  upiId             String?
+  
+  fraudCheckStatus  String   @default("PENDING") // PENDING, PASSED, FAILED
+  fraudCheckNotes   String?
+  
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  approvedAt        DateTime?
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  
+  paidAt            DateTime?
+  paymentReference  String?
+  
+  metadata          Json?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  commissions       Commission[]
+  
+  @@index([dnpProfileId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DNPWalletTransaction {
+  id                String   @id @default(cuid())
+  dnpProfileId      String
+  dnpProfile        DNPProfile @relation(fields: [dnpProfileId], references: [id], onDelete: Cascade)
+  
+  type              TransactionType // CREDIT, DEBIT, FEE_DEDUCTION, WITHDRAWAL
+  
+  amount            Int
+  balanceBefore     Int
+  balanceAfter      Int
+  
+  description       String
+  referenceId       String?  // Commission ID, Withdrawal ID, etc.
+  referenceType     String?  // COMMISSION, WITHDRAWAL, MEMBERSHIP_FEE
+  
+  metadata          Json?
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([dnpProfileId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// DNP Enums
+
+enum DNPStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum ReferralStatus {
+  PENDING
+  REGISTERED
+  LISTING_CREATED
+  LISTING_APPROVED
+  COMPLETED
+  EXPIRED
+  FRAUDulent
+}
+
+enum LeadStatus {
+  SHARED
+  VIEWED
+  CONTACTED
+  TEST_DRIVE_SCHEDULED
+  NEGOTIATION
+  BOOKING
+  SOLD
+  CLOSED
+  LOST
+}
+
+enum CommissionType {
+  LISTING_APPROVAL
+  VEHICLE_SOLD
+  BONUS
+  REFERRAL_BONUS
+}
+
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELLED
+  ON_HOLD
+}
+
+enum WithdrawalStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+  FEE_DEDUCTION
+  WITHDRAWAL
+}

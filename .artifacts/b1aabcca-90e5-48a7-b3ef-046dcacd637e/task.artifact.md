@@ -1,0 +1,3 @@
+- [ ] Clean Android project
+- [ ] Build release APK
+- [ ] Verify generated APK

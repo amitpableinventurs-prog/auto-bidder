@@ -1,0 +1,4 @@
+- `[x]` Run local EAS build for Android (`preview` profile) - *Failed, not supported on Windows*
+- `[/]` Create temporary branch and commit changes
+- `[ ]` Trigger EAS Cloud build for Android (`preview` profile)
+- `[ ]` Provide build dashboard link

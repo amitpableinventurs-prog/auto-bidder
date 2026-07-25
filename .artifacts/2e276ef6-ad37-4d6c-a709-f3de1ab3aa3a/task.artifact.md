@@ -1,0 +1,12 @@
+- [/] Refactor `CameraGuidance.tsx`
+    - [ ] Update Step 0: Car Type Selection
+    - [ ] Implement "Quick tour X of 4" and "Skip" button
+    - [ ] Step 1: Swipe Guide with 3 angle boxes (Portrait)
+    - [ ] Step 2: Fit Borders simplified (Landscape)
+    - [ ] Step 3: Green Click simplified (Landscape)
+    - [ ] Step 4: Combined Categories (Landscape)
+    - [ ] Update Step navigation logic
+- [ ] Refactor `CarCamera.tsx`
+    - [ ] Verify state management for categories and angles
+    - [ ] Ensure "FINISH" returns all captured images to `FillCarDetails`
+- [ ] Manual Verification

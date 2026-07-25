@@ -1,0 +1,4 @@
+- [/] Clean build artifacts (`gradlew clean`)
+- [ ] Build Release APK (`gradlew assembleRelease`)
+- [ ] Verify APK generation
+- [ ] Copy APK to root directory

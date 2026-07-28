@@ -8,11 +8,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/autobuilderlogo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "updates": {
       "url": "https://u.expo.dev/your-project-id",
       "fallbackToCacheTimeout": 0
@@ -29,7 +24,7 @@
       ]
     },
     "android": {
-      "package": "com.autobidder.mobile",
+      "package": "com.anonymous.autobidder",
       "versionCode": 1,
       "scheme": "autobidder",
       "adaptiveIcon": {
@@ -63,8 +58,6 @@
           ]
         }
       ],
-      "usesCleartextTraffic": false,
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {

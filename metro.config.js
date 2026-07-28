@@ -2,9 +2,11 @@ const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const projectRoot = __dirname;
+console.log('METRO CONFIG: __dirname =', __dirname);
+console.log('METRO CONFIG: projectRoot =', projectRoot);
 const mobileRoot = path.resolve(projectRoot, 'apps/mobile');
 
-const config = getDefaultConfig(projectRoot);
+const config = getDefaultConfig(path.resolve(projectRoot));
 
 // Watch monorepo folders
 config.watchFolders = [

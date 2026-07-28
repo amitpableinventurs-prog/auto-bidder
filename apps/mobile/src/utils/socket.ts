@@ -6,16 +6,26 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? fallbackBaseUrl;
 
 class SocketService {
   private socket: Socket | null = null;
+  private token: string | null = null;
 
-  connect() {
+  /**
+   * Initializes the socket connection with the provided JWT token.
+   */
+  connect(token?: string) {
+    if (token) this.token = token;
+
     if (!this.socket) {
       console.log('Connecting to socket at:', API_BASE_URL);
       this.socket = io(API_BASE_URL, {
-        transports: ['websocket', 'polling'], // Added polling as fallback
+        transports: ['websocket', 'polling'],
         autoConnect: true,
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: Infinity, // Production ready: keep trying
         reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        auth: {
+          token: this.token,
+        },
       });
 
       this.socket.on('connect', () => {
@@ -27,9 +37,14 @@ class SocketService {
       });
 
       this.socket.on('connect_error', (error) => {
-        console.warn('Socket connection error details:', error.message, error.name);
+        console.warn('Socket connection error:', error.message);
       });
+    } else if (token && this.socket.connected) {
+        // If already connected but token changed, we might need to reconnect
+        // For simplicity, we just update the auth object for next connection
+        this.socket.auth = { token };
     }
+
     return this.socket;
   }
 
@@ -41,20 +56,23 @@ class SocketService {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
+      this.token = null;
     }
   }
 
-  joinListing(listingId: string) {
-    this.getSocket().emit('listing:join', { listingId });
+  // --- Auction Events ---
+
+  joinAuction(auctionId: string) {
+    this.getSocket().emit('joinAuction', { auctionId });
   }
 
-  leaveListing(listingId: string) {
-    this.getSocket().emit('listing:leave', { listingId });
+  leaveAuction(auctionId: string) {
+    this.getSocket().emit('leaveAuction', { auctionId });
   }
 
-  placeBid(listingId: string, userId: string, amount: number) {
+  placeBid(auctionId: string, amount: number) {
     return new Promise((resolve, reject) => {
-      this.getSocket().emit('bid:place', { listingId, userId, amount }, (response: any) => {
+      this.getSocket().emit('placeBid', { auctionId, amount }, (response: any) => {
         if (response.ok) {
           resolve(response.bid);
         } else {
@@ -64,13 +82,41 @@ class SocketService {
     });
   }
 
-  onBidCreated(callback: (data: { bid: any }) => void) {
-    this.getSocket().on('bid:created', callback);
+  // --- Listeners ---
+
+  onBidUpdated(callback: (data: { bid: any }) => void) {
+    this.getSocket().on('bidUpdated', callback);
   }
 
-  offBidCreated() {
-    this.getSocket().off('bid:created');
+  offBidUpdated() {
+    this.getSocket().off('bidUpdated');
   }
+
+  onAuctionStarted(callback: (data: any) => void) {
+    this.getSocket().on('auctionStarted', callback);
+  }
+
+  offAuctionStarted() {
+    this.getSocket().off('auctionStarted');
+  }
+
+  onAuctionEnded(callback: (data: any) => void) {
+    this.getSocket().on('auctionEnded', callback);
+  }
+
+  offAuctionEnded() {
+    this.getSocket().off('auctionEnded');
+  }
+
+  onUserConnected(callback: (data: any) => void) {
+    this.getSocket().on('userConnected', callback);
+  }
+
+  onUserDisconnected(callback: (data: any) => void) {
+    this.getSocket().on('userDisconnected', callback);
+  }
+
+  // --- Notifications (Keeping existing functionality) ---
 
   subscribeToNotifications(userId: string) {
     this.getSocket().emit('notifications:subscribe', { userId });

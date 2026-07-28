@@ -21,7 +21,7 @@ import { RootStackParamList } from '../navigation/types';
 const { width: SCREEN_W } = Dimensions.get('window');
 
 export default function DNPDashboardScreen() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -33,7 +33,7 @@ export default function DNPDashboardScreen() {
     try {
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/dashboard`, {
         headers: {
-          'Authorization': `Bearer ${user?.token}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
       const data = await response.json();
@@ -172,28 +172,61 @@ export default function DNPDashboardScreen() {
     </View>
   );
 
-  const renderRecentActivity = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Recent Activity</Text>
-      {stats?.recentActivity?.referrals?.length > 0 ? (
-        stats.recentActivity.referrals.slice(0, 3).map((item: any, index: number) => (
-          <ActivityItem
-            key={index}
-            icon="person-add"
-            title="New Referral"
-            description={item.referredUser?.name || 'New user registered'}
-            time={new Date(item.createdAt).toLocaleDateString()}
-            color={COLORS.secondary}
-          />
-        ))
-      ) : (
-        <View style={styles.emptyState}>
-          <Ionicons name="time-outline" size={40} color={COLORS.lightGrey1} />
-          <Text style={styles.emptyText}>No recent activity</Text>
-        </View>
-      )}
-    </View>
-  );
+  const renderRecentActivity = () => {
+    const activities: any[] = [];
+
+    if (stats?.recentActivity?.referrals) {
+      stats.recentActivity.referrals.forEach((item: any) => {
+        activities.push({
+          icon: 'person-add',
+          title: 'New Referral',
+          description: item.referredUser?.name || 'New user registered',
+          time: new Date(item.createdAt).toLocaleDateString(),
+          color: COLORS.secondary,
+          rawDate: new Date(item.createdAt)
+        });
+      });
+    }
+
+    if (stats?.recentActivity?.leads) {
+      stats.recentActivity.leads.forEach((item: any) => {
+        activities.push({
+          icon: 'list',
+          title: 'New Buyer Lead',
+          description: `${item.buyerName} for ${item.sharedListing?.listing?.title}`,
+          time: new Date(item.createdAt).toLocaleDateString(),
+          color: COLORS.success,
+          rawDate: new Date(item.createdAt)
+        });
+      });
+    }
+
+    // Sort combined activities by date descending
+    activities.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        {activities.length > 0 ? (
+          activities.slice(0, 5).map((item, index) => (
+            <ActivityItem
+              key={index}
+              icon={item.icon}
+              title={item.title}
+              description={item.description}
+              time={item.time}
+              color={item.color}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="time-outline" size={40} color={COLORS.lightGrey1} />
+            <Text style={styles.emptyText}>No recent activity</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   const renderReferralCodeCard = () => (
     <View style={styles.referralCard}>

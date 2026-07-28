@@ -1,276 +1,182 @@
 import type { Server as HttpServer } from 'node:http';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
 import { env } from './env.js';
 import { prisma } from './prisma.js';
-import { devStore, type PaymentStatus, type NotificationType } from './devStore.js';
+import { devStore, type PaymentStatus } from './devStore.js';
 
-const useMemoryStore = process.env.AUTO_BIDDER_STORE !== 'database';
+const useMemoryStore = env.AUTO_BIDDER_STORE === 'memory';
 
 // Schemas
-const joinSchema = z.object({ listingId: z.string().min(1) });
+const joinSchema = z.object({ auctionId: z.string().min(1) });
 const bidSchema = z.object({
-  listingId: z.string().min(1),
-  userId: z.string().min(1),
+  auctionId: z.string().min(1),
   amount: z.number().int().positive(),
 });
-const autoBidSchema = z.object({
-  listingId: z.string().min(1),
-  userId: z.string().min(1),
-  maxLimit: z.number().int().positive(),
-  increment: z.number().int().positive().default(5000),
-});
-const pushTokenSchema = z.object({
-  userId: z.string().min(1),
-  token: z.string().min(1),
-  platform: z.string().default('android'),
-});
 
+// Global Socket.IO instance
+let io: Server | null = null;
+
+export function getIo() {
+  return io;
+}
+
+/**
+ * Attaches Socket.IO to the HTTP server and sets up event handlers.
+ */
 export function attachSocketServer(httpServer: HttpServer) {
-  const io = new Server(httpServer, {
+  io = new Server(httpServer, {
     cors: {
       origin: env.CORS_ORIGIN,
       credentials: true,
     },
+    // Production-ready settings
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
-  io.on('connection', (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+  // Authentication Middleware
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(' ')[1];
 
-    // Join listing room for real-time updates
-    socket.on('listing:join', async (payload, ack) => {
+    if (!token) {
+      return next(new Error('Authentication error: No token provided'));
+    }
+
+    try {
+      const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string; role: string };
+      (socket as any).userId = decoded.userId;
+      (socket as any).userRole = decoded.role;
+      next();
+    } catch (err) {
+      return next(new Error('Authentication error: Invalid token'));
+    }
+  });
+
+  io.on('connection', (socket: Socket) => {
+    const userId = (socket as any).userId;
+    console.log(`User connected: ${userId} (Socket: ${socket.id})`);
+
+    // Broadcast userConnected to specific user's private room if needed,
+    // or just acknowledge connection.
+    socket.emit('userConnected', { userId, socketId: socket.id });
+
+    // Join auction-specific room
+    socket.on('joinAuction', async (payload, ack) => {
       try {
-        const { listingId } = joinSchema.parse(payload);
-        await socket.join(`listing:${listingId}`);
-        
-        // Send current bid history
-        const bidHistory = useMemoryStore
-          ? devStore.listBids().filter((b) => b.listing.id === listingId).slice(0, 20)
-          : await prisma.bid.findMany({
-              where: { listingId },
-              orderBy: { amount: 'desc' },
-              take: 20,
-              include: { user: { select: { id: true, name: true, phone: true } } },
-            });
+        const { auctionId } = joinSchema.parse(payload);
+        await socket.join(`auction:${auctionId}`);
 
-        // Send current highest bid
-        const highestBid = bidHistory[0] ?? null;
+        console.log(`User ${userId} joined auction room: ${auctionId}`);
 
-        socket.emit('listing:state', { bidHistory, highestBid });
+        // Fetch current auction state
+        let highestBid = null;
+        let bidHistory = [];
+
+        if (useMemoryStore) {
+          bidHistory = devStore.listBids().filter((b) => b.listing.id === auctionId).slice(0, 20);
+          highestBid = bidHistory[0] ?? null;
+        } else {
+          bidHistory = await prisma.bid.findMany({
+            where: { listingId: auctionId },
+            orderBy: { amount: 'desc' },
+            take: 20,
+            include: { user: { select: { id: true, name: true } } },
+          });
+          highestBid = bidHistory[0] ?? null;
+        }
+
         ack?.({ ok: true, bidHistory, highestBid });
       } catch (e) {
-        ack?.({ ok: false, error: e instanceof Error ? e.message : 'invalid payload' });
+        console.error('joinAuction error:', e);
+        ack?.({ ok: false, error: e instanceof Error ? e.message : 'Invalid payload' });
       }
     });
 
-    // Leave listing room
-    socket.on('listing:leave', async (payload, ack) => {
+    // Leave auction room
+    socket.on('leaveAuction', async (payload, ack) => {
       try {
-        const { listingId } = joinSchema.parse(payload);
-        await socket.leave(`listing:${listingId}`);
+        const { auctionId } = joinSchema.parse(payload);
+        await socket.leave(`auction:${auctionId}`);
+        console.log(`User ${userId} left auction room: ${auctionId}`);
         ack?.({ ok: true });
       } catch (e) {
-        ack?.({ ok: false, error: e instanceof Error ? e.message : 'invalid payload' });
+        ack?.({ ok: false, error: e instanceof Error ? e.message : 'Invalid payload' });
       }
     });
 
-    // Place a bid
-    socket.on('bid:place', async (payload, ack) => {
+    // Place a bid with race condition prevention
+    socket.on('placeBid', async (payload, ack) => {
       try {
-        const { listingId, userId, amount } = bidSchema.parse(payload);
+        const { auctionId, amount } = bidSchema.parse(payload);
+        const bidderId = (socket as any).userId;
 
         let result;
         if (useMemoryStore) {
-          result = devStore.createBid(listingId, userId, amount);
+          // Memory store simple implementation (race conditions possible but okay for devStore)
+          result = devStore.createBid(auctionId, bidderId, amount);
         } else {
-          const listing = await prisma.listing.findUnique({ where: { id: listingId } });
-          if (!listing) {
-            ack?.({ ok: false, error: 'Listing not found' });
-            return;
-          }
+          // Database transaction to prevent race conditions
+          result = await prisma.$transaction(async (tx) => {
+            // 1. Get current listing and lock for update to prevent concurrent bids
+            // Note: SQLite doesn't support SELECT FOR UPDATE well, but we use transactions.
+            // For Postgres, we would use: await tx.$executeRaw`SELECT * FROM "Listing" WHERE id = ${auctionId} FOR UPDATE`;
 
-          const highest = await prisma.bid.findFirst({
-            where: { listingId },
-            orderBy: { amount: 'desc' },
-            select: { amount: true },
-          });
+            const listing = await tx.listing.findUnique({
+              where: { id: auctionId },
+              include: { bids: { orderBy: { amount: 'desc' }, take: 1 } }
+            });
 
-          const min = highest?.amount ?? listing.startingBid;
-          if (amount <= min) {
-            ack?.({ ok: false, error: `Bid must be > ${min}` });
-            return;
-          }
+            if (!listing) throw new Error('Auction listing not found');
+            if (listing.status !== 'ACTIVE') throw new Error('Auction is not active');
 
-          result = await prisma.bid.create({
-            data: { listingId, userId, amount },
-            include: { user: { select: { id: true, email: true, phone: true, name: true } } },
+            const currentHighest = listing.bids[0]?.amount ?? listing.startingBid;
+
+            // 2. Validate bid amount
+            if (amount <= currentHighest) {
+              throw new Error(`Bid must be higher than ₹${currentHighest.toLocaleString('en-IN')}`);
+            }
+
+            // 3. Create the bid
+            return await tx.bid.create({
+              data: { listingId: auctionId, userId: bidderId, amount },
+              include: { user: { select: { id: true, name: true } } },
+            });
           });
         }
 
-        // Broadcast to all users in the listing room
-        io.to(`listing:${listingId}`).emit('bid:created', { bid: result });
+        // Broadcast updated bid to everyone in the auction room
+        io?.to(`auction:${auctionId}`).emit('bidUpdated', { bid: result });
 
-        // Send outbid notifications to other bidders
-        await notifyOutbid(io, listingId, userId, amount);
-
-        // Process auto-bids
-        await processAutoBids(io, listingId, userId);
+        // Helper: Notify other bidders and process auto-bids
+        await notifyOutbid(auctionId, bidderId, amount);
+        await processAutoBids(auctionId, bidderId);
 
         ack?.({ ok: true, bid: result });
       } catch (e) {
-        ack?.({ ok: false, error: e instanceof Error ? e.message : 'invalid payload' });
-      }
-    });
-
-    // Set up auto-bid
-    socket.on('autobid:setup', async (payload, ack) => {
-      try {
-        const { listingId, userId, maxLimit, increment } = autoBidSchema.parse(payload);
-
-        let result;
-        if (useMemoryStore) {
-          result = devStore.createAutoBidConfig(userId, listingId, maxLimit, increment);
-        } else {
-          result = await prisma.autoBidConfig.upsert({
-            where: {
-              userId_listingId: { userId, listingId },
-            },
-            create: { userId, listingId, maxLimit, increment, isActive: true },
-            update: { maxLimit, increment, isActive: true },
-          });
-        }
-
-        socket.join(`autobid:${userId}`);
-        ack?.({ ok: true, autoBidConfig: result });
-      } catch (e) {
-        ack?.({ ok: false, error: e instanceof Error ? e.message : 'invalid payload' });
-      }
-    });
-
-    // Cancel auto-bid
-    socket.on('autobid:cancel', async (payload, ack) => {
-      try {
-        const { configId } = z.object({ configId: z.string().min(1) }).parse(payload);
-
-        if (useMemoryStore) {
-          devStore.deleteAutoBidConfig(configId);
-        } else {
-          await prisma.autoBidConfig.update({
-            where: { id: configId },
-            data: { isActive: false },
-          });
-        }
-
-        ack?.({ ok: true });
-      } catch (e) {
-        ack?.({ ok: false, error: e instanceof Error ? e.message : 'invalid payload' });
-      }
-    });
-
-    // Register push token
-    socket.on('push:register', async (payload, ack) => {
-      try {
-        const { userId, token, platform } = pushTokenSchema.parse(payload);
-
-        if (useMemoryStore) {
-          devStore.registerPushToken(userId, token, platform);
-        } else {
-          await prisma.pushToken.upsert({
-            where: { token },
-            create: { userId, token, platform },
-            update: { userId, isActive: true },
-          });
-        }
-
-        ack?.({ ok: true });
-      } catch (e) {
-        ack?.({ ok: false, error: e instanceof Error ? e.message : 'invalid payload' });
-      }
-    });
-
-    // Subscribe to notifications
-    socket.on('notifications:subscribe', async (payload, ack) => {
-      try {
-        const { userId } = z.object({ userId: z.string().min(1) }).parse(payload);
-        await socket.join(`user:${userId}`);
-        ack?.({ ok: true });
-      } catch (e) {
-        ack?.({ ok: false, error: e instanceof Error ? e.message : 'invalid payload' });
-      }
-    });
-
-    // Mark notification as read
-    socket.on('notification:read', async (payload, ack) => {
-      try {
-        const { notificationId } = z.object({ notificationId: z.string().min(1) }).parse(payload);
-
-        if (useMemoryStore) {
-          devStore.markNotificationRead(notificationId);
-        } else {
-          await prisma.notification.update({
-            where: { id: notificationId },
-            data: { read: true },
-          });
-        }
-
-        ack?.({ ok: true });
-      } catch (e) {
-        ack?.({ ok: false, error: e instanceof Error ? e.message : 'invalid payload' });
-      }
-    });
-
-    // Payment status update (from client after Stripe confirmation)
-    socket.on('payment:confirm', async (payload, ack) => {
-      try {
-        const { paymentIntentId, status } = z.object({
-          paymentIntentId: z.string().min(1),
-          status: z.enum(['succeeded', 'failed', 'canceled']),
-        }).parse(payload);
-
-        let paymentStatus: PaymentStatus;
-        if (status === 'succeeded') {
-          paymentStatus = 'SUCCEEDED';
-        } else if (status === 'canceled') {
-          paymentStatus = 'CANCELLED';
-        } else {
-          paymentStatus = 'FAILED';
-        }
-
-        let payment;
-        if (useMemoryStore) {
-          const pay = devStore.listPayments({}).find((p) => p.stripePaymentIntentId === paymentIntentId);
-          if (pay) {
-            payment = devStore.updatePaymentStatus(pay.id, paymentStatus);
-          }
-        } else {
-          payment = await prisma.payment.update({
-            where: { stripePaymentIntentId: paymentIntentId },
-            data: { status: paymentStatus },
-          });
-        }
-
-        if (payment) {
-          io.emit('payment:updated', { payment });
-        }
-
-        ack?.({ ok: true, payment });
-      } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : 'invalid payload';
-        ack?.({ ok: false, error: errorMessage });
+        console.error('placeBid error:', e);
+        ack?.({ ok: false, error: e instanceof Error ? e.message : 'Invalid bid request' });
       }
     });
 
     socket.on('disconnect', () => {
-      console.log(`Socket disconnected: ${socket.id}`);
+      console.log(`User disconnected: ${userId} (Socket: ${socket.id})`);
+      io?.emit('userDisconnected', { userId, socketId: socket.id });
     });
   });
 
   return io;
 }
 
-// Helper functions
-async function notifyOutbid(io: any, listingId: string, currentUserId: string, amount: number) {
+/**
+ * Utility to notify users when they are outbid
+ */
+async function notifyOutbid(listingId: string, currentUserId: string, amount: number) {
   try {
+    const io = getIo();
+    if (!io) return;
+
     if (useMemoryStore) {
       const listing = devStore.listListings({}).find((l) => l.id === listingId);
       const outbidUsers = devStore
@@ -286,6 +192,7 @@ async function notifyOutbid(io: any, listingId: string, currentUserId: string, a
           'You have been outbid!',
           `A new bid of ₹${amount.toLocaleString('en-IN')} was placed on ${listing?.title ?? 'a listing'}`
         );
+        // Using private user room for notifications
         io.to(`user:${userId}`).emit('notification:new', { notification });
       }
     } else {
@@ -313,8 +220,14 @@ async function notifyOutbid(io: any, listingId: string, currentUserId: string, a
   }
 }
 
-async function processAutoBids(io: any, listingId: string, currentUserId: string) {
+/**
+ * Automatically handle auto-bids if configured
+ */
+async function processAutoBids(listingId: string, currentUserId: string) {
   try {
+    const io = getIo();
+    if (!io) return;
+
     if (useMemoryStore) {
       devStore.processAutoBids(listingId);
     } else {
@@ -343,9 +256,10 @@ async function processAutoBids(io: any, listingId: string, currentUserId: string
               amount: newAmount,
               autoBidConfigId: config.id,
             },
+            include: { user: { select: { id: true, name: true } } },
           });
 
-          io.to(`listing:${listingId}`).emit('bid:created', { bid });
+          io.to(`auction:${listingId}`).emit('bidUpdated', { bid });
 
           await prisma.notification.create({
             data: {
@@ -366,7 +280,7 @@ async function processAutoBids(io: any, listingId: string, currentUserId: string
               userId: config.userId,
               type: 'OUTBID',
               title: 'Auto-bid Limit Reached',
-              message: `Your auto-bid limit has been reached`,
+              message: `Your auto-bid limit has been reached on ${listingId}`,
             },
           });
         }
@@ -375,4 +289,15 @@ async function processAutoBids(io: any, listingId: string, currentUserId: string
   } catch (error) {
     console.error('Error processing auto-bids:', error);
   }
+}
+
+/**
+ * Public functions to emit auction status events from routes
+ */
+export function emitAuctionStarted(auctionId: string) {
+  io?.to(`auction:${auctionId}`).emit('auctionStarted', { auctionId, timestamp: new Date() });
+}
+
+export function emitAuctionEnded(auctionId: string, winnerId?: string) {
+  io?.to(`auction:${auctionId}`).emit('auctionEnded', { auctionId, winnerId, timestamp: new Date() });
 }

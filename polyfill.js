@@ -37,4 +37,19 @@
     global.nativeModuleProxy = new Proxy({}, { get: () => ({}) });
   }
 
+  // 4. queueMicrotask Polyfill
+  // Required by Reanimated 4 and modern JS environments when the engine doesn't provide it.
+  if (typeof global.queueMicrotask !== 'function') {
+    global.queueMicrotask = (callback) => {
+      Promise.resolve().then(callback).catch(error => {
+        // Fallback for fatal errors in microtasks
+        if (global.__reportFatalRemoteError) {
+          global.__reportFatalRemoteError(error);
+        } else {
+          console.error('Unhandled microtask error:', error);
+        }
+      });
+    };
+  }
+
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof global !== 'undefined' ? global : this));

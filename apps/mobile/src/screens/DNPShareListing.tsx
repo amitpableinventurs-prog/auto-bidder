@@ -61,6 +61,28 @@ export default function DNPShareListingScreen() {
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [shareLink, setShareLink] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [shareType, setShareType] = useState<'QUICK' | 'LEAD'>('QUICK');
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerPhone, setBuyerPhone] = useState('');
+
+  const fetchListings = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/app/bootstrap`);
+      const data = await response.json();
+      if (response.ok && data.listings) {
+        setListings(data.listings);
+      }
+    } catch (error) {
+      console.error('Fetch Listings Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchListings();
+  }, []);
 
   const filteredListings = listings.filter(listing =>
     listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,6 +91,18 @@ export default function DNPShareListingScreen() {
 
   const handleShareListing = async (listing: any) => {
     setSelectedListing(listing);
+    setShareType('QUICK');
+    setBuyerName('');
+    setBuyerPhone('');
+    setShowShareModal(true);
+  };
+
+  const generateLink = async () => {
+    if (shareType === 'LEAD' && (!buyerName || !buyerPhone)) {
+      Alert.alert('Error', 'Please enter buyer name and phone');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/share-listing`, {
@@ -78,15 +112,16 @@ export default function DNPShareListingScreen() {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          listingId: listing.id,
+          listingId: selectedListing.id,
           shareSource: 'DIRECT',
+          buyerName: shareType === 'LEAD' ? buyerName : undefined,
+          buyerPhone: shareType === 'LEAD' ? buyerPhone : undefined,
         }),
       });
 
       const data = await response.json();
       if (response.ok) {
         setShareLink(data.shareLink);
-        setShowShareModal(true);
       } else {
         Alert.alert('Error', data.error || 'Failed to generate share link');
       }
@@ -193,45 +228,102 @@ export default function DNPShareListingScreen() {
                 <Image source={{ uri: selectedListing.imageUrl }} style={styles.selectedImage} />
                 <View style={styles.selectedInfo}>
                   <Text style={styles.selectedTitle}>{selectedListing.title}</Text>
-                  <Text style={styles.selectedPrice}>₹{selectedListing.demandPrice.toLocaleString()}</Text>
+                  <Text style={styles.selectedPrice}>₹{selectedListing.demandPrice?.toLocaleString()}</Text>
                 </View>
               </View>
             )}
 
-            <View style={styles.shareLinkBox}>
-              <Text style={styles.shareLink} numberOfLines={2}>{shareLink}</Text>
-              <Pressable style={styles.copyBtn}>
-                <Ionicons name="copy-outline" size={18} color={COLORS.white} />
-              </Pressable>
-            </View>
+            {!shareLink ? (
+              <View>
+                <Text style={styles.shareTypeTitle}>How do you want to share?</Text>
+                <View style={styles.shareTypeTabs}>
+                  <Pressable
+                    style={[styles.shareTypeTab, shareType === 'QUICK' && styles.shareTypeTabActive]}
+                    onPress={() => setShareType('QUICK')}
+                  >
+                    <Ionicons name="flash-outline" size={18} color={shareType === 'QUICK' ? COLORS.white : COLORS.grey} />
+                    <Text style={[styles.shareTypeTabText, shareType === 'QUICK' && styles.shareTypeTabTextActive]}>Quick Share</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.shareTypeTab, shareType === 'LEAD' && styles.shareTypeTabActive]}
+                    onPress={() => setShareType('LEAD')}
+                  >
+                    <Ionicons name="person-add-outline" size={18} color={shareType === 'LEAD' ? COLORS.white : COLORS.grey} />
+                    <Text style={[styles.shareTypeTabText, shareType === 'LEAD' && styles.shareTypeTabTextActive]}>Share With Lead</Text>
+                  </Pressable>
+                </View>
 
-            <Text style={styles.shareViaTitle}>Share Via</Text>
-            <View style={styles.shareOptions}>
-              <ShareOption
-                icon="logo-whatsapp"
-                label="WhatsApp"
-                color="#25D366"
-                onPress={() => handleShareVia('whatsapp')}
-              />
-              <ShareOption
-                icon="logo-facebook"
-                label="Facebook"
-                color="#1877F2"
-                onPress={() => handleShareVia('facebook')}
-              />
-              <ShareOption
-                icon="send"
-                label="Telegram"
-                color="#0088cc"
-                onPress={() => handleShareVia('telegram')}
-              />
-              <ShareOption
-                icon="copy-outline"
-                label="Copy Link"
-                color={COLORS.secondary}
-                onPress={() => handleShareVia('copy')}
-              />
-            </View>
+                {shareType === 'LEAD' && (
+                  <View style={styles.leadForm}>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Prospect Buyer Name"
+                      value={buyerName}
+                      onChangeText={setBuyerName}
+                    />
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Prospect Buyer Phone"
+                      keyboardType="phone-pad"
+                      value={buyerPhone}
+                      onChangeText={setBuyerPhone}
+                    />
+                  </View>
+                )}
+
+                <Pressable style={styles.generateBtn} onPress={generateLink}>
+                  <Text style={styles.generateBtnText}>Generate Share Link</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View>
+                <View style={styles.shareLinkBox}>
+                  <Text style={styles.shareLink} numberOfLines={2}>{shareLink}</Text>
+                  <Pressable style={styles.copyBtn}>
+                    <Ionicons name="copy-outline" size={18} color={COLORS.white} />
+                  </Pressable>
+                </View>
+
+                <Text style={styles.shareViaTitle}>Share Via</Text>
+                <View style={styles.shareOptions}>
+                  <ShareOption
+                    icon="logo-whatsapp"
+                    label="WhatsApp"
+                    color="#25D366"
+                    onPress={() => handleShareVia('whatsapp')}
+                  />
+                  <ShareOption
+                    icon="logo-facebook"
+                    label="Facebook"
+                    color="#1877F2"
+                    onPress={() => handleShareVia('facebook')}
+                  />
+                  <ShareOption
+                    icon="send"
+                    label="Telegram"
+                    color="#0088cc"
+                    onPress={() => handleShareVia('telegram')}
+                  />
+                  <ShareOption
+                    icon="copy-outline"
+                    label="Copy Link"
+                    color={COLORS.secondary}
+                    onPress={() => handleShareVia('copy')}
+                  />
+                </View>
+
+                <Pressable
+                  style={styles.resetBtn}
+                  onPress={() => {
+                    setShareLink('');
+                    setBuyerName('');
+                    setBuyerPhone('');
+                  }}
+                >
+                  <Text style={styles.resetBtnText}>Share again with different lead</Text>
+                </Pressable>
+              </View>
+            )}
 
             <View style={styles.infoBox}>
               <Ionicons name="information-circle" size={20} color={COLORS.accent} />
@@ -506,6 +598,77 @@ const styles = StyleSheet.create({
     color: '#9a3412',
     flex: 1,
     lineHeight: 18,
+  },
+  shareTypeTitle: {
+    ...TYPOGRAPHY.bodySmall,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.black2,
+    marginBottom: 12,
+  },
+  shareTypeTabs: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  shareTypeTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: COLORS.lightGrey2,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  shareTypeTabActive: {
+    backgroundColor: COLORS.secondary,
+    borderColor: COLORS.secondary,
+  },
+  shareTypeTabText: {
+    ...TYPOGRAPHY.bodySmall,
+    fontSize: 12,
+    color: COLORS.grey,
+  },
+  shareTypeTabTextActive: {
+    color: COLORS.white,
+    fontFamily: FONTS.poppins.bold,
+  },
+  leadForm: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  formInput: {
+    height: 48,
+    backgroundColor: COLORS.lightGrey2,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.black2,
+  },
+  generateBtn: {
+    backgroundColor: COLORS.secondary,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  generateBtnText: {
+    ...TYPOGRAPHY.bodySmall,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.white,
+  },
+  resetBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  resetBtnText: {
+    ...TYPOGRAPHY.bodySmall,
+    fontSize: 12,
+    color: COLORS.secondary,
+    textDecorationLine: 'underline',
   },
   loadingOverlay: {
     position: 'absolute',

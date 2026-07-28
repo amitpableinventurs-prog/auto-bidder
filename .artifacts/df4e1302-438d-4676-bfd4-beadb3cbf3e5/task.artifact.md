@@ -1,8 +1,0 @@
-- [x] Update `MainHome.tsx` brand section UI
-    - [x] Change initial brands count to 20
-    - [x] Update brand grid and item styling (3-column, light blue items, white section background)
-    - [x] Remove brand counts and adjust logo sizes
-    - [x] Update "VIEW ALL" / "VIEW LESS" button styling
-- [x] Update `CarSearchFilter.tsx` brand section UI
-    - [x] Apply same styling and 20-brand count for consistency
-- [x] Verify UI on both screens

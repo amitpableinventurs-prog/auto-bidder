@@ -1,3 +1,0 @@
-- `[x]` Update brand grid rendering logic in `FillCarDetails.tsx` to use local assets.
-- `[x]` Ensure `ALL_BRANDS` data is correctly mapped to `PRIMARY_BRANDS`.
-- `[x]` Verify brand icon visibility and selection functionality.

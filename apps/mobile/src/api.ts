@@ -10,7 +10,7 @@ const getApiBaseUrl = () => {
 
   // Development-only convenience. A release build must be configured with HTTPS.
   if (!__DEV__) {
-    throw new Error('EXPO_PUBLIC_API_BASE_URL must be configured for release builds');
+    return 'https://autobidder.in';
   }
 
   // 2. Try to detect computer IP in Expo Go

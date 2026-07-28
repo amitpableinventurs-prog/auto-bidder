@@ -15,6 +15,8 @@ const schema = z.object({
   ADMIN_EMAIL: z.string().email().default('admin@autobidder.in'),
   ADMIN_PASSWORD: z.string().min(8).default('Admin@123'),
   AUTO_BIDDER_STORE: z.enum(['database', 'memory']).default('database'),
+  RESEND_API_KEY: z.string().default(''),
+  RESEND_FROM_EMAIL: z.string().email().default('onboarding@resend.dev'),
 });
 
 type Env = z.infer<typeof schema>;
@@ -31,6 +33,8 @@ export const env: Env = schema.parse({
   ADMIN_EMAIL: process.env.ADMIN_EMAIL,
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
   AUTO_BIDDER_STORE: process.env.AUTO_BIDDER_STORE,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
 });
 
 /** Origins are comma-separated so a deployed admin panel and web client can both be allowed. */

@@ -271,7 +271,7 @@ function CarCard({ car, onPress }: { car: ApiListing, onPress: () => void }) {
         <View style={styles.cardFooter}>
           <View>
              <Text style={styles.bidLabel}>Current Bid</Text>
-             <Text style={styles.bidValue}><Text style={{ fontFamily: undefined }}>₹</Text>{' '}{car.startingBid.toLocaleString('en-IN')}</Text>
+             <Text style={styles.bidValue}>{formatCurrency(car.startingBid)}</Text>
           </View>
           <View style={styles.bidBtn}>
              <Text style={styles.bidBtnText}>Bid Now</Text>

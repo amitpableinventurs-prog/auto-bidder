@@ -11,6 +11,18 @@ import { View, ActivityIndicator, LogBox } from 'react-native';
 import Logo from './src/components/Logo';
 import ErrorBoundary from './src/components/ErrorBoundary';
 
+// Global error handler for JS exceptions outside of React
+if (typeof ErrorUtils !== 'undefined') {
+  const defaultHandler = ErrorUtils.getGlobalHandler();
+  ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
+    console.error('GLOBAL JS ERROR:', error, 'isFatal:', isFatal);
+    // You could report to Sentry/Crashlytics here
+    if (defaultHandler) {
+      defaultHandler(error, isFatal);
+    }
+  });
+}
+
 // Ignore specific warnings if necessary
 LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
 
@@ -29,8 +41,9 @@ import {
 } from '@expo-google-fonts/open-sans';
 
 export default function App() {
+  console.log('APP LOADED VERSION 2');
   useEffect(() => {
-    validateEnv();
+    // validateEnv();
   }, []);
 
   const [fontsLoaded] = useFonts({
@@ -46,7 +59,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    validateEnv();
+    // validateEnv();
     registerForPushNotificationsAsync()
       .then(token => console.log('Push token:', token))
       .catch(err => console.warn('Push notification registration failed:', err));

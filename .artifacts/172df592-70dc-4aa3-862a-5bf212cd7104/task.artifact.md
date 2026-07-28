@@ -1,5 +1,0 @@
-- [x] Remove redundant Reanimated plugin from root `babel.config.js`
-- [x] Remove redundant Reanimated plugin from `apps/mobile/babel.config.js`
-- [x] Disable automatic plugin inclusion in `babel-preset-expo` (root)
-- [x] Disable automatic plugin inclusion in `babel-preset-expo` (mobile)
-- [ ] Verify fix by suggesting clear cache command to user

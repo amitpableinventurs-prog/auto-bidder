@@ -1,6 +1,0 @@
-- [x] Research Babel configuration mismatch
-- [x] Update `apps/mobile/babel.config.js`
-- [x] Instruct user to clear Metro cache and restart
-- [x] Research Metro `transformFile` error
-- [x] Update `metro.config.js` with safer overrides
-- [ ] Verify fix with user

@@ -70,18 +70,45 @@ export default function DNPLeadsScreen() {
   const { user, token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [loading, setLoading] = useState(false);
-  const [leads, setLeads] = useState(MOCK_LEADS);
+  const [leads, setLeads] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
+  const fetchLeads = async () => {
+    setLoading(true);
+    try {
+      const url = new URL(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/leads`);
+      if (filterStatus) url.searchParams.append('status', filterStatus);
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setLeads(data.leads || []);
+      }
+    } catch (error) {
+      console.error('Fetch Leads Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, [filterStatus]);
+
   const filteredLeads = leads.filter(lead => {
-    const matchesStatus = !filterStatus || lead.status === filterStatus;
-    const matchesSearch = !searchQuery || 
-      lead.buyerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.vehicleTitle.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
+    const buyerName = lead.buyerName || '';
+    const vehicleTitle = lead.sharedListing?.listing?.title || '';
+
+    return !searchQuery ||
+      buyerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vehicleTitle.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const handleStatusUpdate = async (leadId: string, newStatus: string, notes?: string) => {
@@ -136,7 +163,7 @@ export default function DNPLeadsScreen() {
     >
       <View style={styles.leadHeader}>
         <View style={styles.leadInfo}>
-          <Text style={styles.buyerName}>{lead.buyerName}</Text>
+          <Text style={styles.buyerName}>{lead.buyerName || 'Unnamed Buyer'}</Text>
           <Text style={styles.buyerPhone}>{lead.buyerPhone}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(lead.status) + '15' }]}>
@@ -148,11 +175,11 @@ export default function DNPLeadsScreen() {
 
       <View style={styles.leadVehicle}>
         <View style={styles.vehicleInfo}>
-          <Text style={styles.vehicleTitle}>{lead.vehicleTitle}</Text>
-          <Text style={styles.lastActivity}>Last activity: {lead.lastActivity}</Text>
+          <Text style={styles.vehicleTitle}>{lead.sharedListing?.listing?.title}</Text>
+          <Text style={styles.lastActivity}>Created: {new Date(lead.createdAt).toLocaleDateString()}</Text>
         </View>
         <Text style={styles.commission}>
-          Expected: ₹{lead.expectedCommission.toLocaleString()}
+          {lead.actualCommission > 0 ? `Earned: ₹${lead.actualCommission.toLocaleString()}` : `Expected: ₹${lead.expectedCommission.toLocaleString()}`}
         </Text>
       </View>
 
@@ -261,7 +288,7 @@ export default function DNPLeadsScreen() {
 
             <View style={styles.leadDetail}>
               <Text style={styles.leadDetailName}>{selectedLead.buyerName}</Text>
-              <Text style={styles.leadDetailVehicle}>{selectedLead.vehicleTitle}</Text>
+              <Text style={styles.leadDetailVehicle}>{selectedLead.sharedListing?.listing?.title}</Text>
               <Text style={styles.leadDetailCurrent}>
                 Current Status: <Text style={{ color: getStatusColor(selectedLead.status) }}>
                   {getStatusLabel(selectedLead.status)}

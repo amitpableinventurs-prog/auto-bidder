@@ -7,10 +7,14 @@ import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import bcrypt from 'bcrypt';
+import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'node:url';
 import { devStore } from '../devStore.js';
 import { env } from '../env.js';
 import { prisma } from '../prisma.js';
+import { emitAuctionStarted, emitAuctionEnded } from '../socket.js';
+import { EmailService } from '../services/emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -100,6 +104,19 @@ function userSelect() {
     kycStatus: true,
     isFeatured: true,
   };
+}
+
+const otpRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: { error: 'Too many OTP requests. Please try again after an hour.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.body.email || req.ip, // Rate limit by email if provided
+});
+
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 function listingInclude() {
@@ -200,6 +217,101 @@ export function createApiRouter() {
 
   // Every remaining /admin API endpoint requires an authenticated admin token.
   router.use('/admin', authenticate, authorize(['ADMIN']));
+
+  // Email Auth endpoints
+  post('/auth/send-otp', otpRateLimiter, async (req: Request, res: Response) => {
+    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+
+    // Prevent duplicate OTP requests within 60 seconds
+    const existingOtp = await prisma.oTP.findUnique({ where: { email } });
+    if (existingOtp && Date.now() - existingOtp.lastResentAt.getTime() < 60000) {
+      return res.status(429).json({ error: 'Please wait 60 seconds before requesting another OTP.' });
+    }
+
+    const otp = generateOTP();
+    const hashedCode = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await prisma.oTP.upsert({
+      where: { email },
+      update: { hashedCode, expiresAt, attempts: 0, lastResentAt: new Date() },
+      create: { email, hashedCode, expiresAt },
+    });
+
+    // Logging for debugging (should be removed or masked in production)
+    console.log(`[AUTH] OTP generated for ${email}: ${otp}`);
+
+    const result = await EmailService.sendOtp(email, otp);
+    if (!result.success) {
+      return res.status(500).json({ error: 'Failed to send OTP email.' });
+    }
+
+    res.json({ ok: true, message: 'OTP sent successfully.' });
+  });
+
+  post('/auth/verify-otp', async (req: Request, res: Response) => {
+    const { email, otp } = z.object({ email: z.string().email(), otp: z.string().length(6) }).parse(req.body);
+
+    const record = await prisma.oTP.findUnique({ where: { email } });
+
+    if (!record) {
+      return res.status(404).json({ error: 'No OTP record found for this email.' });
+    }
+
+    if (Date.now() > record.expiresAt.getTime()) {
+      await prisma.oTP.delete({ where: { email } });
+      return res.status(401).json({ error: 'OTP has expired.' });
+    }
+
+    if (record.attempts >= 3) {
+      await prisma.oTP.delete({ where: { email } });
+      return res.status(401).json({ error: 'Maximum verification attempts exceeded. Please request a new OTP.' });
+    }
+
+    const isValid = await bcrypt.compare(otp, record.hashedCode);
+
+    if (!isValid) {
+      await prisma.oTP.update({
+        where: { email },
+        data: { attempts: { increment: 1 } },
+      });
+      return res.status(401).json({ error: 'Invalid OTP.' });
+    }
+
+    // Success: delete OTP
+    await prisma.oTP.delete({ where: { email } });
+
+    res.json({ ok: true, message: 'OTP verified successfully.' });
+  });
+
+  post('/auth/resend-otp', otpRateLimiter, async (req: Request, res: Response) => {
+    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+
+    const existingOtp = await prisma.oTP.findUnique({ where: { email } });
+
+    if (existingOtp && Date.now() - existingOtp.lastResentAt.getTime() < 60000) {
+      return res.status(429).json({ error: 'Please wait 60 seconds before resending OTP.' });
+    }
+
+    const otp = generateOTP();
+    const hashedCode = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await prisma.oTP.upsert({
+      where: { email },
+      update: { hashedCode, expiresAt, attempts: 0, lastResentAt: new Date() },
+      create: { email, hashedCode, expiresAt },
+    });
+
+    console.log(`[AUTH] OTP resent for ${email}: ${otp}`);
+
+    const result = await EmailService.sendOtp(email, otp);
+    if (!result.success) {
+      return res.status(500).json({ error: 'Failed to resend OTP email.' });
+    }
+
+    res.json({ ok: true, message: 'OTP resent successfully.' });
+  });
 
   // Auth endpoints
   post('/auth/otp/request', async (_req: Request, res: Response) => {
@@ -2240,9 +2352,11 @@ export function createApiRouter() {
     const id = req.params.id;
     if (useMemoryStore) {
       devStore.updateListing(id, { status: 'SOLD' });
+      emitAuctionEnded(id);
       return res.json({ ok: true });
     }
     await prisma.listing.update({ where: { id }, data: { status: 'SOLD' } });
+    emitAuctionEnded(id);
     res.json({ ok: true });
   });
 
@@ -2272,9 +2386,16 @@ patch('/admin/listings/:id/status', async (req: Request, res: Response) => {
     const id = req.params.id;
     const status = listingStatusSchema.parse(req.body.status);
     if (useMemoryStore) {
-      return res.json({ listing: devStore.updateListing(id, { status }) });
+      const listing = devStore.updateListing(id, { status });
+      if (status === 'ACTIVE') emitAuctionStarted(id);
+      if (status === 'SOLD') emitAuctionEnded(id);
+      return res.json({ listing });
     }
     const listing = await prisma.listing.update({ where: { id }, data: { status }, include: listingInclude() });
+
+    if (status === 'ACTIVE') emitAuctionStarted(id);
+    if (status === 'SOLD') emitAuctionEnded(id);
+
     res.json({ listing });
   });
 
@@ -2424,13 +2545,31 @@ patch('/admin/listings/:id/status', async (req: Request, res: Response) => {
           orderBy: { calculatedAt: 'desc' },
           where: { status: 'PAID' },
         },
+        // Adding buyer leads to recent activity
+        referralsAsBuyer: {
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            sharedListing: {
+              include: { listing: { select: { title: true } } }
+            }
+          }
+        }
       },
     });
     
     if (!profile) {
       return errorResponse(res, 404, 'DNP profile not found');
     }
-    
+
+    // Fetch buyer leads directly if the relation doesn't cover everything needed
+    const recentLeads = await (prisma as any).buyerLead.findMany({
+      where: { sharedListing: { dnpProfileId: profile.id } },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: { sharedListing: { include: { listing: { select: { title: true } } } } }
+    });
+
     res.json({
       stats: {
         totalEarnings: profile.totalEarnings,
@@ -2449,6 +2588,7 @@ patch('/admin/listings/:id/status', async (req: Request, res: Response) => {
         referrals: profile.referrals,
         sharedListings: profile.sharedListings,
         commissions: profile.commissions,
+        leads: recentLeads,
       },
     });
   });
@@ -2495,7 +2635,9 @@ patch('/admin/listings/:id/status', async (req: Request, res: Response) => {
     const userId = (req as any).user.userId;
     const body = z.object({
       listingId: z.string(),
-      shareSource: z.enum(['WHATSAPP', 'FACEBOOK', 'TELEGRAM', 'SMS', 'COPY_LINK', 'QR_CODE']),
+      shareSource: z.enum(['WHATSAPP', 'FACEBOOK', 'TELEGRAM', 'SMS', 'COPY_LINK', 'QR_CODE', 'DIRECT']),
+      buyerName: z.string().optional(),
+      buyerPhone: z.string().optional(),
     }).parse(req.body);
     
     if (useMemoryStore) {
@@ -2523,7 +2665,25 @@ patch('/admin/listings/:id/status', async (req: Request, res: Response) => {
         shareSource: body.shareSource,
       },
     });
-    
+
+    // Create a buyer lead if details provided
+    if (body.buyerName || body.buyerPhone) {
+      await (prisma as any).buyerLead.create({
+        data: {
+          sharedListingId: sharedListing.id,
+          buyerName: body.buyerName,
+          buyerPhone: body.buyerPhone,
+          status: 'SHARED',
+        }
+      });
+
+      // Update shared listing lead counter
+      await (prisma as any).sharedListing.update({
+        where: { id: sharedListing.id },
+        data: { totalLeads: { increment: 1 } },
+      });
+    }
+
     // Update profile counter
     await (prisma as any).dNPProfile.update({
       where: { id: profile.id },

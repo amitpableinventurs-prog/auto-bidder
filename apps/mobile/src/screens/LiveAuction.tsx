@@ -9,6 +9,7 @@ import {
   Text,
   View,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from "@expo/vector-icons";
@@ -60,12 +61,12 @@ export default function LiveAuction() {
     if (listingId) {
       fetchListing(!listing);
 
-      // Connect to socket and join listing room
+      // Connect to socket and join auction room
       socketService.connect();
-      socketService.joinListing(listingId);
+      socketService.joinAuction(listingId);
 
       // Listen for real-time bids
-      socketService.onBidCreated(({ bid }) => {
+      socketService.onBidUpdated(({ bid }) => {
         if (!bid || !bid.id || bid.amount === undefined) return;
 
         setListing(prev => {
@@ -82,6 +83,17 @@ export default function LiveAuction() {
         });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       });
+
+      // Listen for auction events
+      socketService.onAuctionStarted(() => {
+        setListing(prev => prev ? { ...prev, status: 'ACTIVE' } : null);
+        Alert.alert('Auction Started', 'The auction for this vehicle has started!');
+      });
+
+      socketService.onAuctionEnded(() => {
+        setListing(prev => prev ? { ...prev, status: 'SOLD' } : null);
+        Alert.alert('Auction Ended', 'This auction has concluded.');
+      });
     }
 
     const timer = setInterval(() => {
@@ -91,8 +103,10 @@ export default function LiveAuction() {
     return () => {
         clearInterval(timer);
         if (listingId) {
-          socketService.leaveListing(listingId);
-          socketService.offBidCreated();
+          socketService.leaveAuction(listingId);
+          socketService.offBidUpdated();
+          socketService.offAuctionStarted();
+          socketService.offAuctionEnded();
         }
     };
   }, [listingId]);

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ApiUser, verifyOtp, setAuthToken, registerPushToken, getUser, register as apiRegister, googleAuth } from './api';
 import { registerForPushNotificationsAsync } from './utils/notifications';
+import { socketService } from './utils/socket';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (savedToken) {
           setToken(savedToken);
           setAuthToken(savedToken);
+          socketService.connect(savedToken);
 
           if (savedUserJson) {
             const savedUser = JSON.parse(savedUserJson);
@@ -70,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.user);
       setToken(res.token);
       setAuthToken(res.token);
+      socketService.connect(res.token);
 
       if (Platform.OS === 'web') {
         await AsyncStorage.setItem('auth_token', res.token);
@@ -95,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.user);
       setToken(res.token);
       setAuthToken(res.token);
+      socketService.connect(res.token);
 
       if (Platform.OS === 'web') {
         await AsyncStorage.setItem('auth_token', res.token);
@@ -117,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setToken(null);
     setAuthToken(null);
+    socketService.disconnect();
     if (Platform.OS === 'web') {
       await AsyncStorage.removeItem('auth_token');
     } else {
@@ -131,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.user);
       setToken(res.token);
       setAuthToken(res.token);
+      socketService.connect(res.token);
 
       if (Platform.OS === 'web') {
         await AsyncStorage.setItem('auth_token', res.token);

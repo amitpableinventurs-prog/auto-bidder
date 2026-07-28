@@ -35,6 +35,18 @@ model User {
   referrals Referral[]
 }
 
+model OTP {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  hashedCode   String
+  expiresAt    DateTime
+  attempts     Int      @default(0)
+  lastResentAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([email])
+}
+
 enum Role {
   BUYER
   SELLER

@@ -1,3 +1,0 @@
-- [ ] Run Gradle build for release APK
-- [ ] Verify APK generation
-- [ ] Provide path to the generated APK

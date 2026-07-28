@@ -1,4 +1,3 @@
-import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 
@@ -11,7 +10,15 @@ export async function registerForPushNotificationsAsync() {
   }
 
   try {
-    // Dynamic require to avoid crashing in Expo Go SDK 53+
+    // Dynamic require to avoid crashing if native modules are missing
+    let Device;
+    try {
+      Device = require('expo-device');
+    } catch (e) {
+      console.warn('expo-device native module not found, falling back to safe defaults.');
+      Device = { isDevice: Platform.OS !== 'web' };
+    }
+
     const Notifications = require('expo-notifications');
 
     Notifications.setNotificationHandler({

@@ -64,12 +64,42 @@ export default function DNPListingsScreen() {
   const { user, token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [loading, setLoading] = useState(false);
-  const [listings, setListings] = useState(MOCK_LISTINGS);
+  const [listings, setListings] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('');
+
+  const fetchReferrals = async () => {
+    setLoading(true);
+    try {
+      const url = new URL(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/referrals`);
+      // Map screen filter to API filter if needed, or just fetch all and filter client side
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setListings(data.referrals || []);
+      }
+    } catch (error) {
+      console.error('Fetch Referrals Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReferrals();
+  }, []);
 
   const filteredListings = listings.filter(listing => {
     if (!filterStatus) return true;
-    return listing.approvalStatus === filterStatus;
+    // Map API status to filter status
+    if (filterStatus === 'APPROVED') return listing.status === 'LISTING_APPROVED' || listing.status === 'COMPLETED';
+    if (filterStatus === 'PENDING') return listing.status === 'PENDING' || listing.status === 'REGISTERED' || listing.status === 'LISTING_CREATED';
+    if (filterStatus === 'REJECTED') return listing.status === 'EXPIRED' || listing.status === 'FRAUDULENT';
+    return true;
   });
 
   const getApprovalColor = (status: string) => {
@@ -93,57 +123,71 @@ export default function DNPListingsScreen() {
   const renderListingCard = (listing: any) => (
     <View key={listing.id} style={styles.listingCard}>
       <View style={styles.listingHeader}>
-        <Image source={{ uri: listing.vehicleImage }} style={styles.listingImage} />
+        {listing.listing?.imageUrl ? (
+          <Image source={{ uri: listing.listing.imageUrl }} style={styles.listingImage} />
+        ) : (
+          <View style={[styles.listingImage, { backgroundColor: COLORS.lightGrey2, justifyContent: 'center', alignItems: 'center' }]}>
+            <Ionicons name="car-outline" size={30} color={COLORS.grey} />
+          </View>
+        )}
         <View style={styles.listingInfo}>
-          <Text style={styles.vehicleTitle} numberOfLines={2}>{listing.vehicleTitle}</Text>
+          <Text style={styles.vehicleTitle} numberOfLines={2}>{listing.listing?.title || 'Registration Pending'}</Text>
           <View style={styles.sellerInfo}>
             <Ionicons name="person-outline" size={14} color={COLORS.textMuted} />
-            <Text style={styles.sellerName}>{listing.sellerName}</Text>
+            <Text style={styles.sellerName}>{listing.referredUser?.name || 'Referred User'}</Text>
           </View>
-          <Text style={styles.createdAt}>Referred: {listing.createdAt}</Text>
+          <Text style={styles.createdAt}>Referred: {new Date(listing.createdAt).toLocaleDateString()}</Text>
         </View>
       </View>
 
       <View style={styles.statusGrid}>
         <StatusItem
-          label="Approval"
-          value={listing.approvalStatus}
-          color={getApprovalColor(listing.approvalStatus)}
+          label="Referral"
+          value={listing.status}
+          color={getApprovalColor(listing.status === 'LISTING_APPROVED' || listing.status === 'COMPLETED' ? 'APPROVED' : (listing.status === 'EXPIRED' ? 'REJECTED' : 'PENDING'))}
         />
         <StatusItem
-          label="Inspection"
-          value={listing.inspectionStatus}
-          color={listing.inspectionStatus === 'COMPLETED' ? COLORS.success : COLORS.accent}
+          label="Listing"
+          value={listing.listing?.status || 'N/A'}
+          color={listing.listing?.status === 'ACTIVE' ? COLORS.success : COLORS.secondary}
         />
         <StatusItem
-          label="Auction"
-          value={listing.auctionStatus}
-          color={listing.auctionStatus === 'SOLD' ? COLORS.success : COLORS.secondary}
+          label="Commission"
+          value={listing.commissionPaid ? 'PAID' : 'PENDING'}
+          color={listing.commissionPaid ? COLORS.success : COLORS.accent}
         />
       </View>
 
       <View style={styles.commissionSection}>
         <View style={styles.commissionInfo}>
-          <Text style={styles.commissionLabel}>Commission</Text>
+          <Text style={styles.commissionLabel}>Commission Earned</Text>
           <Text style={styles.commissionAmount}>
-            {listing.commission > 0 ? `₹${listing.commission.toLocaleString()}` : 'N/A'}
+            ₹{(listing.commission || 0).toLocaleString()}
           </Text>
         </View>
-        <View style={[styles.commissionBadge, { backgroundColor: getCommissionColor(listing.commissionStatus) + '15' }]}>
-          <Text style={[styles.commissionStatusText, { color: getCommissionColor(listing.commissionStatus) }]}>
-            {listing.commissionStatus.replace('_', ' ')}
+        <View style={[styles.commissionBadge, { backgroundColor: (listing.commissionPaid ? COLORS.success : COLORS.accent) + '15' }]}>
+          <Text style={[styles.commissionStatusText, { color: listing.commissionPaid ? COLORS.success : COLORS.accent }]}>
+            {listing.commissionPaid ? 'PAID' : 'PENDING'}
           </Text>
         </View>
       </View>
 
       <View style={styles.listingActions}>
-        <Pressable style={styles.actionBtn}>
+        <Pressable
+          style={styles.actionBtn}
+          onPress={() => listing.listingId && navigation.navigate('CarDetail', { id: listing.listingId })}
+          disabled={!listing.listingId}
+        >
           <Ionicons name="eye-outline" size={18} color={COLORS.secondary} />
-          <Text style={styles.actionBtnText}>View Details</Text>
+          <Text style={styles.actionBtnText}>View Listing</Text>
         </Pressable>
-        <Pressable style={styles.actionBtn}>
+        <Pressable
+          style={styles.actionBtn}
+          onPress={() => listing.referredUser?.phone && Alert.alert('Call', `Call ${listing.referredUser.phone}`)}
+          disabled={!listing.referredUser?.phone}
+        >
           <Ionicons name="call-outline" size={18} color={COLORS.success} />
-          <Text style={styles.actionBtnText}>Call Seller</Text>
+          <Text style={styles.actionBtnText}>Call User</Text>
         </Pressable>
       </View>
     </View>

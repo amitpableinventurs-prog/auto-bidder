@@ -1,4 +1,0 @@
-- [x] Replace Kilometers Driven `SelectInput` with `TextInputBox`
-- [x] Refresh "View All Brands" button design and logic
-- [x] Cleanup `kmDriven` modal logic and data
-- [x] Verify changes in `FillCarDetails.tsx`

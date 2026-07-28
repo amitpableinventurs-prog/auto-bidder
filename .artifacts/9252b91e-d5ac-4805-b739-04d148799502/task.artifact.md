@@ -1,4 +1,0 @@
-- [x] Fix brand logo source in `BrandDetails.tsx`
-- [x] Fix brand logo source in `MainHome.tsx`
-- [x] Verify changes for syntax errors
-- [x] Create walkthrough

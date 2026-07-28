@@ -1,0 +1,12 @@
+- [x] Install dependencies (`resend`, `express-rate-limit`, `bcrypt`, `@types/bcrypt`)
+- [x] Update `schema.prisma` with `OTP` model
+- [x] Run Prisma migration
+- [x] Update `.env` and `src/env.ts`
+- [x] Create `src/services/emailTemplates.ts` with HTML templates
+- [x] Create `src/services/emailService.ts` using Resend SDK
+- [x] Implement OTP endpoints in `src/routes/index.ts`
+    - [x] `POST /auth/send-otp`
+    - [x] `POST /auth/verify-otp`
+    - [x] `POST /auth/resend-otp`
+    - [x] Add rate limiting and cooldown logic
+- [x] Final verification and documentation

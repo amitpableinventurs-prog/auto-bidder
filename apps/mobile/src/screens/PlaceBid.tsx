@@ -57,10 +57,10 @@ export default function PlaceBid() {
         .finally(() => setFetching(false));
 
       socketService.connect();
-      socketService.joinListing(listingId);
+      socketService.joinAuction(listingId);
     }
     return () => {
-        if (listingId) socketService.leaveListing(listingId);
+        if (listingId) socketService.leaveAuction(listingId);
     };
   }, [listingId, userId]);
 
@@ -104,7 +104,7 @@ export default function PlaceBid() {
             await placeBidApi(listing.id, userId, offerAmount);
         } catch (apiError: any) {
             console.warn('REST API Bid failed, trying socket', apiError);
-            await socketService.placeBid(listing.id, userId, offerAmount);
+            await socketService.placeBid(listing.id, offerAmount);
         }
 
         Alert.alert('Success', 'Your offer has been submitted successfully!');

@@ -28,6 +28,7 @@ import StarPointsModal from '../components/StarPointsModal';
 import Logo from '../components/Logo';
 import NeedAssistance from '../components/NeedAssistance';
 import ScreenWrapper from '../components/ScreenWrapper';
+import { formatCurrency } from '../utils/safe-formatters';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -397,7 +398,7 @@ export default function CarDetails() {
          <View style={styles.priceCard}>
             <View style={styles.priceCenteredRow}>
                <Text style={styles.askingLabel}>Asking Price :- </Text>
-               <Text style={styles.askingValue}>₹ {listing?.demandPrice?.toLocaleString() || '9,30,100'}</Text>
+               <Text style={styles.askingValue}>{formatCurrency(listing?.demandPrice)}</Text>
             </View>
             <View style={styles.additionalCenteredRow}><Text style={styles.additionalLabel}>Additional Charges: </Text><Text style={styles.additionalValue}>₹ 37,100</Text><Ionicons name="information-circle-outline" size={14} color={COLORS.textLight} /></View>
          </View>
@@ -405,7 +406,7 @@ export default function CarDetails() {
          {myBid && (
            <View style={styles.myOfferCard}>
               <Text style={styles.myOfferLabel}>You offered :-</Text>
-              <Text style={styles.myOfferValue}>₹ {myBid.amount.toLocaleString('en-IN')}</Text>
+              <Text style={styles.myOfferValue}>{formatCurrency(myBid.amount)}</Text>
            </View>
          )}
 
@@ -450,7 +451,7 @@ export default function CarDetails() {
                     <Image source={{ uri: item.imageUrl || 'https://images.unsplash.com/photo-1541899481282-d53bffe3c15d?auto=format&fit=crop&w=400&q=80' }} style={styles.collectionImg} />
                     <View style={styles.collectionOverlay}>
                       <Text style={styles.collectionText} numberOfLines={1}>{item.title}</Text>
-                      <Text style={{color: '#FFF', fontSize: 10, fontWeight: '700'}}>₹{(item.demandPrice || 0).toLocaleString()}</Text>
+                      <Text style={{color: '#FFF', fontSize: 10, fontWeight: '700'}}>{formatCurrency(item.demandPrice)}</Text>
                     </View>
                   </Pressable>
                 )}
@@ -491,7 +492,7 @@ export default function CarDetails() {
            </View>
          ) : (
            <Pressable style={styles.bestOfferStickyBtn} onPress={onBid}>
-              <Text style={styles.bestOfferStickyText}>TELL BEST OFFER :- ₹{(listing?.demandPrice || 0).toLocaleString()}</Text>
+              <Text style={styles.bestOfferStickyText}>TELL BEST OFFER :- {formatCurrency(listing?.demandPrice)}</Text>
            </Pressable>
          )}
       </View>

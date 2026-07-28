@@ -1,4 +1,0 @@
-- [ ] Initialize build environment
-- [ ] Run `assembleRelease` Gradle task
-- [ ] Verify generated APK location
-- [ ] Finalize walkthrough

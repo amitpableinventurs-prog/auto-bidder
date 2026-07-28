@@ -1,4 +1,0 @@
-- [x] Fix syntax error in `apps/mobile/src/screens/PlaceBid.tsx`
-- [x] Fix syntax error in `apps/mobile/src/screens/DNP.tsx`
-- [x] Verify fixes by running `analyze_file`
-- [x] Create walkthrough

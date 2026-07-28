@@ -20,13 +20,39 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 
 export default function DNPReferralScreen() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [loading, setLoading] = useState(false);
   const [referralData, setReferralData] = useState({
-    code: 'AB-DNP-1234',
-    link: 'https://autobidder.in?ref=AB-DNP-1234',
+    code: 'LOADING...',
+    link: 'https://autobidder.in',
   });
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok && data.hasProfile) {
+        setReferralData({
+          code: data.profile.referralCode,
+          link: data.profile.referralLink,
+        });
+      }
+    } catch (error) {
+      console.error('Fetch Profile Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchProfile();
+  }, []);
 
   const handleCopyLink = async () => {
     try {

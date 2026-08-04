@@ -20,6 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install packages
         run: npm install
@@ -36,13 +37,30 @@ jobs:
       - name: Build APK
         run: |
           cd apps/mobile
-          npx expo prebuild
+
+          echo "Installing mobile dependencies..."
+          npm install
+
+          echo "Generating Android project..."
+          npx expo prebuild --clean
+
           cd android
+
+          echo "Increasing Gradle memory..."
+          echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=2048m" >> gradle.properties
+          echo "org.gradle.daemon=false" >> gradle.properties
+          echo "org.gradle.parallel=true" >> gradle.properties
+          echo "org.gradle.caching=true" >> gradle.properties
+          echo "kotlin.daemon.jvm.options=-Xmx4096m" >> gradle.properties
+
           chmod +x gradlew
-          ./gradlew assembleRelease
+
+          echo "Building Release APK..."
+          ./gradlew assembleRelease --no-daemon --max-workers=2
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: apk-file
+          name: Auto-Bidder-Release-APK
           path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          

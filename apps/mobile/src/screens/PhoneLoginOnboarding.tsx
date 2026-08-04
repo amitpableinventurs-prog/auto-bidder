@@ -198,8 +198,8 @@ export default function PhoneLoginOnboarding() {
         {/* Header */}
         <View style={[styles.header, {
           top: insets.top,
-          left: Math.max(insets.left, 20),
-          right: Math.max(insets.right, 20)
+          left: Math.max(insets.left, 4),
+          right: Math.max(insets.right, 4)
         }]}>
             <Pressable onPress={() => navigation.navigate('MainDrawer')} style={styles.iconBtn}>
                 <Ionicons name="chevron-back" size={24} color={COLORS.white} />
@@ -398,13 +398,26 @@ export default function PhoneLoginOnboarding() {
                 setLoading(true);
                 try {
                   // Wait for OTP request to succeed before navigating
-                  await api.requestOtp(fullPhone);
                   setPhoneNumber(fullPhone);
+                  await api.requestOtp(fullPhone);
                   console.log("OTP requested successfully, navigating...");
                   navigation.navigate('Otp', { phoneNumber: fullPhone });
                 } catch (err: any) {
                   console.warn("OTP request failed:", err.message);
-                  Alert.alert('Request Failed', err.message || 'Could not send OTP. Please check your connection.');
+
+                  // In development mode, allow navigation anyway to avoid blocking flow
+                  if (__DEV__) {
+                    Alert.alert(
+                      'Request Failed',
+                      'Backend returned an error. Navigate to OTP screen anyway for testing?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Yes (Dev)', onPress: () => navigation.navigate('Otp', { phoneNumber: fullPhone }) }
+                      ]
+                    );
+                  } else {
+                    Alert.alert('Request Failed', err.message || 'Could not send OTP. Please check your connection.');
+                  }
                 } finally {
                   setLoading(false);
                 }

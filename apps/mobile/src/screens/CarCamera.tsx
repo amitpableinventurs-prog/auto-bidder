@@ -345,14 +345,18 @@ export default function CarCamera() {
               <Image source={{ uri: capturedImages[`${selectedCategory}_${currentAngle.id}`][0] }} style={styles.capturedImg} resizeMode="cover" />
             ) : (
               <>
-                {selectedCategory === 'Exterior' ? (
+                {currentAngle.outline ? (
                    <Image
                       source={currentAngle.outline}
-                      style={[styles.mainCarOutlineLandscape, { tintColor: isAngleCorrect ? "#22c55e" : "rgba(255,255,255,0.4)" }]}
+                      style={[
+                        styles.mainCarOutlineLandscape,
+                        { tintColor: isAngleCorrect ? "#22c55e" : "rgba(255,255,255,0.4)" },
+                        selectedCategory !== 'Exterior' && { transform: [{ scale: 1.4 }] }
+                      ]}
                       resizeMode="contain"
                     />
                 ) : (
-                  <MaterialCommunityIcons name="camera-outline" size={100} color="rgba(255,255,255,0.2)" />
+                  <MaterialCommunityIcons name="camera-outline" size={120} color="rgba(255,255,255,0.2)" />
                 )}
               </>
             )}
@@ -460,14 +464,15 @@ const styles = StyleSheet.create({
 
   edgeGuideBox: {
       position: 'absolute',
-      borderWidth: 2,
-      borderColor: 'rgba(255,255,255,0.3)',
-      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: 'rgba(255,255,255,0.2)',
+      borderRadius: 16,
       zIndex: 1
   },
   edgeGuideBoxGreen: {
       borderColor: '#22c55e',
-      borderWidth: 4,
+      borderWidth: 3,
+      backgroundColor: 'rgba(34,197,94,0.05)',
   },
 
   topControls: {
@@ -516,20 +521,21 @@ const styles = StyleSheet.create({
 
   centerContentLandscape: {
       position: 'absolute',
-      top: 100,
-      bottom: 130,
-      left: 80,
-      right: 140,
+      top: 40,
+      bottom: 100,
+      left: 20,
+      right: 100,
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 2
   },
   instructionWrap: {
+      position: 'absolute',
+      top: 0,
       backgroundColor: 'rgba(0,0,0,0.6)',
       paddingHorizontal: 20,
       paddingVertical: 10,
       borderRadius: 20,
-      marginBottom: 5, // Reduced from 10
       zIndex: 5
   },
   instructionText: {
@@ -544,11 +550,13 @@ const styles = StyleSheet.create({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 20,
   },
   mainCarOutlineLandscape: {
-      width: '100%',
-      height: '100%',
-      opacity: 0.8
+      width: '95%',
+      height: '95%',
+      transform: [{ scale: 1.25 }],
+      opacity: 0.9
   },
   capturedImg: {
       width: '100%',

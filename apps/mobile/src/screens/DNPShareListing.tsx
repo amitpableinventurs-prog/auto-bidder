@@ -10,69 +10,35 @@ import {
   TextInput,
   Image,
   FlatList,
+  Share,
 } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { COLORS, TYPOGRAPHY, FONTS } from '../theme';
 import { useAuth } from '../AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-
-const MOCK_LISTINGS = [
-  {
-    id: '1',
-    title: '2022 Honda City ZX',
-    brand: 'Honda',
-    model: 'City',
-    imageUrl: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80',
-    demandPrice: 850000,
-    status: 'ACTIVE',
-    city: 'Mumbai',
-  },
-  {
-    id: '2',
-    title: '2021 Hyundai Creta SX',
-    brand: 'Hyundai',
-    model: 'Creta',
-    imageUrl: 'https://images.unsplash.com/photo-1619682817481-e994891cd1f5?auto=format&fit=crop&w=400&q=80',
-    demandPrice: 1200000,
-    status: 'ACTIVE',
-    city: 'Delhi',
-  },
-  {
-    id: '3',
-    title: '2023 Maruti Swift VXI',
-    brand: 'Maruti',
-    model: 'Swift',
-    imageUrl: 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?auto=format&fit=crop&w=400&q=80',
-    demandPrice: 650000,
-    status: 'ACTIVE',
-    city: 'Bangalore',
-  },
-];
+import { request } from '../api';
 
 export default function DNPShareListingScreen() {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [loading, setLoading] = useState(false);
-  const [listings, setListings] = useState(MOCK_LISTINGS);
+  const [listings, setListings] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [shareLink, setShareLink] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
-  const [shareType, setShareType] = useState<'QUICK' | 'LEAD'>('QUICK');
+  const [shareType, setShareType] = useState<'QUICK' | 'LEAD'>('LEAD');
   const [buyerName, setBuyerName] = useState('');
   const [buyerPhone, setBuyerPhone] = useState('');
 
-  const fetchListings = async () => {
+  const fetchListings = async (query = '') => {
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/app/bootstrap`);
-      const data = await response.json();
-      if (response.ok && data.listings) {
-        setListings(data.listings);
-      }
+      const data = await request<any>(`/api/dnp/eligible-listings?search=${query}`);
+      setListings(data.listings);
     } catch (error) {
       console.error('Fetch Listings Error:', error);
     } finally {
@@ -84,135 +50,117 @@ export default function DNPShareListingScreen() {
     fetchListings();
   }, []);
 
-  const filteredListings = listings.filter(listing =>
-    listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    listing.brand.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSearch = (text: string) => {
+    setSearchQuery(text);
+    // Debounce would be better here
+    if (text.length > 2 || text.length === 0) {
+      fetchListings(text);
+    }
+  };
 
-  const handleShareListing = async (listing: any) => {
+  const handleOpenShareModal = (listing: any) => {
     setSelectedListing(listing);
-    setShareType('QUICK');
+    setShareLink('');
     setBuyerName('');
     setBuyerPhone('');
     setShowShareModal(true);
   };
 
   const generateLink = async () => {
-    if (shareType === 'LEAD' && (!buyerName || !buyerPhone)) {
-      Alert.alert('Error', 'Please enter buyer name and phone');
+    if (!buyerName || !buyerPhone) {
+      Alert.alert('Required', 'Please enter the prospect buyer name and mobile number.');
+      return;
+    }
+    if (buyerPhone.length !== 10) {
+      Alert.alert('Invalid Phone', 'Please enter a valid 10-digit mobile number.');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/share-listing`, {
+      const data = await request<any>('/api/dnp/listing-shares', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({
           listingId: selectedListing.id,
-          shareSource: 'DIRECT',
-          buyerName: shareType === 'LEAD' ? buyerName : undefined,
-          buyerPhone: shareType === 'LEAD' ? buyerPhone : undefined,
+          buyerName,
+          buyerPhone,
+          shareMethod: 'DIRECT',
         }),
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        setShareLink(data.shareLink);
-      } else {
-        Alert.alert('Error', data.error || 'Failed to generate share link');
-      }
-    } catch (error) {
-      console.error('Share Error:', error);
-      Alert.alert('Error', 'Failed to generate share link');
+      setShareLink(data.shareLink);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to generate share link.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleShareVia = async (platform: string) => {
-    const message = `Check out this ${selectedListing.title} on Auto Bidder!\n\n${shareLink}`;
-    
+  const handleNativeShare = async () => {
     try {
-      if (platform === 'whatsapp') {
-        Alert.alert('WhatsApp', 'Opening WhatsApp...');
-      } else if (platform === 'facebook') {
-        Alert.alert('Facebook', 'Opening Facebook...');
-      } else if (platform === 'telegram') {
-        Alert.alert('Telegram', 'Opening Telegram...');
-      } else if (platform === 'copy') {
-        // Copy to clipboard
-        Alert.alert('Copied!', 'Link copied to clipboard');
-      }
+      await Share.share({
+        message: `Check out this ${selectedListing.brand} ${selectedListing.model} on Auto Bidder!\n\nView details: ${shareLink}`,
+      });
     } catch (error) {
-      Alert.alert('Error', 'Failed to share');
+      console.log(error);
     }
   };
 
   const renderListingItem = ({ item }: { item: any }) => (
-    <Pressable style={styles.listingCard} onPress={() => handleShareListing(item)}>
-      <Image source={{ uri: item.imageUrl }} style={styles.listingImage} />
+    <Pressable style={styles.listingCard} onPress={() => handleOpenShareModal(item)}>
+      <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/150' }} style={styles.listingImage} />
       <View style={styles.listingContent}>
-        <Text style={styles.listingTitle} numberOfLines={2}>{item.title}</Text>
-        <View style={styles.listingMeta}>
-          <Text style={styles.listingPrice}>₹{(item.demandPrice / 100000).toFixed(2)}L</Text>
-          <Text style={styles.listingCity}>{item.city}</Text>
-        </View>
-        <View style={styles.listingStatus}>
-          <View style={[styles.statusBadge, { backgroundColor: COLORS.success + '20' }]}>
-            <Ionicons name="checkmark-circle" size={12} color={COLORS.success} />
-            <Text style={[styles.statusText, { color: COLORS.success }]}>Active</Text>
-          </View>
+        <Text style={styles.listingTitle} numberOfLines={1}>{item.brand} {item.model}</Text>
+        <Text style={styles.listingSub}>{item.manufacturingYear} • {item.fuelType} • {item.city}</Text>
+        <Text style={styles.listingPrice}>₹{(item.demandPrice || 0).toLocaleString('en-IN')}</Text>
+        <View style={styles.eligibilityBadge}>
+          <Ionicons name="sparkles" size={10} color={COLORS.secondary} />
+          <Text style={styles.eligibilityText}>Eligible for Reward</Text>
         </View>
       </View>
-      <Ionicons name="share-social-outline" size={20} color={COLORS.secondary} />
+      <View style={styles.shareButtonSmall}>
+        <Ionicons name="share-social-outline" size={20} color={COLORS.secondary} />
+      </View>
     </Pressable>
   );
 
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      
-      {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={COLORS.black2} />
         </Pressable>
-        <Text style={styles.headerTitle}>Share Existing Listings</Text>
+        <Text style={styles.headerTitle}>Browse & Share</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Search */}
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={COLORS.grey} />
+        <Ionicons name="search" size={18} color={COLORS.grey} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search listings..."
-          placeholderTextColor={COLORS.grey}
+          placeholder="Search by brand or model..."
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={handleSearch}
         />
       </View>
 
-      {/* Listings */}
       <FlatList
-        data={filteredListings}
+        data={listings}
         renderItem={renderListingItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons name="car-outline" size={60} color={COLORS.lightGrey1} />
-            <Text style={styles.emptyText}>No listings found</Text>
-          </View>
+          loading ? <ActivityIndicator size="large" color={COLORS.secondary} style={{ marginTop: 40 }} /> : (
+            <View style={styles.emptyState}>
+              <Ionicons name="search-outline" size={60} color={COLORS.lightGrey1} />
+              <Text style={styles.emptyText}>No eligible listings found</Text>
+            </View>
+          )
         }
       />
 
-      {/* Share Modal */}
       {showShareModal && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -225,459 +173,114 @@ export default function DNPShareListingScreen() {
 
             {selectedListing && (
               <View style={styles.selectedListing}>
-                <Image source={{ uri: selectedListing.imageUrl }} style={styles.selectedImage} />
+                <Image source={{ uri: selectedListing.imageUrl || 'https://via.placeholder.com/150' }} style={styles.selectedImage} />
                 <View style={styles.selectedInfo}>
-                  <Text style={styles.selectedTitle}>{selectedListing.title}</Text>
-                  <Text style={styles.selectedPrice}>₹{selectedListing.demandPrice?.toLocaleString()}</Text>
+                  <Text style={styles.selectedTitle}>{selectedListing.brand} {selectedListing.model}</Text>
+                  <Text style={styles.selectedPrice}>₹{selectedListing.demandPrice?.toLocaleString('en-IN')}</Text>
                 </View>
               </View>
             )}
 
             {!shareLink ? (
               <View>
-                <Text style={styles.shareTypeTitle}>How do you want to share?</Text>
-                <View style={styles.shareTypeTabs}>
-                  <Pressable
-                    style={[styles.shareTypeTab, shareType === 'QUICK' && styles.shareTypeTabActive]}
-                    onPress={() => setShareType('QUICK')}
-                  >
-                    <Ionicons name="flash-outline" size={18} color={shareType === 'QUICK' ? COLORS.white : COLORS.grey} />
-                    <Text style={[styles.shareTypeTabText, shareType === 'QUICK' && styles.shareTypeTabTextActive]}>Quick Share</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.shareTypeTab, shareType === 'LEAD' && styles.shareTypeTabActive]}
-                    onPress={() => setShareType('LEAD')}
-                  >
-                    <Ionicons name="person-add-outline" size={18} color={shareType === 'LEAD' ? COLORS.white : COLORS.grey} />
-                    <Text style={[styles.shareTypeTabText, shareType === 'LEAD' && styles.shareTypeTabTextActive]}>Share With Lead</Text>
-                  </Pressable>
-                </View>
-
-                {shareType === 'LEAD' && (
-                  <View style={styles.leadForm}>
-                    <TextInput
-                      style={styles.formInput}
-                      placeholder="Prospect Buyer Name"
-                      value={buyerName}
-                      onChangeText={setBuyerName}
-                    />
-                    <TextInput
-                      style={styles.formInput}
-                      placeholder="Prospect Buyer Phone"
-                      keyboardType="phone-pad"
-                      value={buyerPhone}
-                      onChangeText={setBuyerPhone}
-                    />
-                  </View>
-                )}
-
-                <Pressable style={styles.generateBtn} onPress={generateLink}>
-                  <Text style={styles.generateBtnText}>Generate Share Link</Text>
+                <Text style={styles.formLabel}>Enter Prospect Buyer Details</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Buyer Full Name"
+                  value={buyerName}
+                  onChangeText={setBuyerName}
+                />
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Buyer Mobile Number (10-digit)"
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                  value={buyerPhone}
+                  onChangeText={setBuyerPhone}
+                />
+                <Pressable style={styles.generateBtn} onPress={generateLink} disabled={loading}>
+                  {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.generateBtnText}>Generate Share Link</Text>}
                 </Pressable>
               </View>
             ) : (
               <View>
-                <View style={styles.shareLinkBox}>
-                  <Text style={styles.shareLink} numberOfLines={2}>{shareLink}</Text>
-                  <Pressable style={styles.copyBtn}>
+                <View style={styles.linkSuccess}>
+                  <Ionicons name="checkmark-circle" size={24} color={COLORS.green} />
+                  <Text style={styles.linkSuccessText}>Link registered to your DNP ID!</Text>
+                </View>
+
+                <View style={styles.linkBox}>
+                  <Text style={styles.linkText} numberOfLines={1}>{shareLink}</Text>
+                  <Pressable style={styles.copyBtn} onPress={() => Alert.alert('Copied', 'Link copied to clipboard')}>
                     <Ionicons name="copy-outline" size={18} color={COLORS.white} />
                   </Pressable>
                 </View>
 
-                <Text style={styles.shareViaTitle}>Share Via</Text>
-                <View style={styles.shareOptions}>
-                  <ShareOption
-                    icon="logo-whatsapp"
-                    label="WhatsApp"
-                    color="#25D366"
-                    onPress={() => handleShareVia('whatsapp')}
-                  />
-                  <ShareOption
-                    icon="logo-facebook"
-                    label="Facebook"
-                    color="#1877F2"
-                    onPress={() => handleShareVia('facebook')}
-                  />
-                  <ShareOption
-                    icon="send"
-                    label="Telegram"
-                    color="#0088cc"
-                    onPress={() => handleShareVia('telegram')}
-                  />
-                  <ShareOption
-                    icon="copy-outline"
-                    label="Copy Link"
-                    color={COLORS.secondary}
-                    onPress={() => handleShareVia('copy')}
-                  />
-                </View>
+                <Pressable style={styles.shareViaBtn} onPress={handleNativeShare}>
+                  <Ionicons name="share-social" size={20} color={COLORS.white} />
+                  <Text style={styles.shareViaText}>Share with Buyer</Text>
+                </Pressable>
 
-                <Pressable
-                  style={styles.resetBtn}
-                  onPress={() => {
-                    setShareLink('');
-                    setBuyerName('');
-                    setBuyerPhone('');
-                  }}
-                >
-                  <Text style={styles.resetBtnText}>Share again with different lead</Text>
+                <Pressable style={styles.resetBtn} onPress={() => { setShareLink(''); setBuyerName(''); setBuyerPhone(''); }}>
+                  <Text style={styles.resetBtnText}>New Share for this Car</Text>
                 </Pressable>
               </View>
             )}
-
-            <View style={styles.infoBox}>
-              <Ionicons name="information-circle" size={20} color={COLORS.accent} />
-              <Text style={styles.infoText}>
-                When buyers view or purchase through your link, you'll earn commissions. Track all your shared listings in the dashboard.
-              </Text>
-            </View>
           </View>
-        </View>
-      )}
-
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={COLORS.secondary} />
         </View>
       )}
     </View>
   );
 }
 
-function ShareOption({ icon, label, color, onPress }: { 
-  icon: any, 
-  label: string, 
-  color: string, 
-  onPress: () => void 
-}) {
-  return (
-    <Pressable style={styles.shareOption} onPress={onPress}>
-      <View style={[styles.shareOptionIcon, { backgroundColor: color + '15' }]}>
-        <Ionicons name={icon} size={24} color={color} />
-      </View>
-      <Text style={styles.shareOptionLabel}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGrey2,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.lightGrey2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    ...TYPOGRAPHY.h6,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.lightGrey2,
-    margin: 20,
-    paddingHorizontal: 16,
-    height: 48,
-    borderRadius: 12,
-    gap: 12,
-  },
-  searchInput: {
-    flex: 1,
-    ...TYPOGRAPHY.bodyMedium,
-    color: COLORS.black2,
-  },
-  listContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  listingCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.lightGrey2,
-    alignItems: 'center',
-  },
-  listingImage: {
-    width: 80,
-    height: 60,
-    borderRadius: 12,
-    marginRight: 12,
-  },
-  listingContent: {
-    flex: 1,
-  },
-  listingTitle: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 4,
-  },
-  listingMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  listingPrice: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.secondary,
-  },
-  listingCity: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  listingStatus: {
-    marginTop: 4,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  statusText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 11,
-    fontFamily: FONTS.poppins.bold,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textMuted,
-    marginTop: 12,
-  },
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    borderRadius: 24,
-    width: '100%',
-    maxHeight: '80%',
-    padding: 24,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    ...TYPOGRAPHY.h6,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-  },
-  selectedListing: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.lightGrey2,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  selectedImage: {
-    width: 60,
-    height: 45,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  selectedInfo: {
-    flex: 1,
-  },
-  selectedTitle: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 4,
-  },
-  selectedPrice: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.secondary,
-  },
-  shareLinkBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.lightGrey2,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginBottom: 20,
-    justifyContent: 'space-between',
-  },
-  shareLink: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textMuted,
-    flex: 1,
-    marginRight: 12,
-  },
-  copyBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: COLORS.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shareViaTitle: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 12,
-  },
-  shareOptions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  shareOption: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  shareOptionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  shareOptionLabel: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 11,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    textAlign: 'center',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    backgroundColor: '#fff7ed',
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  infoText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: '#9a3412',
-    flex: 1,
-    lineHeight: 18,
-  },
-  shareTypeTitle: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 12,
-  },
-  shareTypeTabs: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  shareTypeTab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: COLORS.lightGrey2,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  shareTypeTabActive: {
-    backgroundColor: COLORS.secondary,
-    borderColor: COLORS.secondary,
-  },
-  shareTypeTabText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.grey,
-  },
-  shareTypeTabTextActive: {
-    color: COLORS.white,
-    fontFamily: FONTS.poppins.bold,
-  },
-  leadForm: {
-    gap: 12,
-    marginBottom: 20,
-  },
-  formInput: {
-    height: 48,
-    backgroundColor: COLORS.lightGrey2,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.black2,
-  },
-  generateBtn: {
-    backgroundColor: COLORS.secondary,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  generateBtnText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.white,
-  },
-  resetBtn: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  resetBtnText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.secondary,
-    textDecorationLine: 'underline',
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { ...TYPOGRAPHY.h6, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, margin: 16, paddingHorizontal: 16, height: 50, borderRadius: 12, borderWidth: 1, borderColor: COLORS.lightGrey2 },
+  searchInput: { flex: 1, marginLeft: 10, ...TYPOGRAPHY.bodySmall, color: COLORS.black2 },
+  listContent: { padding: 16, paddingBottom: 40 },
+  listingCard: { flexDirection: 'row', backgroundColor: COLORS.white, borderRadius: 16, padding: 12, marginBottom: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  listingImage: { width: 90, height: 70, borderRadius: 12, marginRight: 16 },
+  listingContent: { flex: 1 },
+  listingTitle: { ...TYPOGRAPHY.bodyMedium, fontFamily: FONTS.poppins.bold, color: COLORS.black2, marginBottom: 2 },
+  listingSub: { ...TYPOGRAPHY.bodySmall, fontSize: 11, color: COLORS.textMuted, marginBottom: 4 },
+  listingPrice: { ...TYPOGRAPHY.bodySmall, fontFamily: FONTS.poppins.bold, color: COLORS.secondary, fontSize: 14 },
+  eligibilityBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  eligibilityText: { fontSize: 9, color: COLORS.secondary, fontFamily: FONTS.poppins.bold, textTransform: 'uppercase' },
+  shareButtonSmall: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.lightBlue1, justifyContent: 'center', alignItems: 'center' },
+  emptyState: { alignItems: 'center', marginTop: 100 },
+  emptyText: { ...TYPOGRAPHY.bodySmall, color: COLORS.textMuted, marginTop: 12 },
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20, zIndex: 1000 },
+  modalContent: { backgroundColor: COLORS.white, borderRadius: 24, padding: 24 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { ...TYPOGRAPHY.h6, fontFamily: FONTS.poppins.bold },
+  selectedListing: { flexDirection: 'row', backgroundColor: '#F9FAFB', padding: 12, borderRadius: 16, marginBottom: 20, alignItems: 'center' },
+  selectedImage: { width: 70, height: 50, borderRadius: 8, marginRight: 12 },
+  selectedInfo: { flex: 1 },
+  selectedTitle: { ...TYPOGRAPHY.bodySmall, fontFamily: FONTS.poppins.bold },
+  selectedPrice: { ...TYPOGRAPHY.bodySmall, color: COLORS.secondary, fontFamily: FONTS.poppins.bold },
+  formLabel: { ...TYPOGRAPHY.bodySmall, fontFamily: FONTS.poppins.bold, color: COLORS.textMuted, marginBottom: 12 },
+  formInput: { height: 50, backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 16, marginBottom: 12, ...TYPOGRAPHY.bodySmall },
+  generateBtn: { backgroundColor: COLORS.secondary, height: 54, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
+  generateBtnText: { ...TYPOGRAPHY.bodyMedium, fontFamily: FONTS.poppins.bold, color: COLORS.white },
+  linkSuccess: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16, justifyContent: 'center' },
+  linkSuccessText: { color: COLORS.green, fontFamily: FONTS.poppins.bold, fontSize: 13 },
+  linkBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 16, borderRadius: 12, marginBottom: 20 },
+  linkText: { flex: 1, fontSize: 12, color: COLORS.textMuted },
+  copyBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: COLORS.secondary, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
+  shareViaBtn: { backgroundColor: COLORS.secondary, height: 54, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 },
+  shareViaText: { ...TYPOGRAPHY.bodyMedium, fontFamily: FONTS.poppins.bold, color: COLORS.white },
+  resetBtn: { alignItems: 'center', marginTop: 20 },
+  resetBtnText: { fontSize: 12, color: COLORS.grey, textDecorationLine: 'underline' },
 });

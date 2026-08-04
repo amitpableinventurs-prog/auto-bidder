@@ -34,6 +34,15 @@ export type RootStackParamList = {
   SoldVehicles: undefined;
   Chat: undefined;
   Dnp: undefined;
+  DNPOnboarding: undefined;
+  DNPActivation: undefined;
+  DNPDashboard: undefined;
+  DNPLeads: undefined;
+  DNPListings: undefined;
+  DNPWallet: undefined;
+  DNPWithdraw: undefined;
+  DNPVehicleAcquisition: undefined;
+  DNPShareListing: undefined;
   Profile: undefined;
   EditProfile: undefined;
   Wallet: undefined;

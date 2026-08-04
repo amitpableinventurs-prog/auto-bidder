@@ -2,13 +2,18 @@ import { Resend } from 'resend';
 import { env } from '../env.js';
 import { emailTemplates } from './emailTemplates.js';
 
-const resend = new Resend(env.RESEND_API_KEY);
+const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 export class EmailService {
   /**
    * Generic method to send emails
    */
   private static async sendEmail(to: string, subject: string, html: string) {
+    if (!resend) {
+      console.warn(`[EmailService] Skipping email to ${to} because RESEND_API_KEY is not configured.`);
+      console.log(`[Email DEV LOG] Subject: ${subject}`);
+      return { success: true, dummy: true };
+    }
     try {
       const { data, error } = await resend.emails.send({
         from: env.RESEND_FROM_EMAIL,

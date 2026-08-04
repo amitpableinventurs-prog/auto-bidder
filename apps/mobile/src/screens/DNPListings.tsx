@@ -6,523 +6,221 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
-  Alert,
+  RefreshControl,
   Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { COLORS, TYPOGRAPHY, FONTS } from '../theme';
 import { useAuth } from '../AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-
-const MOCK_LISTINGS = [
-  {
-    id: '1',
-    vehicleTitle: '2022 Honda City ZX',
-    sellerName: 'Rajesh Kumar',
-    sellerPhone: '+91 98765 43210',
-    vehicleImage: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80',
-    approvalStatus: 'APPROVED',
-    inspectionStatus: 'COMPLETED',
-    auctionStatus: 'ACTIVE',
-    commission: 12000,
-    commissionStatus: 'PENDING',
-    createdAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    vehicleTitle: '2021 Hyundai Creta SX',
-    sellerName: 'Priya Patel',
-    sellerPhone: '+91 98765 43211',
-    vehicleImage: 'https://images.unsplash.com/photo-1619682817481-e994891cd1f5?auto=format&fit=crop&w=400&q=80',
-    approvalStatus: 'PENDING',
-    inspectionStatus: 'IN_PROGRESS',
-    auctionStatus: 'NOT_STARTED',
-    commission: 0,
-    commissionStatus: 'NOT_APPLICABLE',
-    createdAt: '2024-01-18',
-  },
-  {
-    id: '3',
-    vehicleTitle: '2023 Maruti Swift VXI',
-    sellerName: 'Amit Sharma',
-    sellerPhone: '+91 98765 43212',
-    vehicleImage: 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?auto=format&fit=crop&w=400&q=80',
-    approvalStatus: 'APPROVED',
-    inspectionStatus: 'COMPLETED',
-    auctionStatus: 'SOLD',
-    commission: 18000,
-    commissionStatus: 'PAID',
-    createdAt: '2024-01-10',
-  },
-];
+import { request } from '../api';
 
 export default function DNPListingsScreen() {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [loading, setLoading] = useState(false);
-  const [listings, setListings] = useState<any[]>([]);
-  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [shares, setShares] = useState<any[]>([]);
+  const [selectedShare, setSelectedShare] = useState<any>(null);
 
-  const fetchReferrals = async () => {
-    setLoading(true);
+  const fetchShares = async () => {
     try {
-      const url = new URL(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/referrals`);
-      // Map screen filter to API filter if needed, or just fetch all and filter client side
-
-      const response = await fetch(url.toString(), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setListings(data.referrals || []);
-      }
+      const data = await request<any>('/api/dnp/listing-shares');
+      setShares(data.shares || []);
     } catch (error) {
-      console.error('Fetch Referrals Error:', error);
+      console.error('Fetch Shares Error:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchReferrals();
+    fetchShares();
   }, []);
 
-  const filteredListings = listings.filter(listing => {
-    if (!filterStatus) return true;
-    // Map API status to filter status
-    if (filterStatus === 'APPROVED') return listing.status === 'LISTING_APPROVED' || listing.status === 'COMPLETED';
-    if (filterStatus === 'PENDING') return listing.status === 'PENDING' || listing.status === 'REGISTERED' || listing.status === 'LISTING_CREATED';
-    if (filterStatus === 'REJECTED') return listing.status === 'EXPIRED' || listing.status === 'FRAUDULENT';
-    return true;
-  });
-
-  const getApprovalColor = (status: string) => {
-    switch (status) {
-      case 'APPROVED': return COLORS.success;
-      case 'PENDING': return COLORS.accent;
-      case 'REJECTED': return COLORS.coral;
-      default: return COLORS.grey;
-    }
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchShares();
   };
 
-  const getCommissionColor = (status: string) => {
-    switch (status) {
-      case 'PAID': return COLORS.success;
-      case 'PENDING': return COLORS.accent;
-      case 'NOT_APPLICABLE': return COLORS.grey;
-      default: return COLORS.grey;
-    }
+  const getStatusColor = (status: string) => {
+    const map: any = {
+      'SHARED': COLORS.grey,
+      'VIEWED': COLORS.accent,
+      'INTERESTED': COLORS.primary,
+      'CONTACTED': COLORS.secondary,
+      'NEGOTIATION': '#f59e0b',
+      'CONVERTED': COLORS.green,
+      'LOST': COLORS.coral,
+    };
+    return map[status] || COLORS.grey;
   };
 
-  const renderListingCard = (listing: any) => (
-    <View key={listing.id} style={styles.listingCard}>
-      <View style={styles.listingHeader}>
-        {listing.listing?.imageUrl ? (
-          <Image source={{ uri: listing.listing.imageUrl }} style={styles.listingImage} />
-        ) : (
-          <View style={[styles.listingImage, { backgroundColor: COLORS.lightGrey2, justifyContent: 'center', alignItems: 'center' }]}>
-            <Ionicons name="car-outline" size={30} color={COLORS.grey} />
+  const renderShareCard = (share: any) => {
+    const lead = share.buyerLeads?.[0]; // Current implementation handles one lead per share for simplicity
+    return (
+      <Pressable key={share.id} style={styles.shareCard} onPress={() => setSelectedShare(share)}>
+        <View style={styles.shareHeader}>
+          <Image source={{ uri: share.listing?.imageUrl || 'https://via.placeholder.com/150' }} style={styles.carImage} />
+          <View style={styles.shareInfo}>
+            <Text style={styles.carTitle}>{share.listing?.brand} {share.listing?.model}</Text>
+            <Text style={styles.listingId}>Ref: {share.shareToken.substring(0, 8).toUpperCase()}</Text>
+            <View style={styles.buyerRow}>
+              <Ionicons name="person-outline" size={12} color={COLORS.textMuted} />
+              <Text style={styles.buyerName}>{lead?.buyerName || 'Prospect Buyer'}</Text>
+            </View>
           </View>
-        )}
-        <View style={styles.listingInfo}>
-          <Text style={styles.vehicleTitle} numberOfLines={2}>{listing.listing?.title || 'Registration Pending'}</Text>
-          <View style={styles.sellerInfo}>
-            <Ionicons name="person-outline" size={14} color={COLORS.textMuted} />
-            <Text style={styles.sellerName}>{listing.referredUser?.name || 'Referred User'}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(lead?.status) + '15' }]}>
+            <Text style={[styles.statusText, { color: getStatusColor(lead?.status) }]}>{lead?.status}</Text>
           </View>
-          <Text style={styles.createdAt}>Referred: {new Date(listing.createdAt).toLocaleDateString()}</Text>
         </View>
-      </View>
 
-      <View style={styles.statusGrid}>
-        <StatusItem
-          label="Referral"
-          value={listing.status}
-          color={getApprovalColor(listing.status === 'LISTING_APPROVED' || listing.status === 'COMPLETED' ? 'APPROVED' : (listing.status === 'EXPIRED' ? 'REJECTED' : 'PENDING'))}
-        />
-        <StatusItem
-          label="Listing"
-          value={listing.listing?.status || 'N/A'}
-          color={listing.listing?.status === 'ACTIVE' ? COLORS.success : COLORS.secondary}
-        />
-        <StatusItem
-          label="Commission"
-          value={listing.commissionPaid ? 'PAID' : 'PENDING'}
-          color={listing.commissionPaid ? COLORS.success : COLORS.accent}
-        />
-      </View>
+        <View style={styles.cardDivider} />
 
-      <View style={styles.commissionSection}>
-        <View style={styles.commissionInfo}>
-          <Text style={styles.commissionLabel}>Commission Earned</Text>
-          <Text style={styles.commissionAmount}>
-            ₹{(listing.commission || 0).toLocaleString()}
-          </Text>
+        <View style={styles.shareFooter}>
+          <View>
+            <Text style={styles.dateLabel}>Shared Date</Text>
+            <Text style={styles.dateValue}>{new Date(share.createdAt).toLocaleDateString()}</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.dateLabel}>Commission</Text>
+            <Text style={[styles.dateValue, { color: COLORS.green }]}>
+              {lead?.status === 'CONVERTED' ? 'Earned' : 'Expected'}
+            </Text>
+          </View>
         </View>
-        <View style={[styles.commissionBadge, { backgroundColor: (listing.commissionPaid ? COLORS.success : COLORS.accent) + '15' }]}>
-          <Text style={[styles.commissionStatusText, { color: listing.commissionPaid ? COLORS.success : COLORS.accent }]}>
-            {listing.commissionPaid ? 'PAID' : 'PENDING'}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.listingActions}>
-        <Pressable
-          style={styles.actionBtn}
-          onPress={() => listing.listingId && navigation.navigate('CarDetail', { id: listing.listingId })}
-          disabled={!listing.listingId}
-        >
-          <Ionicons name="eye-outline" size={18} color={COLORS.secondary} />
-          <Text style={styles.actionBtnText}>View Listing</Text>
-        </Pressable>
-        <Pressable
-          style={styles.actionBtn}
-          onPress={() => listing.referredUser?.phone && Alert.alert('Call', `Call ${listing.referredUser.phone}`)}
-          disabled={!listing.referredUser?.phone}
-        >
-          <Ionicons name="call-outline" size={18} color={COLORS.success} />
-          <Text style={styles.actionBtnText}>Call User</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
+      </Pressable>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      
-      {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={COLORS.black2} />
         </Pressable>
-        <Text style={styles.headerTitle}>My Listings Brought</Text>
+        <Text style={styles.headerTitle}>Shared Listings</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Stats Summary */}
-      <View style={styles.statsSummary}>
-        <StatItem label="Total" value={listings.length} color={COLORS.secondary} />
-        <StatItem label="Approved" value={listings.filter(l => l.approvalStatus === 'APPROVED').length} color={COLORS.success} />
-        <StatItem label="Pending" value={listings.filter(l => l.approvalStatus === 'PENDING').length} color={COLORS.accent} />
-        <StatItem label="Sold" value={listings.filter(l => l.auctionStatus === 'SOLD').length} color={COLORS.primary} />
-      </View>
-
-      {/* Filter */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterScroll}
-      >
-        <Pressable 
-          style={[styles.filterChip, !filterStatus && styles.filterChipActive]}
-          onPress={() => setFilterStatus('')}
-        >
-          <Text style={[styles.filterChipText, !filterStatus && styles.filterChipTextActive]}>
-            All
-          </Text>
-        </Pressable>
-        <Pressable 
-          style={[styles.filterChip, filterStatus === 'APPROVED' && styles.filterChipActive]}
-          onPress={() => setFilterStatus('APPROVED')}
-        >
-          <Text style={[styles.filterChipText, filterStatus === 'APPROVED' && styles.filterChipTextActive]}>
-            Approved
-          </Text>
-        </Pressable>
-        <Pressable 
-          style={[styles.filterChip, filterStatus === 'PENDING' && styles.filterChipActive]}
-          onPress={() => setFilterStatus('PENDING')}
-        >
-          <Text style={[styles.filterChipText, filterStatus === 'PENDING' && styles.filterChipTextActive]}>
-            Pending
-          </Text>
-        </Pressable>
-        <Pressable 
-          style={[styles.filterChip, filterStatus === 'REJECTED' && styles.filterChipActive]}
-          onPress={() => setFilterStatus('REJECTED')}
-        >
-          <Text style={[styles.filterChipText, filterStatus === 'REJECTED' && styles.filterChipTextActive]}>
-            Rejected
-          </Text>
-        </Pressable>
-      </ScrollView>
-
-      {/* Listings */}
-      <ScrollView 
+      <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.secondary} />}
       >
-        {filteredListings.length > 0 ? (
-          filteredListings.map(renderListingCard)
+        {loading ? (
+          <ActivityIndicator size="large" color={COLORS.secondary} style={{ marginTop: 40 }} />
+        ) : shares.length > 0 ? (
+          shares.map(renderShareCard)
         ) : (
           <View style={styles.emptyState}>
-            <Ionicons name="car-outline" size={60} color={COLORS.lightGrey1} />
-            <Text style={styles.emptyText}>No listings found</Text>
+            <Ionicons name="share-social-outline" size={60} color={COLORS.lightGrey1} />
+            <Text style={styles.emptyText}>You haven't shared any listings yet.</Text>
+            <Pressable style={styles.emptyBtn} onPress={() => navigation.navigate('DNPShareListing')}>
+              <Text style={styles.emptyBtnText}>Browse & Share Now</Text>
+            </Pressable>
           </View>
         )}
       </ScrollView>
 
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={COLORS.secondary} />
+      {selectedShare && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Lead Timeline</Text>
+              <Pressable onPress={() => setSelectedShare(null)}>
+                <Ionicons name="close" size={24} color={COLORS.black2} />
+              </Pressable>
+            </View>
+
+            <ScrollView style={{ padding: 20 }}>
+              <View style={styles.detailHeader}>
+                <Image source={{ uri: selectedShare.listing?.imageUrl }} style={styles.detailImage} />
+                <View>
+                  <Text style={styles.detailTitle}>{selectedShare.listing?.brand} {selectedShare.listing?.model}</Text>
+                  <Text style={styles.detailSub}>Buyer: {selectedShare.buyerLeads?.[0]?.buyerName}</Text>
+                </View>
+              </View>
+
+              <View style={styles.timeline}>
+                {selectedShare.buyerLeads?.[0]?.statusHistory?.map((event: any, index: number) => (
+                  <View key={event.id} style={styles.timelineItem}>
+                    <View style={styles.timelinePoint}>
+                      <View style={[styles.dot, { backgroundColor: index === 0 ? COLORS.secondary : COLORS.lightGrey1 }]} />
+                      {index < selectedShare.buyerLeads[0].statusHistory.length - 1 && <View style={styles.line} />}
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={styles.eventStatus}>{event.status}</Text>
+                      <Text style={styles.eventTime}>{new Date(event.createdAt).toLocaleString()}</Text>
+                      {event.notes && <Text style={styles.eventNotes}>{event.notes}</Text>}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
         </View>
       )}
     </SafeAreaView>
   );
 }
 
-function StatusItem({ label, value, color }: { label: string, value: string, color: string }) {
-  return (
-    <View style={styles.statusItem}>
-      <Text style={styles.statusLabel}>{label}</Text>
-      <View style={[styles.statusValue, { backgroundColor: color + '15' }]}>
-        <Text style={[styles.statusValueText, { color }]}>{value}</Text>
-      </View>
-    </View>
-  );
-}
-
-function StatItem({ label, value, color }: { label: string, value: number, color: string }) {
-  return (
-    <View style={styles.statItem}>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGrey2,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.lightGrey2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    ...TYPOGRAPHY.h6,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-  },
-  statsSummary: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 20,
-    backgroundColor: COLORS.lightGrey2,
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 16,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    ...TYPOGRAPHY.h5,
-    fontFamily: FONTS.poppins.bold,
-    marginBottom: 4,
-  },
-  statLabel: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  filterScroll: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: COLORS.lightGrey2,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  filterChipActive: {
-    backgroundColor: COLORS.secondary,
-  },
-  filterChipText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  filterChipTextActive: {
-    color: COLORS.white,
-    fontFamily: FONTS.poppins.bold,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  listingCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.lightGrey2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  listingHeader: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  listingImage: {
-    width: 80,
-    height: 60,
-    borderRadius: 12,
-    marginRight: 12,
-  },
-  listingInfo: {
-    flex: 1,
-  },
-  vehicleTitle: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 6,
-  },
-  sellerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  sellerName: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  createdAt: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 11,
-    color: COLORS.grey,
-  },
-  statusGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  statusItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statusLabel: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginBottom: 6,
-  },
-  statusValue: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  statusValueText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 11,
-    fontFamily: FONTS.poppins.bold,
-  },
-  commissionSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.lightGrey2,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  commissionInfo: {
-    flex: 1,
-  },
-  commissionLabel: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginBottom: 4,
-  },
-  commissionAmount: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-  },
-  commissionBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  commissionStatusText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 11,
-    fontFamily: FONTS.poppins.bold,
-  },
-  listingActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: COLORS.lightGrey2,
-    gap: 6,
-  },
-  actionBtnText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 11,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textMuted,
-    marginTop: 12,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { ...TYPOGRAPHY.h6, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 40 },
+  shareCard: { backgroundColor: COLORS.white, borderRadius: 20, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  shareHeader: { flexDirection: 'row', alignItems: 'center' },
+  carImage: { width: 70, height: 50, borderRadius: 10, marginRight: 12 },
+  shareInfo: { flex: 1 },
+  carTitle: { ...TYPOGRAPHY.bodySmall, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  listingId: { fontSize: 10, color: COLORS.grey, marginTop: 2 },
+  buyerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  buyerName: { fontSize: 11, color: COLORS.textMuted },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  statusText: { fontSize: 10, fontFamily: FONTS.poppins.bold },
+  cardDivider: { height: 1, backgroundColor: COLORS.lightGrey2, marginVertical: 12 },
+  shareFooter: { flexDirection: 'row', justifyContent: 'space-between' },
+  dateLabel: { fontSize: 10, color: COLORS.textMuted, marginBottom: 2 },
+  dateValue: { fontSize: 12, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  emptyState: { alignItems: 'center', marginTop: 100 },
+  emptyText: { ...TYPOGRAPHY.bodySmall, color: COLORS.textMuted, marginTop: 12, textAlign: 'center' },
+  emptyBtn: { marginTop: 20, backgroundColor: COLORS.secondary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
+  emptyBtnText: { color: COLORS.white, fontFamily: FONTS.poppins.bold, fontSize: 13 },
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20, zIndex: 1000 },
+  modalContent: { backgroundColor: COLORS.white, borderRadius: 24, maxHeight: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: COLORS.lightGrey2 },
+  modalTitle: { ...TYPOGRAPHY.h6, fontFamily: FONTS.poppins.bold },
+  detailHeader: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24 },
+  detailImage: { width: 80, height: 60, borderRadius: 12 },
+  detailTitle: { ...TYPOGRAPHY.bodyMedium, fontFamily: FONTS.poppins.bold },
+  detailSub: { fontSize: 12, color: COLORS.textMuted },
+  timeline: { paddingLeft: 8 },
+  timelineItem: { flexDirection: 'row', gap: 16, marginBottom: 20 },
+  timelinePoint: { alignItems: 'center', width: 20 },
+  dot: { width: 12, height: 12, borderRadius: 6, zIndex: 1 },
+  line: { width: 2, flex: 1, backgroundColor: COLORS.lightGrey1, position: 'absolute', top: 12, bottom: -20 },
+  timelineContent: { flex: 1 },
+  eventStatus: { ...TYPOGRAPHY.bodySmall, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  eventTime: { fontSize: 11, color: COLORS.grey, marginTop: 2 },
+  eventNotes: { fontSize: 11, color: COLORS.textMuted, marginTop: 4, fontStyle: 'italic' },
 });

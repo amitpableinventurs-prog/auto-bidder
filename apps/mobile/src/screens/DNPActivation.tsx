@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -16,106 +16,78 @@ import { useAuth } from '../AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-
-const DNP_AGREEMENT_TEXT = `
-DNP (Distributor Network Partner) Terms and Conditions
-
-1. Program Overview
-The Auto Bidder DNP Program allows verified users to earn commissions by bringing new vehicle listings to the platform and promoting existing listings to prospective buyers.
-
-2. Membership Fee
-Annual DNP Membership Fee: ₹5,000
-Special Launch Offer: Pay After You Earn
-The membership fee will be deducted from your earnings after you start generating commissions according to company policy.
-
-3. Commission Structure
-- Listing Approval Reward: Flat commission when a referred listing gets approved
-- Vehicle Sale Commission: Percentage commission when a referred vehicle is sold
-- Bonus Commissions: Additional rewards for high-performing partners
-
-4. Responsibilities
-- Only refer genuine sellers and buyers
-- Maintain professional conduct
-- Follow platform guidelines
-- Report suspicious activity
-
-5. Payment Terms
-- Commissions are credited after successful transaction completion
-- Minimum withdrawal threshold: ₹1,000
-- Withdrawal requests subject to fraud check and admin approval
-
-6. Termination
-Auto Bidder reserves the right to terminate DNP membership for:
-- Fraudulent activities
-- Policy violations
-- Misconduct
-
-By accepting this agreement, you agree to abide by all terms and conditions.
-`;
+import { request } from '../api';
 
 export default function DNPActivationScreen() {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [deferredFeeAccepted, setDeferredFeeAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showAgreement, setShowAgreement] = useState(false);
+  const [fetchingAgreement, setFetchingAgreement] = useState(true);
+  const [agreementData, setAgreementData] = useState<any>(null);
+  const [showAgreementModal, setShowAgreementModal] = useState(false);
+
+  useEffect(() => {
+    const getAgreement = async () => {
+      try {
+        const data = await request<any>('/api/dnp/agreement');
+        setAgreementData(data);
+      } catch (error) {
+        console.error('Agreement Fetch Error:', error);
+      } finally {
+        setFetchingAgreement(false);
+      }
+    };
+    getAgreement();
+  }, []);
 
   const handleActivate = async () => {
     if (!agreementAccepted || !deferredFeeAccepted) {
-      Alert.alert('Required', 'Please accept both the agreement and deferred fee terms to proceed.');
+      Alert.alert('Required', 'Please accept both the DNP Agreement and the Fee Recovery terms to proceed.');
       return;
     }
 
     setLoading(true);
     try {
-      // API call to activate DNP profile
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/activate`, {
+      const data = await request<any>('/api/dnp/activate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({
           agreementAccepted: true,
-          termsVersion: '1.0',
+          agreementVersion: agreementData?.version || '1.0',
+          termsVersion: agreementData?.termsVersion || '1.0',
         }),
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert(
-          'Congratulations!',
-          'Welcome to Auto Bidder DNP Program. You can now start earning!',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.goBack(),
-            },
-          ]
-        );
-      } else {
-        Alert.alert('Error', data.error || 'Failed to activate DNP profile. Please try again.');
-      }
-    } catch (error) {
-      console.error('DNP Activation Error:', error);
-      Alert.alert('Error', 'Failed to activate DNP profile. Please check your connection and try again.');
+      Alert.alert(
+        'Congratulations!',
+        'Your DNP profile is now active. Welcome to the Auto Bidder Distributor Network Partner program!',
+        [{ text: 'Start Earning', onPress: () => navigation.replace('DNPDashboard') }]
+      );
+    } catch (error: any) {
+      Alert.alert('Activation Failed', error.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetchingAgreement) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={COLORS.secondary} />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       
-      {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={COLORS.black2} />
         </Pressable>
-        <Text style={styles.headerTitle}>DNP Activation</Text>
+        <Text style={styles.headerTitle}>Activate My DNP</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -124,111 +96,61 @@ export default function DNPActivationScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Welcome Card */}
-        <View style={styles.welcomeCard}>
-          <View style={styles.welcomeIcon}>
-            <MaterialCommunityIcons name="crown" size={40} color={COLORS.primary} />
+        <View style={styles.congratsCard}>
+          <View style={styles.crownIcon}>
+            <MaterialCommunityIcons name="crown" size={40} color={COLORS.secondary} />
           </View>
-          <Text style={styles.welcomeTitle}>Become an Auto Bidder DNP Partner</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Congratulations! Auto Bidder is inviting selected users to become Distributor Network Partners (DNP).
-          </Text>
-        </View>
+          <Text style={styles.congratsTitle}>Congratulations!</Text>
+          <Text style={styles.congratsSubtitle}>You have been selected for Zero Upfront Cost.</Text>
 
-        {/* Benefits Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>You can earn by:</Text>
-          <View style={styles.benefitsList}>
-            <BenefitItem 
-              icon="car-outline"
-              title="Bringing vehicle listings to our platform"
-              description="Refer sellers and earn when their listings get approved"
-            />
-            <BenefitItem 
-              icon="share-social-outline"
-              title="Sharing existing listings with interested buyers"
-              description="Promote cars and earn when buyers complete purchases"
-            />
-            <BenefitItem 
-              icon="checkmark-circle-outline"
-              title="Helping close successful deals"
-              description="Get rewarded for facilitating successful transactions"
-            />
-          </View>
-        </View>
-
-        {/* Special Offer Card */}
-        <View style={styles.offerCard}>
-          <View style={styles.offerHeader}>
-            <MaterialCommunityIcons name="gift" size={28} color={COLORS.coral} />
-            <Text style={styles.offerTag}>Special Launch Offer</Text>
-          </View>
-          
-          <View style={styles.offerContent}>
-            <Text style={styles.offerTitle}>Annual DNP Membership Fee</Text>
-            <Text style={styles.offerPrice}>₹5,000</Text>
-            
-            <View style={styles.offerDivider} />
-            
-            <Text style={styles.offerBut}>But...</Text>
-            <Text style={styles.offerHighlight}>Pay After You Earn</Text>
-            <Text style={styles.offerDesc}>
-              No upfront payment is required. The membership fee will be adjusted only after you start earning through the platform according to company policy.
+          <View style={styles.explanationBox}>
+            <Text style={styles.explanationText}>
+              Your annual DNP membership fee is <Text style={styles.boldText}>₹5,000</Text>. You do not need to pay anything today.
+              Your membership fee will be recovered from your future DNP earnings according to the DNP Agreement
+              and applicable Terms & Conditions.
             </Text>
           </View>
         </View>
 
-        {/* Agreement Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Terms & Conditions</Text>
-          
-          <Pressable 
-            style={styles.agreementPreview}
-            onPress={() => setShowAgreement(true)}
-          >
-            <View style={styles.agreementHeader}>
-              <Ionicons name="document-text-outline" size={20} color={COLORS.secondary} />
-              <Text style={styles.agreementTitle}>View Full Agreement</Text>
-              <Ionicons name="chevron-forward" size={20} color={COLORS.grey} />
-            </View>
-            <Text style={styles.agreementPreviewText} numberOfLines={2}>
-              DNP (Distributor Network Partner) Terms and Conditions - Program Overview, Membership Fee, Commission Structure...
-            </Text>
+        <View style={styles.feeSummary}>
+          <Text style={styles.summaryTitle}>Membership Fee Summary</Text>
+
+          <SummaryRow label="Annual DNP Membership Fee" value="₹5,000" />
+          <SummaryRow label="Pay Today" value="₹0" valueStyle={{ color: COLORS.green }} />
+          <View style={styles.divider} />
+          <SummaryRow label="Payment Plan" value="Pay After You Earn" valueStyle={styles.boldGreen} />
+          <SummaryRow label="Recovery Source" value="Future DNP Earnings" />
+        </View>
+
+        <View style={styles.agreementSection}>
+          <Pressable style={styles.agreementBtn} onPress={() => setShowAgreementModal(true)}>
+            <Ionicons name="document-text-outline" size={20} color={COLORS.secondary} />
+            <Text style={styles.agreementBtnText}>View DNP Agreement</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.grey} />
           </Pressable>
 
-          <View style={styles.checkboxContainer}>
-            <Pressable 
-              style={styles.checkbox}
-              onPress={() => setAgreementAccepted(!agreementAccepted)}
-            >
-              <View style={[styles.checkboxBox, agreementAccepted && styles.checkboxChecked]}>
-                {agreementAccepted && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
-              </View>
-              <Text style={styles.checkboxText}>
-                I have read and agree to the DNP Terms & Conditions
-              </Text>
-            </Pressable>
+          <Pressable style={styles.agreementBtn} onPress={() => Alert.alert('Terms', 'Full T&C would open here')}>
+            <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.secondary} />
+            <Text style={styles.agreementBtnText}>View Terms & Conditions</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.grey} />
+          </Pressable>
 
-            <Pressable 
-              style={styles.checkbox}
+          <View style={styles.checkboxes}>
+            <Checkbox
+              checked={agreementAccepted}
+              onPress={() => setAgreementAccepted(!agreementAccepted)}
+              label="I have read and accepted the DNP Agreement and Terms & Conditions."
+            />
+            <Checkbox
+              checked={deferredFeeAccepted}
               onPress={() => setDeferredFeeAccepted(!deferredFeeAccepted)}
-            >
-              <View style={[styles.checkboxBox, deferredFeeAccepted && styles.checkboxChecked]}>
-                {deferredFeeAccepted && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
-              </View>
-              <Text style={styles.checkboxText}>
-                I understand that the ₹5,000 annual DNP membership fee will be deducted after my earnings as per company policy
-              </Text>
-            </Pressable>
+              label="I understand that the annual membership fee of ₹5,000 is not payable upfront and may be recovered from my future DNP earnings according to the agreed recovery terms."
+            />
           </View>
         </View>
 
-        {/* Activate Button */}
-        <Pressable 
-          style={[
-            styles.activateBtn,
-            (!agreementAccepted || !deferredFeeAccepted) && styles.activateBtnDisabled,
-          ]}
+        <Pressable
+          style={[styles.activateBtn, (!agreementAccepted || !deferredFeeAccepted) && styles.disabledBtn]}
           onPress={handleActivate}
           disabled={!agreementAccepted || !deferredFeeAccepted || loading}
         >
@@ -236,25 +158,26 @@ export default function DNPActivationScreen() {
             <ActivityIndicator color={COLORS.white} />
           ) : (
             <>
-              <Text style={styles.activateBtnText}>Activate DNP</Text>
-              <Ionicons name="arrow-forward" size={20} color={COLORS.white} />
+              <Text style={styles.activateBtnText}>Activate My DNP</Text>
+              <Ionicons name="sparkles" size={18} color={COLORS.white} />
             </>
           )}
         </Pressable>
       </ScrollView>
 
-      {/* Agreement Modal */}
-      {showAgreement && (
-        <View style={styles.agreementModal}>
-          <View style={styles.agreementModalContent}>
-            <View style={styles.agreementModalHeader}>
-              <Text style={styles.agreementModalTitle}>DNP Agreement</Text>
-              <Pressable onPress={() => setShowAgreement(false)}>
+      {showAgreementModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>DNP Agreement</Text>
+              <Pressable onPress={() => setShowAgreementModal(false)}>
                 <Ionicons name="close" size={24} color={COLORS.black2} />
               </Pressable>
             </View>
-            <ScrollView style={styles.agreementModalScroll}>
-              <Text style={styles.agreementModalText}>{DNP_AGREEMENT_TEXT}</Text>
+            <ScrollView style={styles.modalScroll}>
+              <Text style={styles.agreementText}>
+                {agreementData?.content || 'Loading agreement...'}
+              </Text>
             </ScrollView>
           </View>
         </View>
@@ -263,25 +186,29 @@ export default function DNPActivationScreen() {
   );
 }
 
-function BenefitItem({ icon, title, description }: { icon: any, title: string, description: string }) {
+function SummaryRow({ label, value, valueStyle }: { label: string, value: string, valueStyle?: any }) {
   return (
-    <View style={styles.benefitItem}>
-      <View style={styles.benefitIcon}>
-        <Ionicons name={icon} size={24} color={COLORS.secondary} />
-      </View>
-      <View style={styles.benefitContent}>
-        <Text style={styles.benefitTitle}>{title}</Text>
-        <Text style={styles.benefitDesc}>{description}</Text>
-      </View>
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={[styles.summaryValue, valueStyle]}>{value}</Text>
     </View>
   );
 }
 
+function Checkbox({ checked, onPress, label }: { checked: boolean, onPress: () => void, label: string }) {
+  return (
+    <Pressable style={styles.checkboxContainer} onPress={onPress}>
+      <View style={[styles.checkbox, checked && styles.checkedBox]}>
+        {checked && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
+      </View>
+      <Text style={styles.checkboxLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
+  container: { flex: 1, backgroundColor: COLORS.white },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -299,26 +226,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    ...TYPOGRAPHY.h6,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  welcomeCard: {
-    backgroundColor: COLORS.lightBlue1,
+  headerTitle: { ...TYPOGRAPHY.h6, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  congratsCard: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 24,
     padding: 24,
-    borderRadius: 20,
     alignItems: 'center',
     marginBottom: 24,
   },
-  welcomeIcon: {
+  crownIcon: {
     width: 70,
     height: 70,
     borderRadius: 35,
@@ -332,237 +250,72 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
-  welcomeTitle: {
-    ...TYPOGRAPHY.h5,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  welcomeSubtitle: {
-    ...TYPOGRAPHY.bodyMedium,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    ...TYPOGRAPHY.h6,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 16,
-  },
-  benefitsList: {
-    gap: 12,
-  },
-  benefitItem: {
-    flexDirection: 'row',
+  congratsTitle: { ...TYPOGRAPHY.h5, fontFamily: FONTS.poppins.bold, color: COLORS.black2, marginBottom: 8 },
+  congratsSubtitle: { ...TYPOGRAPHY.bodyMedium, color: COLORS.secondary, fontFamily: FONTS.poppins.bold, textAlign: 'center' },
+  explanationBox: { marginTop: 16, padding: 12, backgroundColor: COLORS.white, borderRadius: 12 },
+  explanationText: { ...TYPOGRAPHY.bodySmall, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
+  boldText: { fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  feeSummary: {
     backgroundColor: COLORS.white,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.lightGrey2,
-    alignItems: 'flex-start',
-  },
-  benefitIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.lightBlue1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  benefitContent: {
-    flex: 1,
-  },
-  benefitTitle: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 4,
-  },
-  benefitDesc: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.textMuted,
-    lineHeight: 18,
-  },
-  offerCard: {
-    backgroundColor: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
     borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: COLORS.coral,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.lightGrey2,
     marginBottom: 24,
   },
-  offerHeader: {
+  summaryTitle: { ...TYPOGRAPHY.bodyMedium, fontFamily: FONTS.poppins.bold, color: COLORS.black2, marginBottom: 16 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  summaryLabel: { ...TYPOGRAPHY.bodySmall, color: COLORS.textMuted },
+  summaryValue: { ...TYPOGRAPHY.bodySmall, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  boldGreen: { color: COLORS.green, fontFamily: FONTS.poppins.bold },
+  divider: { height: 1, backgroundColor: COLORS.lightGrey2, marginVertical: 12 },
+  agreementSection: { marginBottom: 24 },
+  agreementBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    padding: 16,
-    backgroundColor: 'rgba(234, 88, 12, 0.1)',
-  },
-  offerTag: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.coral,
-    fontSize: 14,
-  },
-  offerContent: {
-    padding: 20,
-  },
-  offerTitle: {
-    ...TYPOGRAPHY.bodyMedium,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 4,
-  },
-  offerPrice: {
-    ...TYPOGRAPHY.h4,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 16,
-  },
-  offerDivider: {
-    height: 1,
-    backgroundColor: COLORS.lightGrey1,
-    marginVertical: 16,
-  },
-  offerBut: {
-    ...TYPOGRAPHY.h5,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.coral,
-    marginBottom: 8,
-  },
-  offerHighlight: {
-    ...TYPOGRAPHY.h4,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.secondary,
-    marginBottom: 12,
-  },
-  offerDesc: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textMuted,
-    lineHeight: 20,
-  },
-  agreementPreview: {
     backgroundColor: COLORS.white,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: COLORS.lightGrey2,
-    marginBottom: 16,
-  },
-  agreementHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  agreementTitle: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.secondary,
-    flex: 1,
-  },
-  agreementPreviewText: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.textMuted,
-    lineHeight: 18,
-  },
-  checkboxContainer: {
+    marginBottom: 12,
     gap: 12,
   },
+  agreementBtnText: { ...TYPOGRAPHY.bodySmall, fontFamily: FONTS.poppins.bold, color: COLORS.secondary, flex: 1 },
+  checkboxes: { gap: 16, marginTop: 12 },
+  checkboxContainer: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   checkbox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  checkboxBox: {
     width: 24,
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
     borderColor: COLORS.lightGrey1,
+    marginTop: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 2,
   },
-  checkboxChecked: {
-    backgroundColor: COLORS.secondary,
-    borderColor: COLORS.secondary,
-  },
-  checkboxText: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.black2,
-    flex: 1,
-    lineHeight: 20,
-  },
+  checkedBox: { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
+  checkboxLabel: { ...TYPOGRAPHY.bodySmall, color: COLORS.black2, flex: 1, lineHeight: 20 },
   activateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.secondary,
     paddingVertical: 18,
-    borderRadius: 16,
-    gap: 8,
+    borderRadius: 18,
+    gap: 10,
     shadowColor: COLORS.secondary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
   },
-  activateBtnDisabled: {
-    backgroundColor: COLORS.lightGrey1,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  activateBtnText: {
-    ...TYPOGRAPHY.bodyMedium,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.white,
-    fontSize: 16,
-  },
-  agreementModal: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  agreementModalContent: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    width: '100%',
-    maxHeight: '80%',
-  },
-  agreementModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGrey2,
-  },
-  agreementModalTitle: {
-    ...TYPOGRAPHY.h6,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-  },
-  agreementModalScroll: {
-    padding: 20,
-  },
-  agreementModalText: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.black2,
-    lineHeight: 24,
-  },
+  disabledBtn: { backgroundColor: COLORS.lightGrey1, shadowOpacity: 0, elevation: 0 },
+  activateBtnText: { ...TYPOGRAPHY.bodyMedium, fontFamily: FONTS.poppins.bold, color: COLORS.white, fontSize: 16 },
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20, zIndex: 1000 },
+  modalContent: { backgroundColor: COLORS.white, borderRadius: 24, maxHeight: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: COLORS.lightGrey2 },
+  modalTitle: { ...TYPOGRAPHY.h6, fontFamily: FONTS.poppins.bold },
+  modalScroll: { padding: 20 },
+  agreementText: { ...TYPOGRAPHY.bodySmall, color: COLORS.black2, lineHeight: 24 },
 });

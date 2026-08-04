@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Dimensions,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ import { useAuth } from '../AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import { request } from '../api';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -26,20 +28,11 @@ export default function DNPDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'REFERRALS' | 'LISTINGS' | 'LEADS'>('DASHBOARD');
 
   const fetchDashboardData = async () => {
-    setLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/dashboard`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setStats(data);
-      }
+      const data = await request<any>('/api/dnp/dashboard');
+      setStats(data);
     } catch (error) {
       console.error('Dashboard Error:', error);
     } finally {
@@ -60,95 +53,137 @@ export default function DNPDashboardScreen() {
   const renderHeader = () => (
     <View style={styles.header}>
       <View>
-        <Text style={styles.greeting}>Welcome back,</Text>
+        <Text style={styles.greeting}>Welcome to DNP</Text>
         <Text style={styles.userName}>{user?.name || 'Partner'}</Text>
+        <View style={styles.partnerIdRow}>
+          <Text style={styles.partnerId}>Partner ID: {stats?.profileId?.substring(0, 8).toUpperCase() || '---'}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: stats?.status === 'ACTIVE' ? COLORS.green + '20' : COLORS.yellow + '20' }]}>
+            <View style={[styles.statusDot, { backgroundColor: stats?.status === 'ACTIVE' ? COLORS.green : COLORS.yellow }]} />
+            <Text style={[styles.statusText, { color: stats?.status === 'ACTIVE' ? COLORS.green : COLORS.yellow }]}>{stats?.status || 'ACTIVE'}</Text>
+          </View>
+        </View>
       </View>
       <View style={styles.headerActions}>
         <Pressable style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
           <Ionicons name="notifications-outline" size={24} color={COLORS.black2} />
         </Pressable>
-        <Pressable style={styles.iconBtn} onPress={() => navigation.navigate('Profile')}>
-          <Ionicons name="person-circle-outline" size={24} color={COLORS.black2} />
-        </Pressable>
+      </View>
+    </View>
+  );
+
+  const renderFinancialSummary = () => (
+    <View style={styles.financialSection}>
+      <View style={styles.membershipBanner}>
+        <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.secondary} />
+        <Text style={styles.membershipText}>Plan: Pay After You Earn</Text>
+      </View>
+
+      <View style={styles.earningsGrid}>
+        <FinancialCard
+          label="Total Earnings"
+          value={`₹${(stats?.financials?.totalEarnings || 0).toLocaleString('en-IN')}`}
+          icon="wallet-outline"
+          color={COLORS.black2}
+        />
+        <FinancialCard
+          label="Pending"
+          value={`₹${(stats?.financials?.pendingEarnings || 0).toLocaleString('en-IN')}`}
+          icon="time-outline"
+          color={COLORS.accent}
+        />
+        <FinancialCard
+          label="Approved"
+          value={`₹${(stats?.financials?.approvedEarnings || 0).toLocaleString('en-IN')}`}
+          icon="checkmark-done-outline"
+          color={COLORS.green}
+        />
+      </View>
+
+      <View style={styles.recoveryCard}>
+        <View style={styles.recoveryRow}>
+          <View style={styles.recoveryItem}>
+            <Text style={styles.recoveryLabel}>Fee Recovered</Text>
+            <Text style={styles.recoveryValue}>₹{(stats?.financials?.recoveredFee || 0).toLocaleString('en-IN')}</Text>
+          </View>
+          <View style={styles.recoveryDivider} />
+          <View style={styles.recoveryItem}>
+            <Text style={styles.recoveryLabel}>Remaining Fee</Text>
+            <Text style={styles.recoveryValue}>₹{(stats?.financials?.remainingFee || 5000).toLocaleString('en-IN')}</Text>
+          </View>
+        </View>
+
+        <View style={styles.balanceRow}>
+          <View>
+            <Text style={styles.balanceLabel}>Withdrawable Balance</Text>
+            <Text style={styles.balanceValue}>₹{(stats?.financials?.availableBalance || 0).toLocaleString('en-IN')}</Text>
+          </View>
+          <Pressable style={styles.withdrawBtn} onPress={() => navigation.navigate('DNPWithdraw')}>
+            <Text style={styles.withdrawBtnText}>Withdraw</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
 
   const renderStatsCards = () => (
-    <View style={styles.statsContainer}>
-      <StatCard
-        icon="wallet-outline"
-        label="Total Earnings"
-        value={`₹${(stats?.stats?.totalEarnings || 0).toLocaleString()}`}
-        color={COLORS.success}
-        trend="+12%"
-      />
-      <StatCard
-        icon="hourglass-outline"
-        label="Pending Earnings"
-        value={`₹${(stats?.stats?.pendingEarnings || 0).toLocaleString()}`}
-        color={COLORS.accent}
-      />
-      <StatCard
-        icon="cash-outline"
-        label="Available Balance"
-        value={`₹${(stats?.stats?.availableBalance || 0).toLocaleString()}`}
-        color={COLORS.secondary}
-      />
-      <StatCard
-        icon="people-outline"
-        label="Total Referrals"
-        value={stats?.stats?.totalReferrals || 0}
-        color={COLORS.primary}
-      />
-      <StatCard
-        icon="car-outline"
-        label="Active Listings"
-        value={stats?.stats?.activeListings || 0}
-        color="#8b5cf6"
-      />
-      <StatCard
-        icon="share-social-outline"
-        label="Shared Listings"
-        value={stats?.stats?.sharedListingsCount || 0}
-        color="#f59e0b"
-      />
-      <StatCard
-        icon="checkmark-circle-outline"
-        label="Sold Vehicles"
-        value={stats?.stats?.soldVehicles || 0}
-        color={COLORS.coral}
-      />
-      <StatCard
-        icon="trending-up-outline"
-        label="Conversion Rate"
-        value={`${stats?.stats?.conversionRate || 0}%`}
-        color="#10b981"
-      />
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Activity Summary</Text>
+      <View style={styles.statsContainer}>
+        <StatCard
+          icon="car-outline"
+          label="Vehicle Leads"
+          value={stats?.activity?.vehicleLeadsSubmitted || 0}
+          color="#8b5cf6"
+        />
+        <StatCard
+          icon="share-social-outline"
+          label="Listings Shared"
+          value={stats?.activity?.listingsShared || 0}
+          color="#f59e0b"
+        />
+        <StatCard
+          icon="person-outline"
+          label="Buyer Leads"
+          value={stats?.activity?.buyerLeads || 0}
+          color={COLORS.secondary}
+        />
+        <StatCard
+          icon="checkmark-circle-outline"
+          label="Conversions"
+          value={stats?.activity?.conversions || 0}
+          color={COLORS.green}
+        />
+      </View>
     </View>
   );
 
   const renderQuickActions = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
+      <Text style={styles.sectionTitle}>Primary Actions</Text>
       <View style={styles.actionGrid}>
         <QuickAction
-          icon="person-add-outline"
-          label="Bring New Listing"
+          icon="car-sport-outline"
+          label="Bring a Car"
           color={COLORS.secondary}
-          onPress={() => navigation.navigate('DNPReferral')}
+          onPress={() => navigation.navigate('DNPVehicleAcquisition')}
         />
         <QuickAction
-          icon="share-outline"
-          label="Share Existing Cars"
+          icon="search-outline"
+          label="Browse & Share"
           color={COLORS.primary}
           onPress={() => navigation.navigate('DNPShareListing')}
         />
         <QuickAction
           icon="list-outline"
+          label="My Shared"
+          color="#f59e0b"
+          onPress={() => navigation.navigate('DNPListings')}
+        />
+        <QuickAction
+          icon="people-circle-outline"
           label="My Leads"
-          color={COLORS.success}
-          onPress={() => setActiveTab('LEADS')}
+          color={COLORS.green}
+          onPress={() => navigation.navigate('DNPLeads')}
         />
         <QuickAction
           icon="wallet-outline"
@@ -157,97 +192,11 @@ export default function DNPDashboardScreen() {
           onPress={() => navigation.navigate('DNPWallet')}
         />
         <QuickAction
-          icon="arrow-down-circle-outline"
-          label="Withdraw Earnings"
-          color={COLORS.coral}
-          onPress={() => navigation.navigate('DNPWithdraw')}
+          icon="document-text-outline"
+          label="Agreement"
+          color={COLORS.grey}
+          onPress={() => navigation.navigate('DNPActivation')}
         />
-        <QuickAction
-          icon="stats-chart-outline"
-          label="My Listings"
-          color="#8b5cf6"
-          onPress={() => setActiveTab('LISTINGS')}
-        />
-      </View>
-    </View>
-  );
-
-  const renderRecentActivity = () => {
-    const activities: any[] = [];
-
-    if (stats?.recentActivity?.referrals) {
-      stats.recentActivity.referrals.forEach((item: any) => {
-        activities.push({
-          icon: 'person-add',
-          title: 'New Referral',
-          description: item.referredUser?.name || 'New user registered',
-          time: new Date(item.createdAt).toLocaleDateString(),
-          color: COLORS.secondary,
-          rawDate: new Date(item.createdAt)
-        });
-      });
-    }
-
-    if (stats?.recentActivity?.leads) {
-      stats.recentActivity.leads.forEach((item: any) => {
-        activities.push({
-          icon: 'list',
-          title: 'New Buyer Lead',
-          description: `${item.buyerName} for ${item.sharedListing?.listing?.title}`,
-          time: new Date(item.createdAt).toLocaleDateString(),
-          color: COLORS.success,
-          rawDate: new Date(item.createdAt)
-        });
-      });
-    }
-
-    // Sort combined activities by date descending
-    activities.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
-
-    return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        {activities.length > 0 ? (
-          activities.slice(0, 5).map((item, index) => (
-            <ActivityItem
-              key={index}
-              icon={item.icon}
-              title={item.title}
-              description={item.description}
-              time={item.time}
-              color={item.color}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Ionicons name="time-outline" size={40} color={COLORS.lightGrey1} />
-            <Text style={styles.emptyText}>No recent activity</Text>
-          </View>
-        )}
-      </View>
-    );
-  };
-
-  const renderReferralCodeCard = () => (
-    <View style={styles.referralCard}>
-      <View style={styles.referralHeader}>
-        <MaterialCommunityIcons name="qrcode" size={32} color={COLORS.secondary} />
-        <View style={styles.referralTitle}>
-          <Text style={styles.referralMainTitle}>Your Referral Code</Text>
-          <Text style={styles.referralSubtitle}>Share and earn commissions</Text>
-        </View>
-      </View>
-      <View style={styles.referralCodeBox}>
-        <Text style={styles.referralCode}>AB-DNP-1234</Text>
-        <Pressable style={styles.copyBtn}>
-          <Ionicons name="copy-outline" size={18} color={COLORS.white} />
-        </Pressable>
-      </View>
-      <View style={styles.shareButtons}>
-        <ShareButton icon="logo-whatsapp" label="WhatsApp" color="#25D366" />
-        <ShareButton icon="logo-facebook" label="Facebook" color="#1877F2" />
-        <ShareButton icon="send" label="Telegram" color="#0088cc" />
-        <ShareButton icon="logo-facebook-messenger" label="SMS" color="#0084FF" />
       </View>
     </View>
   );
@@ -272,23 +221,37 @@ export default function DNPDashboardScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.secondary} />}
       >
-        {renderReferralCodeCard()}
+        {stats?.isSuspicious && (
+          <View style={styles.suspiciousBanner}>
+            <Ionicons name="warning" size={20} color={COLORS.coral} />
+            <Text style={styles.suspiciousText}>Account under review due to high activity.</Text>
+          </View>
+        )}
+        {renderFinancialSummary()}
         {renderStatsCards()}
         {renderQuickActions()}
-        {renderRecentActivity()}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function StatCard({ icon, label, value, color, trend }: { 
+function FinancialCard({ label, value, icon, color }: { label: string, value: string, icon: any, color: string }) {
+  return (
+    <View style={styles.financialCard}>
+      <Ionicons name={icon} size={20} color={color} style={{ marginBottom: 4 }} />
+      <Text style={styles.financialLabel}>{label}</Text>
+      <Text style={[styles.financialValue, { color }]}>{value}</Text>
+    </View>
+  );
+}
+
+function StatCard({ icon, label, value, color }: {
   icon: any, 
   label: string, 
   value: string | number, 
-  color: string,
-  trend?: string 
+  color: string
 }) {
   return (
     <View style={styles.statCard}>
@@ -297,12 +260,6 @@ function StatCard({ icon, label, value, color, trend }: {
       </View>
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={[styles.statValue, { color }]}>{value}</Text>
-      {trend && (
-        <View style={styles.trendBadge}>
-          <Ionicons name="trending-up" size={12} color={COLORS.success} />
-          <Text style={styles.trendText}>{trend}</Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -323,40 +280,10 @@ function QuickAction({ icon, label, color, onPress }: {
   );
 }
 
-function ActivityItem({ icon, title, description, time, color }: {
-  icon: any,
-  title: string,
-  description: string,
-  time: string,
-  color: string
-}) {
-  return (
-    <View style={styles.activityItem}>
-      <View style={[styles.activityIcon, { backgroundColor: color + '15' }]}>
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
-      <View style={styles.activityContent}>
-        <Text style={styles.activityTitle}>{title}</Text>
-        <Text style={styles.activityDesc}>{description}</Text>
-        <Text style={styles.activityTime}>{time}</Text>
-      </View>
-    </View>
-  );
-}
-
-function ShareButton({ icon, label, color }: { icon: any, label: string, color: string }) {
-  return (
-    <Pressable style={[styles.shareButton, { backgroundColor: color + '15' }]}>
-      <Ionicons name={icon} size={20} color={color} />
-      <Text style={[styles.shareButtonLabel, { color }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: '#F8F9FA',
   },
   centered: {
     flex: 1,
@@ -369,27 +296,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGrey2,
   },
   greeting: {
     ...TYPOGRAPHY.bodySmall,
     color: COLORS.textMuted,
+    fontSize: 12,
   },
   userName: {
     ...TYPOGRAPHY.h5,
     fontFamily: FONTS.poppins.bold,
     color: COLORS.black2,
+    fontSize: 20,
+  },
+  partnerIdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 4,
+  },
+  partnerId: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.grey,
+    fontSize: 11,
+    fontFamily: FONTS.poppins.bold,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    gap: 4,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 10,
+    fontFamily: FONTS.poppins.bold,
+    textTransform: 'uppercase',
   },
   headerActions: {
     flexDirection: 'row',
     gap: 12,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.lightGrey2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -400,126 +360,129 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: TAB_BAR_HEIGHT + 20,
   },
-  referralCard: {
-    backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    borderRadius: 20,
+  suspiciousBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    gap: 8,
+  },
+  suspiciousText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: '#991B1B',
+    fontFamily: FONTS.poppins.bold,
+    fontSize: 11,
+  },
+  financialSection: {
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
     padding: 20,
     marginBottom: 24,
-    shadowColor: '#667eea',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.05,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 3,
   },
-  referralHeader: {
+  membershipBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  referralTitle: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  referralMainTitle: {
-    ...TYPOGRAPHY.h6,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.white,
-  },
-  referralSubtitle: {
-    ...TYPOGRAPHY.bodySmall,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  referralCodeBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    padding: 16,
+    backgroundColor: COLORS.lightBlue1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
-    marginBottom: 16,
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginBottom: 20,
   },
-  referralCode: {
-    ...TYPOGRAPHY.h5,
+  membershipText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.secondary,
     fontFamily: FONTS.poppins.bold,
-    color: COLORS.white,
-    letterSpacing: 2,
+    fontSize: 12,
   },
-  copyBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shareButtons: {
+  earningsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  shareButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginHorizontal: 4,
-    gap: 6,
-  },
-  shareButtonLabel: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 11,
-    fontFamily: FONTS.poppins.bold,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -8,
     marginBottom: 24,
   },
-  statCard: {
-    width: (SCREEN_W - 56) / 2,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    margin: 8,
-    borderWidth: 1,
-    borderColor: COLORS.lightGrey2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
+  financialCard: {
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 12,
   },
-  statLabel: {
+  financialLabel: {
     ...TYPOGRAPHY.bodySmall,
     color: COLORS.textMuted,
-    marginBottom: 4,
-  },
-  statValue: {
-    ...TYPOGRAPHY.h6,
-    fontFamily: FONTS.poppins.bold,
-  },
-  trendBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  trendText: {
-    ...TYPOGRAPHY.bodySmall,
     fontSize: 11,
+    marginBottom: 2,
+  },
+  financialValue: {
+    ...TYPOGRAPHY.bodyMedium,
     fontFamily: FONTS.poppins.bold,
-    color: COLORS.success,
+    fontSize: 16,
+  },
+  recoveryCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 16,
+  },
+  recoveryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGrey2,
+  },
+  recoveryItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  recoveryDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: COLORS.lightGrey1,
+  },
+  recoveryLabel: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.textMuted,
+    fontSize: 11,
+  },
+  recoveryValue: {
+    ...TYPOGRAPHY.bodyMedium,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.black2,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  balanceLabel: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.black2,
+    fontFamily: FONTS.poppins.bold,
+  },
+  balanceValue: {
+    ...TYPOGRAPHY.h5,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.secondary,
+  },
+  withdrawBtn: {
+    backgroundColor: COLORS.secondary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  withdrawBtnText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.white,
+    fontFamily: FONTS.poppins.bold,
   },
   section: {
     marginBottom: 24,
@@ -529,6 +492,43 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.poppins.bold,
     color: COLORS.black2,
     marginBottom: 16,
+    fontSize: 18,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -8,
+  },
+  statCard: {
+    width: (SCREEN_W - 56) / 2,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 16,
+    margin: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  statIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statLabel: {
+    ...TYPOGRAPHY.bodySmall,
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  statValue: {
+    ...TYPOGRAPHY.h6,
+    fontFamily: FONTS.poppins.bold,
+    fontSize: 20,
   },
   actionGrid: {
     flexDirection: 'row',
@@ -536,74 +536,30 @@ const styles = StyleSheet.create({
     marginHorizontal: -8,
   },
   quickAction: {
-    width: (SCREEN_W - 56) / 2,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    margin: 8,
-    borderWidth: 1,
-    borderColor: COLORS.lightGrey2,
+    width: (SCREEN_W - 56) / 3,
     alignItems: 'center',
+    marginVertical: 12,
+    marginHorizontal: 4,
   },
   quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
+    backgroundColor: COLORS.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   quickActionLabel: {
     ...TYPOGRAPHY.bodySmall,
     fontFamily: FONTS.poppins.bold,
     color: COLORS.black2,
     textAlign: 'center',
-  },
-  activityItem: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.lightGrey2,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  activityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  activityContent: {
-    flex: 1,
-  },
-  activityTitle: {
-    ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    marginBottom: 2,
-  },
-  activityDesc: {
-    ...TYPOGRAPHY.bodySmall,
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginBottom: 4,
-  },
-  activityTime: {
-    ...TYPOGRAPHY.bodySmall,
     fontSize: 11,
-    color: COLORS.grey,
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textMuted,
-    marginTop: 12,
   },
 });

@@ -46,6 +46,15 @@ import * as SoldVehiclesMod from "../screens/SoldVehicles";
 import * as PurchaseHistoryMod from "../screens/PurchaseHistory";
 import * as ActivityMod from "../screens/Activity";
 import * as DNPScreenMod from "../screens/DNP";
+import * as DNPOnboardingMod from "../screens/DNPOnboarding";
+import * as DNPActivationMod from "../screens/DNPActivation";
+import * as DNPDashboardMod from "../screens/DNPDashboard";
+import * as DNPLeadsMod from "../screens/DNPLeads";
+import * as DNPListingsMod from "../screens/DNPListings";
+import * as DNPWalletMod from "../screens/DNPWallet";
+import * as DNPWithdrawMod from "../screens/DNPWithdraw";
+import * as DNPVehicleAcquisitionMod from "../screens/DNPVehicleAcquisition";
+import * as DNPShareListingMod from "../screens/DNPShareListing";
 import * as TermsOfServiceMod from "../screens/TermsOfService";
 import * as PrivacyPolicyMod from "../screens/PrivacyPolicy";
 import * as BrandDetailsMod from "../screens/BrandDetails";
@@ -90,6 +99,15 @@ const SoldVehicles = resolve(SoldVehiclesMod);
 const PurchaseHistory = resolve(PurchaseHistoryMod);
 const Activity = resolve(ActivityMod);
 const DNPScreen = resolve(DNPScreenMod);
+const DNPOnboarding = resolve(DNPOnboardingMod);
+const DNPActivation = resolve(DNPActivationMod);
+const DNPDashboard = resolve(DNPDashboardMod);
+const DNPLeads = resolve(DNPLeadsMod);
+const DNPListings = resolve(DNPListingsMod);
+const DNPWallet = resolve(DNPWalletMod);
+const DNPWithdraw = resolve(DNPWithdrawMod);
+const DNPVehicleAcquisition = resolve(DNPVehicleAcquisitionMod);
+const DNPShareListing = resolve(DNPShareListingMod);
 const TermsOfService = resolve(TermsOfServiceMod);
 const PrivacyPolicy = resolve(PrivacyPolicyMod);
 const BrandDetails = resolve(BrandDetailsMod);
@@ -267,6 +285,19 @@ export default function AppNavigator() {
       <Stack.Screen name="CarFilter" component={CarSearchFilter} />
       <Stack.Screen name="SellerMeetingOptions" component={SellerMeetingOptions} />
       <Stack.Screen name="PlaceholderScreen" component={PlaceholderScreen} />
+
+      {/* DNP Flow */}
+      <Stack.Group>
+        <Stack.Screen name="DNPOnboarding" component={DNPOnboarding} />
+        <Stack.Screen name="DNPActivation" component={DNPActivation} />
+        <Stack.Screen name="DNPDashboard" component={DNPDashboard} />
+        <Stack.Screen name="DNPLeads" component={DNPLeads} />
+        <Stack.Screen name="DNPListings" component={DNPListings} />
+        <Stack.Screen name="DNPWallet" component={DNPWallet} />
+        <Stack.Screen name="DNPWithdraw" component={DNPWithdraw} />
+        <Stack.Screen name="DNPVehicleAcquisition" component={DNPVehicleAcquisition} />
+        <Stack.Screen name="DNPShareListing" component={DNPShareListing} />
+      </Stack.Group>
 
       {/* Seller Screens */}
       <Stack.Group>

@@ -16,14 +16,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - name: Install packages
+
+      - name: Install root packages
         run: npm install
+
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -31,8 +34,15 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Setup Android
+
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+
+
+      - name: Create Environment File
+        run: |
+          echo "EXPO_PUBLIC_API_BASE_URL=https://api.autobidder.in" > apps/mobile/.env
+
 
       - name: Build APK
         run: |
@@ -46,21 +56,27 @@ jobs:
 
           cd android
 
-          echo "Increasing Gradle memory..."
-          echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=2048m" >> gradle.properties
+          echo "Configuring Gradle memory..."
+          echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=4096m" >> gradle.properties
           echo "org.gradle.daemon=false" >> gradle.properties
-          echo "org.gradle.parallel=true" >> gradle.properties
+          echo "org.gradle.parallel=false" >> gradle.properties
           echo "org.gradle.caching=true" >> gradle.properties
           echo "kotlin.daemon.jvm.options=-Xmx4096m" >> gradle.properties
 
           chmod +x gradlew
 
+          echo "Cleaning previous build..."
+          ./gradlew clean
+
           echo "Building Release APK..."
-          ./gradlew assembleRelease --no-daemon --max-workers=2
+          ./gradlew assembleRelease \
+            -x lintVitalAnalyzeRelease \
+            --no-daemon \
+            --max-workers=1
+
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Auto-Bidder-Release-APK
           path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
-          

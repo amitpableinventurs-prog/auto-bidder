@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { env } from '../env.js';
 import { emailTemplates } from './emailTemplates.js';
+import { logger } from '../utils/logger.js';
 
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
@@ -10,8 +11,8 @@ export class EmailService {
    */
   private static async sendEmail(to: string, subject: string, html: string) {
     if (!resend) {
-      console.warn(`[EmailService] Skipping email to ${to} because RESEND_API_KEY is not configured.`);
-      console.log(`[Email DEV LOG] Subject: ${subject}`);
+      logger.warn(`Skipping email to ${to} because RESEND_API_KEY is not configured.`);
+      logger.log(`[Email DEV LOG] Subject: ${subject}`);
       return { success: true, dummy: true };
     }
     try {
@@ -23,14 +24,14 @@ export class EmailService {
       });
 
       if (error) {
-        console.error(`[EmailService] Error sending email to ${to}:`, error);
+        logger.error(`Error sending email to ${to}:`, error);
         return { success: false, error };
       }
 
-      console.log(`[EmailService] Email sent successfully to ${to}. ID: ${data?.id}`);
+      logger.log(`Email sent successfully to ${to}. ID: ${data?.id}`);
       return { success: true, data };
-    } catch (err) {
-      console.error(`[EmailService] Unexpected error sending email to ${to}:`, err);
+    } catch (err: any) {
+      logger.error(`Unexpected error sending email to ${to}:`, err.message);
       return { success: false, error: err };
     }
   }

@@ -20,13 +20,13 @@ import { useAuth } from '../AuthContext';
 import {
   getUserBids,
   getFavorites,
-  getUserNotifications,
+  getNotifications,
   type ApiListing,
 } from '../api';
 import { useAppStore } from '../store/useAppStore';
 import Logo from '../components/Logo';
 import ScreenWrapper from '../components/ScreenWrapper';
-import { COLORS, FONTS, TAB_BAR_HEIGHT } from '../theme';
+import { COLORS, FONTS, TAB_BAR_HEIGHT, getShadow } from '../theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getListing } from '../api';
 
@@ -147,9 +147,7 @@ const MOCK_NOTIFICATIONS = [
   }
 ];
 
-export default function Activity() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<any>();
+export default function Activity({ navigation, route }: any) {
   const initialTab = route.params?.initialTab as TabType;
 
   const { user } = useAuth();
@@ -180,8 +178,8 @@ export default function Activity() {
               console.warn("Favorites API failed", err);
               return { favorites: MOCK_FAVORITES };
           }),
-          getUserNotifications(user.id).catch(err => {
-              console.warn("Notifications API failed", err);
+          getNotifications(user.id).catch(err => {
+              if (__DEV__) console.warn("Notifications API failed", err);
               return { notifications: MOCK_NOTIFICATIONS };
           }),
         ]);
@@ -514,11 +512,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#F1F5F9',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    ...getShadow(0, 2, 0.05, 4, '#000', 2),
   },
   cardImg: { width: 90, height: 90, borderRadius: 12 },
   cardInfo: { flex: 1, paddingLeft: 12, justifyContent: 'center' },

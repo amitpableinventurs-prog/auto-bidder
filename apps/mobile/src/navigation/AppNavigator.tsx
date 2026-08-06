@@ -28,6 +28,7 @@ import * as CarSearchFilterMod from "../screens/CarSearchFilter";
 import * as SellCarMod from "../screens/SellCar";
 import * as PlaceBidMod from "../screens/PlaceBid";
 import * as UpdateOfferMod from "../screens/UpdateOffer";
+import * as NotificationsMod from "../screens/Notifications";
 import * as CameraGuidanceMod from "../screens/CameraGuidance";
 import * as CarCameraMod from "../screens/CarCamera";
 import * as SplashScreenMod from "../screens/SplashScreen";
@@ -81,6 +82,7 @@ const CarSearchFilter = resolve(CarSearchFilterMod);
 const SellCar = resolve(SellCarMod);
 const PlaceBid = resolve(PlaceBidMod);
 const UpdateOffer = resolve(UpdateOfferMod);
+const Notifications = resolve(NotificationsMod);
 const CameraGuidance = resolve(CameraGuidanceMod);
 const CarCamera = resolve(CarCameraMod);
 const SplashScreen = resolve(SplashScreenMod);
@@ -196,9 +198,9 @@ function TabBar({ state, descriptors, navigation }: any) {
                   source={require('../../assets/DNP (2).png')}
                   style={{
                     width: 24,
-                    height: 24,
-                    tintColor: isFocused ? ACTIVE_COLOR : INACTIVE_COLOR
+                    height: 24
                   }}
+                  tintColor={isFocused ? ACTIVE_COLOR : INACTIVE_COLOR}
                   resizeMode="contain"
                 />
               ) : (
@@ -282,6 +284,7 @@ export default function AppNavigator() {
       <Stack.Screen name="LiveAuction" component={LiveAuction} />
       <Stack.Screen name="PlaceBid" component={PlaceBid} />
       <Stack.Screen name="UpdateOffer" component={UpdateOffer} />
+      <Stack.Screen name="Notifications" component={Notifications} />
       <Stack.Screen name="CarFilter" component={CarSearchFilter} />
       <Stack.Screen name="SellerMeetingOptions" component={SellerMeetingOptions} />
       <Stack.Screen name="PlaceholderScreen" component={PlaceholderScreen} />

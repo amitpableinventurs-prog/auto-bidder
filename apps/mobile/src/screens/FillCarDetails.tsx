@@ -24,12 +24,13 @@ import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navig
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { type CreateListingPayload, uploadFile, getBrands } from '../api';
+import { logger } from '../utils/logger';
 import { ALL_BRANDS } from '../utils/brands';
 import { ALL_RTO_CODES } from '../utils/rto-codes';
 import CalendarModal from '../components/CalendarModal';
 import BottomSelectModal from '../components/BottomSelectModal';
 import ScreenWrapper from '../components/ScreenWrapper';
-import { COLORS } from '../theme';
+import { COLORS, getShadow } from '../theme';
 
 const TEXT_DARK = '#0b1020';
 const MUTED = '#6b7280';
@@ -287,8 +288,8 @@ export default function FillCarDetails() {
       if (res?.brands) {
         setBrands(res.brands);
       }
-    } catch (err) {
-      console.warn("Failed to fetch brands in fill details", err);
+    } catch (err: any) {
+      logger.warn("Failed to fetch brands in fill details", err.message);
     }
   };
 
@@ -412,18 +413,30 @@ export default function FillCarDetails() {
   };
 
   const pickImage = async (type: 'car' | 'rc' | 'invoice' | 'bankNoc') => {
-    if (type === 'car') {
-        launchCamera(type);
-    } else {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 0.6,
-        });
+    const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        quality: 0.6,
+    });
 
-        if (!result.canceled && result.assets[0].uri) {
-            handleImageResult(result.assets[0].uri, result.assets[0].mimeType ?? undefined, result.assets[0].fileName ?? undefined, type);
+    if (!result.canceled && result.assets.length > 0) {
+        setUploading(type);
+        try {
+            const uploadedUrls: string[] = [];
+            for (const asset of result.assets) {
+                const { url } = await uploadFile(asset.uri, asset.mimeType || 'image/jpeg', asset.fileName || undefined);
+                uploadedUrls.push(url);
+            }
+
+            if (type === 'car') setCarImages([...carImages, ...uploadedUrls]);
+            else if (type === 'rc') setRcImages([...rcImages, ...uploadedUrls]);
+            else if (type === 'invoice') setInvoiceImages([...invoiceImages, ...uploadedUrls]);
+            else if (type === 'bankNoc') setBankNocImages([...bankNocImages, ...uploadedUrls]);
+        } catch (error: any) {
+            console.error(`Upload error for ${type}:`, error);
+            Alert.alert('Upload Failed', error.message || 'Failed to upload images. Please try again.');
+        } finally {
+            setUploading(null);
         }
     }
   };
@@ -431,7 +444,13 @@ export default function FillCarDetails() {
   const pickDocument = async (type: 'rc' | 'invoice' | 'bankNoc') => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
+        type: [
+          'application/pdf',
+          'image/*',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ],
+        copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets[0].uri) {
@@ -467,17 +486,17 @@ export default function FillCarDetails() {
 
   const handleImageResult = async (uri: string, mimeType: string | undefined, fileName: string | undefined, type: 'car' | 'rc' | 'invoice' | 'bankNoc') => {
     try {
-      console.log(`Starting upload for ${type}: ${uri}`);
+      logger.log(`Starting upload for ${type}: ${uri}`);
       setUploading(type);
       const { url } = await uploadFile(uri, mimeType || 'image/jpeg', fileName || undefined);
-      console.log(`Upload successful for ${type}: ${url}`);
+      logger.log(`Upload successful for ${type}: ${url}`);
 
       if (type === 'car') setCarImages([...carImages, url]);
       else if (type === 'rc') setRcImages([...rcImages, url]);
       else if (type === 'invoice') setInvoiceImages([...invoiceImages, url]);
       else if (type === 'bankNoc') setBankNocImages([...bankNocImages, url]);
     } catch (error: any) {
-      console.error(`Upload error for ${type}:`, error);
+      logger.error(`Upload error for ${type}:`, error.message);
       Alert.alert('Upload Failed', error.message || 'Failed to upload image. Please try again.');
     } finally {
       setUploading(null);
@@ -1189,6 +1208,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 2,
+    ...getShadow(0, 1, 0.05, 2, "#000", 1),
   },
   brandItemActive: {
     borderColor: BLUE_BTN,
@@ -1358,6 +1378,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    ...getShadow(0, 4, 0.1, 4, "#000", 4),
   },
   skipBtnText: {
     color: '#fff',
@@ -1395,7 +1416,16 @@ const styles = StyleSheet.create({
   modalItemText: { fontSize: 16, color: TEXT_DARK },
   modalItemTextActive: { color: BLUE_BTN, fontWeight: '700' },
 
-  submitBtn: { height: 50, backgroundColor: BLUE_BTN, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginTop: 32, flexDirection: 'row' },
+  submitBtn: {
+    height: 50,
+    backgroundColor: BLUE_BTN,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 32,
+    flexDirection: 'row',
+    ...getShadow(0, 4, 0.1, 8, "#000", 4),
+  },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 
   calendarCard: { backgroundColor: '#fff', borderRadius: 16, margin: 20, padding: 20, width: '90%', alignSelf: 'center' },

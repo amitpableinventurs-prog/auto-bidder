@@ -15,7 +15,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 
@@ -50,10 +50,8 @@ const COLORS = {
   gold: "#FFD700",
 };
 
-export default function CarDetails() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'CarDetails'>>();
-  const { listingId } = route.params;
+export default function CarDetails({ navigation, route }: any) {
+  const { listingId } = route.params || {};
   const { user } = useAuth();
   const { selectedListing, selectedCity, addRecentlyViewed, setSelectedListing } = useAppStore();
   const insets = useSafeAreaInsets();
@@ -86,27 +84,28 @@ export default function CarDetails() {
       }
 
       socketService.connect();
-      socketService.joinListing(listingId);
+      socketService.joinAuction(listingId);
 
-      socketService.onBidCreated(({ bid }) => {
+      const offBid = socketService.onBidUpdated(({ bid }) => {
           if (bid && bid.listingId === listingId) {
               fetchListingData(false);
           }
       });
-    }
 
-    return () => {
-        if (listingId) {
-            socketService.offBidCreated();
-            socketService.leaveListing(listingId);
-        }
-    };
+      return () => {
+          if (listingId) {
+              offBid();
+              socketService.leaveAuction(listingId);
+          }
+      };
+    }
   }, [listingId]);
 
   const fetchListingData = async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
         const res = await getListing(listingId);
+        console.log('[DEBUG] Listing Data received:', JSON.stringify(res.listing, null, 2));
         setListing(res.listing);
         setSelectedListing(res.listing);
         addRecentlyViewed(res.listing);
@@ -299,7 +298,7 @@ export default function CarDetails() {
   };
 
   return (
-    <ScreenWrapper style={styles.safe}>
+    <ScreenWrapper style={styles.safe} scrollable={true}>
       <StatusBar style="dark" />
 
       {/* Header */}
@@ -343,7 +342,7 @@ export default function CarDetails() {
           scrollEventThrottle={16}
           keyExtractor={(_, i) => i.toString()}
           renderItem={({ item }) => (
-            <Image source={{ uri: item }} style={styles.mainImage} />
+            <Image source={{ uri: item }} style={styles.mainImage} resizeMode="cover" />
           )}
         />
 
@@ -448,7 +447,7 @@ export default function CarDetails() {
                           navigation.push('CarDetails', { listingId: item.id });
                       }}
                   >
-                    <Image source={{ uri: item.imageUrl || 'https://images.unsplash.com/photo-1541899481282-d53bffe3c15d?auto=format&fit=crop&w=400&q=80' }} style={styles.collectionImg} />
+                    <Image source={{ uri: item.imageUrl || 'https://images.unsplash.com/photo-1541899481282-d53bffe3c15d?auto=format&fit=crop&w=400&q=80' }} style={styles.collectionImg} resizeMode="cover" />
                     <View style={styles.collectionOverlay}>
                       <Text style={styles.collectionText} numberOfLines={1}>{item.title}</Text>
                       <Text style={{color: '#FFF', fontSize: 10, fontWeight: '700'}}>{formatCurrency(item.demandPrice)}</Text>
@@ -550,7 +549,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: { backgroundColor: '#F8FAFC' },
   heroWrap: { height: 250, width: SCREEN_W, backgroundColor: '#000' },
-  mainImage: { width: SCREEN_W, height: 250, resizeMode: 'cover' },
+  mainImage: { width: SCREEN_W, height: 250 },
   heroOverlayBottom: { position: 'absolute', bottom: 15, left: 15, right: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   plateBadge: { backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4 },
   plateText: { color: '#FFF', fontSize: 12, fontWeight: '600' },

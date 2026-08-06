@@ -30,7 +30,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../AuthContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as api from "../api";
-import { API_BASE_URL } from '../api';
+import { API_BASE_URL } from '../config';
 import { ALL_BRANDS } from '../utils/brands';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -103,7 +103,7 @@ export default function PhoneLoginOnboarding() {
         const user = await res.json();
 
         const fullPhone = `${selectedCountry.code}${phone}`;
-        await socialLogin(user.email, user.name, user.picture, user.id, fullPhone);
+        await socialLogin(user.email, user.name, user.picture, user.id, fullPhone, userType);
 
         Alert.alert('Success', 'Logged in successfully!');
         navigation.reset({
@@ -117,6 +117,7 @@ export default function PhoneLoginOnboarding() {
     }
   };
 
+  const [userType, setUserType] = useState<'BUYER' | 'SELLER'>('BUYER');
   const [phone, setPhone] = useState('');
   const [whatsappUpdates, setWhatsappUpdates] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -305,6 +306,22 @@ export default function PhoneLoginOnboarding() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.bottomContent}>
           <Text style={styles.loginTitle}>Login With {"\n"}Your Mobile Number</Text>
 
+          <View style={styles.typeSelector}>
+            <Pressable
+              style={[styles.typeBtn, userType === 'BUYER' && styles.typeBtnActive]}
+              onPress={() => setUserType('BUYER')}
+            >
+              <Ionicons name="person" size={20} color={userType === 'BUYER' ? COLORS.white : COLORS.textMuted} />
+              <Text style={[styles.typeBtnText, userType === 'BUYER' && styles.typeBtnTextActive]}>BUYER</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.typeBtn, userType === 'SELLER' && styles.typeBtnActive]}
+              onPress={() => setUserType('SELLER')}
+            >
+              <Ionicons name="business" size={22} color={userType === 'SELLER' ? COLORS.white : COLORS.textMuted} />
+              <Text style={[styles.typeBtnText, userType === 'SELLER' && styles.typeBtnTextActive]}>SELLER</Text>
+            </Pressable>
+          </View>
 
           <View style={styles.inputContainer}>
              <View style={styles.inputRow}>
@@ -399,9 +416,8 @@ export default function PhoneLoginOnboarding() {
                 try {
                   // Wait for OTP request to succeed before navigating
                   setPhoneNumber(fullPhone);
-                  await api.requestOtp(fullPhone);
-                  console.log("OTP requested successfully, navigating...");
-                  navigation.navigate('Otp', { phoneNumber: fullPhone });
+                  await api.requestOTP(fullPhone);
+                  navigation.navigate('Otp', { phoneNumber: fullPhone, userType });
                 } catch (err: any) {
                   console.warn("OTP request failed:", err.message);
 
@@ -412,7 +428,7 @@ export default function PhoneLoginOnboarding() {
                       'Backend returned an error. Navigate to OTP screen anyway for testing?',
                       [
                         { text: 'Cancel', style: 'cancel' },
-                        { text: 'Yes (Dev)', onPress: () => navigation.navigate('Otp', { phoneNumber: fullPhone }) }
+                        { text: 'Yes (Dev)', onPress: () => navigation.navigate('Otp', { phoneNumber: fullPhone, userType }) }
                       ]
                     );
                   } else {
@@ -831,5 +847,33 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontFamily: FONTS.poppins.semiBold,
   },
-
+  typeSelector: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  typeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.lightGrey2,
+  },
+  typeBtnActive: {
+    backgroundColor: COLORS.secondary,
+    borderColor: COLORS.secondary,
+  },
+  typeBtnText: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    fontFamily: FONTS.poppins.bold,
+  },
+  typeBtnTextActive: {
+    color: COLORS.white,
+  },
 });

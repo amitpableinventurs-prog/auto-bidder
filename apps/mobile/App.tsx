@@ -40,12 +40,9 @@ import {
   OpenSans_700Bold
 } from '@expo-google-fonts/open-sans';
 
-export default function App() {
-  console.log('APP LOADED VERSION 2');
-  useEffect(() => {
-    // validateEnv();
-  }, []);
+import { API_BASE_URL } from './src/config';
 
+export default function App() {
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -59,10 +56,11 @@ export default function App() {
   });
 
   useEffect(() => {
-    // validateEnv();
-    registerForPushNotificationsAsync()
-      .then(token => console.log('Push token:', token))
-      .catch(err => console.warn('Push notification registration failed:', err));
+    if (validateEnv()) {
+      registerForPushNotificationsAsync()
+        .then(token => console.log('Push token:', token))
+        .catch(err => console.warn('Push notification registration failed:', err));
+    }
   }, []);
 
   if (!fontsLoaded) {

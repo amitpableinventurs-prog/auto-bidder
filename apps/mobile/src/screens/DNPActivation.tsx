@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { COLORS, TYPOGRAPHY, FONTS } from '../theme';
+import { COLORS, TYPOGRAPHY, FONTS, getShadow } from '../theme';
 import { useAuth } from '../AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -84,7 +84,10 @@ export default function DNPActivationScreen() {
       <StatusBar style="dark" />
       
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Pressable
+          style={styles.backBtn}
+          onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainDrawer')}
+        >
           <Ionicons name="arrow-back" size={24} color={COLORS.black2} />
         </Pressable>
         <Text style={styles.headerTitle}>Activate My DNP</Text>
@@ -97,29 +100,57 @@ export default function DNPActivationScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.congratsCard}>
-          <View style={styles.crownIcon}>
-            <MaterialCommunityIcons name="crown" size={40} color={COLORS.secondary} />
+          <View style={styles.badgeContainer}>
+            <View style={styles.crownCircle}>
+              <MaterialCommunityIcons name="crown" size={32} color={COLORS.secondary} />
+            </View>
+            <View style={styles.sparkleContainer}>
+              <Ionicons name="sparkles" size={16} color={COLORS.secondary} style={styles.sparkle1} />
+              <Ionicons name="sparkles" size={12} color={COLORS.secondary} style={styles.sparkle2} />
+            </View>
           </View>
-          <Text style={styles.congratsTitle}>Congratulations!</Text>
-          <Text style={styles.congratsSubtitle}>You have been selected for Zero Upfront Cost.</Text>
 
-          <View style={styles.explanationBox}>
-            <Text style={styles.explanationText}>
-              Your annual DNP membership fee is <Text style={styles.boldText}>₹5,000</Text>. You do not need to pay anything today.
-              Your membership fee will be recovered from your future DNP earnings according to the DNP Agreement
-              and applicable Terms & Conditions.
-            </Text>
+          <Text style={styles.congratsTitle}>Distributor Network Partner</Text>
+          <Text style={styles.congratsSubtitle}>Exclusive Early Access for You!</Text>
+
+          <View style={styles.benefitRow}>
+            <View style={styles.benefitItem}>
+              <Ionicons name="flash-outline" size={16} color={COLORS.green} />
+              <Text style={styles.benefitText}>Zero Upfront Cost</Text>
+            </View>
+            <View style={styles.benefitDot} />
+            <View style={styles.benefitItem}>
+              <Ionicons name="trending-up-outline" size={16} color={COLORS.green} />
+              <Text style={styles.benefitText}>Unlimited Earnings</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.feeSummary}>
-          <Text style={styles.summaryTitle}>Membership Fee Summary</Text>
+        <View style={styles.feeCard}>
+          <Text style={styles.sectionTitle}>Activation Details</Text>
 
-          <SummaryRow label="Annual DNP Membership Fee" value="₹5,000" />
-          <SummaryRow label="Pay Today" value="₹0" valueStyle={{ color: COLORS.green }} />
-          <View style={styles.divider} />
-          <SummaryRow label="Payment Plan" value="Pay After You Earn" valueStyle={styles.boldGreen} />
-          <SummaryRow label="Recovery Source" value="Future DNP Earnings" />
+          <View style={styles.feeHighlight}>
+            <View>
+              <Text style={styles.feeLabel}>Payable Today</Text>
+              <Text style={styles.feeValueMain}>₹0.00</Text>
+            </View>
+            <View style={styles.feeBadge}>
+              <Text style={styles.feeBadgeText}>APPROVED</Text>
+            </View>
+          </View>
+
+          <View style={styles.feeInfoBox}>
+            <Text style={styles.feeInfoText}>
+              The <Text style={styles.boldText}>₹5,000</Text> annual membership fee is deferred. It will be recovered automatically from your <Text style={styles.boldText}>future earnings</Text> only.
+            </Text>
+          </View>
+
+          <View style={styles.summaryList}>
+            <SummaryRow label="Annual Membership Fee" value="₹5,000" />
+            <SummaryRow label="Special Offer Discount" value="- ₹5,000" valueStyle={{ color: COLORS.green }} />
+            <View style={styles.divider} />
+            <SummaryRow label="Amount to Pay Now" value="₹0" valueStyle={styles.boldText} />
+          </View>
         </View>
 
         <View style={styles.agreementSection}>
@@ -207,7 +238,7 @@ function Checkbox({ checked, onPress, label }: { checked: boolean, onPress: () =
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
@@ -215,103 +246,172 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGrey2,
+    backgroundColor: COLORS.white,
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.lightGrey2,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: { ...TYPOGRAPHY.h6, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  headerTitle: { fontSize: 18, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
   scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   congratsCard: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 24,
-    padding: 24,
+    backgroundColor: COLORS.white,
+    borderRadius: 30,
+    padding: 30,
     alignItems: 'center',
     marginBottom: 24,
+    ...getShadow(0, 10, 0.05, 20, "#000", 4),
   },
-  crownIcon: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: COLORS.white,
+  badgeContainer: {
+    marginBottom: 20,
+    position: 'relative',
+  },
+  crownCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
+    borderWidth: 4,
+    borderColor: COLORS.white,
   },
-  congratsTitle: { ...TYPOGRAPHY.h5, fontFamily: FONTS.poppins.bold, color: COLORS.black2, marginBottom: 8 },
-  congratsSubtitle: { ...TYPOGRAPHY.bodyMedium, color: COLORS.secondary, fontFamily: FONTS.poppins.bold, textAlign: 'center' },
-  explanationBox: { marginTop: 16, padding: 12, backgroundColor: COLORS.white, borderRadius: 12 },
-  explanationText: { ...TYPOGRAPHY.bodySmall, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
-  boldText: { fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
-  feeSummary: {
+  sparkleContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sparkle1: { position: 'absolute', top: 0, right: -4 },
+  sparkle2: { position: 'absolute', bottom: 10, left: -8 },
+  congratsTitle: { fontSize: 20, fontFamily: FONTS.poppins.bold, color: COLORS.black2, textAlign: 'center' },
+  congratsSubtitle: { fontSize: 13, color: COLORS.secondary, fontFamily: FONTS.poppins.bold, textAlign: 'center', marginTop: 4 },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    gap: 12,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  benefitText: {
+    fontSize: 11,
+    fontFamily: FONTS.poppins.bold,
+    color: '#059669',
+  },
+  benefitDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+  },
+  feeCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 24,
+    ...getShadow(0, 4, 0.03, 12, "#000", 2),
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.black2,
+    marginBottom: 20,
+  },
+  feeHighlight: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: COLORS.lightGrey2,
+    borderColor: '#DCFCE7',
+  },
+  feeLabel: {
+    fontSize: 11,
+    color: '#166534',
+    fontFamily: FONTS.poppins.bold,
+    textTransform: 'uppercase',
+  },
+  feeValueMain: {
+    fontSize: 28,
+    fontFamily: FONTS.poppins.bold,
+    color: '#15803d',
+  },
+  feeBadge: {
+    backgroundColor: '#15803d',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  feeBadgeText: {
+    fontSize: 10,
+    color: COLORS.white,
+    fontFamily: FONTS.poppins.bold,
+  },
+  feeInfoBox: {
     marginBottom: 24,
   },
-  summaryTitle: { ...TYPOGRAPHY.bodyMedium, fontFamily: FONTS.poppins.bold, color: COLORS.black2, marginBottom: 16 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  summaryLabel: { ...TYPOGRAPHY.bodySmall, color: COLORS.textMuted },
-  summaryValue: { ...TYPOGRAPHY.bodySmall, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
-  boldGreen: { color: COLORS.green, fontFamily: FONTS.poppins.bold },
-  divider: { height: 1, backgroundColor: COLORS.lightGrey2, marginVertical: 12 },
-  agreementSection: { marginBottom: 24 },
+  feeInfoText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  summaryList: {
+    gap: 12,
+  },
+  boldText: { fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  summaryLabel: { fontSize: 13, color: COLORS.textMuted, fontFamily: FONTS.poppins.medium },
+  summaryValue: { fontSize: 13, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
+  divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 8 },
+  agreementSection: { marginBottom: 30 },
   agreementBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    padding: 16,
+    padding: 14,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.lightGrey2,
     marginBottom: 12,
     gap: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  agreementBtnText: { ...TYPOGRAPHY.bodySmall, fontFamily: FONTS.poppins.bold, color: COLORS.secondary, flex: 1 },
+  agreementBtnText: { fontSize: 13, fontFamily: FONTS.poppins.bold, color: COLORS.black2, flex: 1 },
   checkboxes: { gap: 16, marginTop: 12 },
   checkboxContainer: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   checkbox: {
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: COLORS.lightGrey1,
+    borderColor: '#D1D5DB',
     marginTop: 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkedBox: { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
-  checkboxLabel: { ...TYPOGRAPHY.bodySmall, color: COLORS.black2, flex: 1, lineHeight: 20 },
+  checkboxLabel: { fontSize: 12, color: COLORS.black2, flex: 1, lineHeight: 18, fontFamily: FONTS.poppins.medium },
   activateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.secondary,
     paddingVertical: 18,
-    borderRadius: 18,
+    borderRadius: 20,
     gap: 10,
-    shadowColor: COLORS.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    ...getShadow(0, 10, 0.3, 20, COLORS.secondary, 8),
   },
-  disabledBtn: { backgroundColor: COLORS.lightGrey1, shadowOpacity: 0, elevation: 0 },
-  activateBtnText: { ...TYPOGRAPHY.bodyMedium, fontFamily: FONTS.poppins.bold, color: COLORS.white, fontSize: 16 },
+  disabledBtn: { backgroundColor: '#CBD5E1', shadowOpacity: 0, elevation: 0 },
+  activateBtnText: { fontSize: 16, fontFamily: FONTS.poppins.bold, color: COLORS.white },
   modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20, zIndex: 1000 },
   modalContent: { backgroundColor: COLORS.white, borderRadius: 24, maxHeight: '80%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: COLORS.lightGrey2 },

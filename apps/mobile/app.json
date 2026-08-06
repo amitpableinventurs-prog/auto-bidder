@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Auto Bidder",
+    "slug": "auto-bidder-mobile",
     "version": "1.0.0",
     "description": "AutoBidder - Premium Car Auction Marketplace",
     "owner": "autobidder",
@@ -9,9 +9,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "updates": {
-      "url": "https://u.expo.dev/your-project-id",
       "fallbackToCacheTimeout": 0
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -20,11 +22,11 @@
       "bundleIdentifier": "com.autobidder.mobile",
       "scheme": "autobidder",
       "associatedDomains": [
-        "applinks:autobidder.com"
+        "applinks:api.autobidder.in"
       ]
     },
     "android": {
-      "package": "com.anonymous.autobidder",
+      "package": "com.autobidder.app",
       "versionCode": 1,
       "scheme": "autobidder",
       "adaptiveIcon": {
@@ -48,7 +50,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "autobidder.com",
+              "host": "api.autobidder.in",
               "pathPrefix": "/"
             }
           ],
@@ -110,7 +112,10 @@
           "defaultChannel": "default"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-asset",
+      "expo-sharing",
+      "expo-status-bar"
     ]
   }
 }

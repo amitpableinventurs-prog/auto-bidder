@@ -67,13 +67,13 @@ export function createDnpRouter() {
 
     const referralCode = `AB-DNP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    const profile = await prisma.$transaction(async (tx) => {
+    const profile = await prisma.$transaction(async (tx: any) => {
       const p = await (tx as any).dNPProfile.upsert({
         where: { userId },
         create: {
           userId,
           referralCode,
-          referralLink: `https://autobidder.in/dnp/${referralCode}`,
+          referralLink: `https://api.autobidder.in/dnp/${referralCode}`,
           status: 'ACTIVE',
           activationDate: new Date(),
         },
@@ -334,7 +334,7 @@ export function createDnpRouter() {
     res.json({
       share,
       lead,
-      shareLink: `https://autobidder.in/car/${listing.id}?ref=${share.shareToken}`
+      shareLink: `https://api.autobidder.in/car/${listing.id}?ref=${share.shareToken}`
     });
   });
 
@@ -400,7 +400,7 @@ export function createDnpRouter() {
     const { amount } = z.object({ amount: z.number().min(1000, 'Minimum withdrawal is ₹1,000') }).parse(req.body);
     if (amount > profile.availableBalance) return res.status(400).json({ error: 'Insufficient available balance.' });
 
-    const withdrawal = await prisma.$transaction(async (tx) => {
+    const withdrawal = await prisma.$transaction(async (tx: any) => {
       const w = await (tx as any).dNPWithdrawalRequest.create({
         data: {
           dnpProfileId: profile.id,

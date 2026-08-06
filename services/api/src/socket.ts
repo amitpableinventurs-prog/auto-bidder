@@ -2,9 +2,10 @@ import type { Server as HttpServer } from 'node:http';
 import { Server, Socket } from 'socket.io';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
-import { env } from './env.js';
+import { env, corsOrigins } from './env.js';
 import { prisma } from './prisma.js';
 import { devStore, type PaymentStatus } from './devStore.js';
+import { logger } from './utils/logger.js';
 
 const useMemoryStore = env.AUTO_BIDDER_STORE === 'memory';
 
@@ -27,13 +28,33 @@ export function getIo() {
  */
 export function attachSocketServer(httpServer: HttpServer) {
   io = new Server(httpServer, {
+    path: '/api/socket.io',
     cors: {
-      origin: env.CORS_ORIGIN,
+      origin: (origin, callback) => {
+        // Allow mobile apps (no origin), whitelisted domains, and common development origins
+        if (
+          !origin ||
+          corsOrigins.includes('*') ||
+          corsOrigins.includes(origin) ||
+          origin.includes('localhost:') ||
+          origin.includes('127.0.0.1:') ||
+          origin.endsWith('.autobidder.in')
+        ) {
+          callback(null, true);
+        } else {
+          console.warn(`[SOCKET CORS REJECTED] Origin: ${origin}`);
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      methods: ['GET', 'POST'],
       credentials: true,
     },
-    // Production-ready settings
+    // Reliability settings
+    allowEIO3: true,
     pingTimeout: 60000,
     pingInterval: 25000,
+    connectTimeout: 45000,
+    transports: ['websocket', 'polling'], // Support both, but client is now forced to websocket
   });
 
   // Authentication Middleware
@@ -56,7 +77,7 @@ export function attachSocketServer(httpServer: HttpServer) {
 
   io.on('connection', (socket: Socket) => {
     const userId = (socket as any).userId;
-    console.log(`User connected: ${userId} (Socket: ${socket.id})`);
+    logger.log(`User connected: ${userId} (Socket: ${socket.id})`);
 
     // Broadcast userConnected to specific user's private room if needed,
     // or just acknowledge connection.
@@ -68,7 +89,7 @@ export function attachSocketServer(httpServer: HttpServer) {
         const { auctionId } = joinSchema.parse(payload);
         await socket.join(`auction:${auctionId}`);
 
-        console.log(`User ${userId} joined auction room: ${auctionId}`);
+        logger.log(`User ${userId} joined auction room: ${auctionId}`);
 
         // Fetch current auction state
         let highestBid = null;
@@ -88,8 +109,8 @@ export function attachSocketServer(httpServer: HttpServer) {
         }
 
         ack?.({ ok: true, bidHistory, highestBid });
-      } catch (e) {
-        console.error('joinAuction error:', e);
+      } catch (e: any) {
+        logger.error('joinAuction error:', e.message);
         ack?.({ ok: false, error: e instanceof Error ? e.message : 'Invalid payload' });
       }
     });
@@ -99,7 +120,7 @@ export function attachSocketServer(httpServer: HttpServer) {
       try {
         const { auctionId } = joinSchema.parse(payload);
         await socket.leave(`auction:${auctionId}`);
-        console.log(`User ${userId} left auction room: ${auctionId}`);
+        logger.log(`User ${userId} left auction room: ${auctionId}`);
         ack?.({ ok: true });
       } catch (e) {
         ack?.({ ok: false, error: e instanceof Error ? e.message : 'Invalid payload' });
@@ -118,7 +139,7 @@ export function attachSocketServer(httpServer: HttpServer) {
           result = devStore.createBid(auctionId, bidderId, amount);
         } else {
           // Database transaction to prevent race conditions
-          result = await prisma.$transaction(async (tx) => {
+          result = await prisma.$transaction(async (tx: any) => {
             // 1. Get current listing and lock for update to prevent concurrent bids
             // Note: SQLite doesn't support SELECT FOR UPDATE well, but we use transactions.
             // For Postgres, we would use: await tx.$executeRaw`SELECT * FROM "Listing" WHERE id = ${auctionId} FOR UPDATE`;
@@ -154,14 +175,14 @@ export function attachSocketServer(httpServer: HttpServer) {
         await processAutoBids(auctionId, bidderId);
 
         ack?.({ ok: true, bid: result });
-      } catch (e) {
-        console.error('placeBid error:', e);
+      } catch (e: any) {
+        logger.error('placeBid error:', e.message);
         ack?.({ ok: false, error: e instanceof Error ? e.message : 'Invalid bid request' });
       }
     });
 
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${userId} (Socket: ${socket.id})`);
+      logger.log(`User disconnected: ${userId} (Socket: ${socket.id})`);
       io?.emit('userDisconnected', { userId, socketId: socket.id });
     });
   });

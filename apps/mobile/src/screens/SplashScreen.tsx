@@ -9,6 +9,7 @@ import {
   Text,
   View,
   Pressable,
+  Platform,
 } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from 'expo-status-bar';
@@ -16,7 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useAuth } from '../AuthContext';
-import { COLORS, TYPOGRAPHY } from '../theme';
+import { COLORS, TYPOGRAPHY, getShadow, FONTS } from '../theme';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -45,7 +46,7 @@ export default function SplashScreen() {
       toValue: 1,
       duration: 1800,
       easing: Easing.inOut(Easing.quad),
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start(() => {
       if (!mounted.current) return;
       setPhase('flash');
@@ -60,7 +61,7 @@ export default function SplashScreen() {
       toValue: 1,
       duration: 2000,
       easing: Easing.bezier(0.42, 0, 0.58, 1),
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start(() => {
         if (!mounted.current) return;
         setIsWhite(true);
@@ -73,7 +74,7 @@ export default function SplashScreen() {
                 Animated.timing(onboardingAnim, {
                     toValue: 1,
                     duration: 800,
-                    useNativeDriver: true,
+                    useNativeDriver: Platform.OS !== 'web',
                 }).start();
             }
         }, 300);
@@ -229,13 +230,16 @@ const styles = StyleSheet.create({
   },
   title: {
     color: COLORS.white,
-    ...TYPOGRAPHY.h1,
+    fontSize: 32,
+    fontWeight: '800',
+    fontFamily: FONTS.poppins.bold,
     textAlign: 'center',
     marginBottom: 12,
   },
   subtitle: {
     color: 'rgba(255,255,255,0.7)',
-    ...TYPOGRAPHY.bodyMedium,
+    fontSize: 16,
+    fontFamily: FONTS.openSans.regular,
     textAlign: 'center',
     marginBottom: 40,
   },
@@ -248,11 +252,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    elevation: 8,
-    shadowColor: COLORS.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    ...getShadow(0, 4, 0.3, 8, COLORS.secondary, 8),
   },
   iconCircle: {
     width: 28,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 1,
-    fontFamily: TYPOGRAPHY.h1.fontFamily,
+    fontFamily: FONTS.poppins.bold,
   },
   footerLinks: {
     flexDirection: 'row',
@@ -280,13 +280,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.5)',
     fontSize: 12,
     lineHeight: 22,
-    fontFamily: TYPOGRAPHY.bodySmall.fontFamily,
+    fontFamily: FONTS.openSans.regular,
   },
   linkText: {
     color: COLORS.primary,
     fontSize: 12,
     fontWeight: '600',
     textDecorationLine: 'underline',
-    fontFamily: TYPOGRAPHY.bodySmall.fontFamily,
+    fontFamily: FONTS.openSans.regular,
   },
 });

@@ -1,10 +1,11 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../../../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -20,8 +21,8 @@ model User {
   isFeatured     Boolean         @default(false)
   kycStatus      String?         @default("PENDING")
   kycImageUrl    String?
-  role           Role            @default("BUYER")
-  userType       String?         @default("OWNER")
+  role           Role            @default(BUYER)
+  userType       String?         @default("BUYER")
   businessName   String?
   createdAt      DateTime        @default(now())
   appointments   Appointment[]
@@ -32,6 +33,9 @@ model User {
   listings       Listing[]
   notifications  Notification[]
   pushTokens     PushToken[]
+
+  @@index([email])
+  @@index([phone])
 }
 
 model OTP {
@@ -100,7 +104,7 @@ model Listing {
   commission              String?
   inspectionReportUrl     String?
   inspectionReportStatus  String?           @default("PENDING")
-  status                  ListingStatus     @default("DRAFT")
+  status                  ListingStatus     @default(DRAFT)
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
   sellerId                String
@@ -118,31 +122,35 @@ model Listing {
   @@index([createdAt])
   @@index([status, city])
   @@index([brand, model])
+  @@index([transmission, fuelType])
+  @@index([carType])
+  @@index([demandPrice])
 }
 
 model Bid {
   id              String         @id @default(cuid())
   amount          Int
-  status          BidStatus      @default("SUBMITTED")
+  status          BidStatus      @default(SUBMITTED)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   listingId       String
   userId          String
   autoBidConfigId String?
   listing         Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  user            User           @relation(fields: [userId], references: [id])
-  autoBidConfig   AutoBidConfig? @relation(fields: [autoBidConfigId], references: [id])
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  autoBidConfig   AutoBidConfig? @relation(fields: [autoBidConfigId], references: [id], onDelete: SetNull)
   payment         Payment?
 
   @@index([listingId, createdAt])
   @@index([userId, status])
   @@index([autoBidConfigId])
+  @@index([amount])
 }
 
 model Appointment {
   id          String            @id @default(cuid())
   type        AppointmentType
-  status      AppointmentStatus @default("PENDING")
+  status      AppointmentStatus @default(PENDING)
   scheduledAt DateTime?
   location    String?
   notes       String?
@@ -162,10 +170,10 @@ model RtoNoc {
   rtoTaxStatus  String?
   rtoDues       String?
   rtoNocIssued  String?
-  bankNocStatus NocStatus @default("NOT_STARTED")
-  rtoNocStatus  NocStatus @default("NOT_STARTED")
-  invoiceStatus NocStatus @default("NOT_STARTED")
-  ownerIdStatus NocStatus @default("NOT_STARTED")
+  bankNocStatus NocStatus @default(NOT_STARTED)
+  rtoNocStatus  NocStatus @default(NOT_STARTED)
+  invoiceStatus NocStatus @default(NOT_STARTED)
+  ownerIdStatus NocStatus @default(NOT_STARTED)
   uploadedCount Int       @default(0)
   notes         String?
   createdAt     DateTime  @default(now())
@@ -178,7 +186,7 @@ model Payment {
   id                    String        @id @default(cuid())
   amount                Int
   currency              String        @default("INR")
-  status                PaymentStatus @default("PENDING")
+  status                PaymentStatus @default(PENDING)
   stripePaymentIntentId String?       @unique
   stripeClientSecret    String?
   metadata              Json?
@@ -224,6 +232,7 @@ model Notification {
 
   @@index([userId, read])
   @@index([createdAt])
+  @@index([type])
 }
 
 model PushToken {
@@ -236,7 +245,7 @@ model PushToken {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([userId, isActive])
   @@index([token])
 }
 
@@ -304,7 +313,7 @@ model DNPProfile {
   userId               String                   @unique
   referralCode         String                   @unique
   referralLink         String
-  status               DNPStatus                @default("INACTIVE")
+  status               DNPStatus                @default(INACTIVE)
   activationDate       DateTime?
   isSuspicious         Boolean                  @default(false)
   suspiciousReason     String?
@@ -349,7 +358,7 @@ model DNPMembershipRecovery {
   membershipYear  Int
   totalFee        Int               @default(5000)
   recoveredAmount Int               @default(0)
-  status          RecoveryStatus    @default("NOT_STARTED")
+  status          RecoveryStatus    @default(NOT_STARTED)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   dnpProfile      DNPProfile        @relation(fields: [dnpProfileId], references: [id], onDelete: Cascade)
@@ -379,7 +388,7 @@ model DNPVehicleLead {
   location             String
   images               String?
   notes                String?
-  status               VehicleLeadStatus      @default("SUBMITTED")
+  status               VehicleLeadStatus      @default(SUBMITTED)
   listingId            String?                @unique
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
@@ -418,7 +427,7 @@ model DNPBuyerLead {
   city           String?
   budget         Int?
   notes          String?
-  status         BuyerLeadStatus        @default("SHARED")
+  status         BuyerLeadStatus        @default(SHARED)
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   listingShare   DNPListingShare        @relation(fields: [listingShareId], references: [id], onDelete: Cascade)
@@ -452,7 +461,7 @@ model DNPCommission {
   buyerLeadId   String?
   listingId     String?
   amount        Int
-  status        CommissionStatus @default("PENDING")
+  status        CommissionStatus @default(PENDING)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   listing       Listing?         @relation(fields: [listingId], references: [id])
@@ -505,7 +514,7 @@ model DNPWithdrawalRequest {
   id           String           @id @default(cuid())
   dnpProfileId String
   amount       Int
-  status       WithdrawalStatus @default("PENDING")
+  status       WithdrawalStatus @default(PENDING)
   adminNotes   String?
   processedAt  DateTime?
   createdAt    DateTime         @default(now())

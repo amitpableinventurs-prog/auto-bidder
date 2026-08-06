@@ -10,11 +10,15 @@ attachSocketServer(server);
 
 server.listen(env.PORT, '0.0.0.0', () => {
   // eslint-disable-next-line no-console
-  console.log(`API listening on http://0.0.0.0:${env.PORT}`);
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(`API listening on port ${env.PORT}`);
+  }
 });
 
 function shutdown(signal: string) {
-  console.log(`${signal} received; closing API server`);
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(`${signal} received; closing API server`);
+  }
   server.close((error) => process.exit(error ? 1 : 0));
   setTimeout(() => process.exit(1), 10_000).unref();
 }

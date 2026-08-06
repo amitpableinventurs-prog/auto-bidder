@@ -18,6 +18,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useAuth } from '../AuthContext';
+import { logger } from '../utils/logger';
 import * as api from "../api";
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -65,6 +66,7 @@ export default function OtpVerification() {
   const { user, login } = useAuth();
   const phoneNumber = route.params?.phoneNumber || '';
   const registrationData = route.params?.registrationData;
+  const userTypeParam = route.params?.userType;
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
   const [submitting, setSubmitting] = useState(false);
@@ -74,10 +76,10 @@ export default function OtpVerification() {
     if (resending) return;
     setResending(true);
     try {
-      await api.requestOtp(phoneNumber);
+      await api.requestOTP(phoneNumber);
       Alert.alert('Success', 'OTP Resent!');
-    } catch (err) {
-      console.warn('Resend OTP failed', err);
+    } catch (err: any) {
+      logger.warn('Resend OTP failed', err.message);
     } finally {
       setResending(false);
     }
@@ -122,16 +124,16 @@ export default function OtpVerification() {
     if (submitting) return;
     setSubmitting(true);
 
-    console.log("Verifying OTP:", otp, "for", phoneNumber);
+    logger.log("Verifying OTP:", otp, "for", phoneNumber);
 
     const loginParams = registrationData
-      ? [phoneNumber, otp, registrationData.name, registrationData.userType, registrationData.email]
-      : [phoneNumber, otp, user?.name || undefined, (user?.userType as any) || undefined];
+      ? [phoneNumber, otp, registrationData.name, registrationData.userType]
+      : [phoneNumber, otp, user?.name || undefined, userTypeParam || (user?.userType as any) || undefined];
 
     // @ts-ignore - spread operator with optional arguments
     login(...loginParams)
       .then((loggedInUser: any) => {
-        console.log("OTP verified successfully");
+        logger.log("OTP verified successfully");
         if (loggedInUser && loggedInUser.isVerified) {
           navigation.reset({
             index: 0,
@@ -142,7 +144,7 @@ export default function OtpVerification() {
         }
       })
       .catch(err => {
-        console.warn("OTP verification failed", err);
+        logger.warn("OTP verification failed", err.message);
         // Bypass for development if backend is not responding
         Alert.alert(
           "Verification Error",
@@ -152,7 +154,7 @@ export default function OtpVerification() {
             {
               text: "Bypass (Dev)",
               onPress: () => {
-                console.log("Bypassing verification for development");
+                logger.log("Bypassing verification for development");
                 navigation.navigate('CompleteProfile');
               }
             }

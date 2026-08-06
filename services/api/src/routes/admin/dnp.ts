@@ -183,7 +183,7 @@ export function createAdminDnpRouter() {
       const commission = await DNPService.approveCommission(id);
       res.json({ commission });
     } else if (action === 'PAY') {
-      const commission = await prisma.$transaction(async (tx) => {
+      const commission = await prisma.$transaction(async (tx: any) => {
         const c = await (tx as any).dNPCommission.update({
           where: { id },
           data: { status: 'PAID' }
@@ -222,7 +222,7 @@ export function createAdminDnpRouter() {
     const withdrawal = await (prisma as any).dNPWithdrawalRequest.findUnique({ where: { id } });
     if (!withdrawal) return res.status(404).json({ error: 'Withdrawal not found' });
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: any) => {
       const w = await (tx as any).dNPWithdrawalRequest.update({
         where: { id },
         data: { status, adminNotes, processedAt: (status === 'PAID' || status === 'APPROVED') ? new Date() : null }

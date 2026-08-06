@@ -1,12 +1,11 @@
 import { io, Socket } from 'socket.io-client';
 import { Platform } from 'react-native';
-
-const fallbackBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? fallbackBaseUrl;
+import { SOCKET_URL } from '../config';
 
 class SocketService {
   private socket: Socket | null = null;
   private token: string | null = null;
+  private reconnectionAttempts = 0;
 
   /**
    * Initializes the socket connection with the provided JWT token.
@@ -15,33 +14,37 @@ class SocketService {
     if (token) this.token = token;
 
     if (!this.socket) {
-      console.log('Connecting to socket at:', API_BASE_URL);
-      this.socket = io(API_BASE_URL, {
-        transports: ['websocket', 'polling'],
+      this.socket = io(SOCKET_URL, {
+        path: '/api/socket.io',
+        transports: ['websocket'], // Force websocket for stability on Web and Mobile
+        upgrade: false, // Prevent switching to polling
         autoConnect: true,
         reconnection: true,
-        reconnectionAttempts: Infinity, // Production ready: keep trying
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 10, // Increase attempts
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000,
+        timeout: 20000,
+        forceNew: true,
+        jsonp: false,
         auth: {
           token: this.token,
         },
       });
 
       this.socket.on('connect', () => {
-        console.log('Socket connected successfully');
+        this.reconnectionAttempts = 0;
       });
 
       this.socket.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason);
+        if (reason === 'io server disconnect') {
+          this.socket?.connect();
+        }
       });
 
       this.socket.on('connect_error', (error) => {
-        console.warn('Socket connection error:', error.message);
+        this.reconnectionAttempts++;
       });
     } else if (token && this.socket.connected) {
-        // If already connected but token changed, we might need to reconnect
-        // For simplicity, we just update the auth object for next connection
         this.socket.auth = { token };
     }
 
@@ -86,37 +89,44 @@ class SocketService {
 
   onBidUpdated(callback: (data: { bid: any }) => void) {
     this.getSocket().on('bidUpdated', callback);
+    return () => this.getSocket().off('bidUpdated', callback);
   }
 
-  offBidUpdated() {
-    this.getSocket().off('bidUpdated');
+  offBidUpdated(callback?: (data: { bid: any }) => void) {
+    if (callback) {
+      this.getSocket().off('bidUpdated', callback);
+    } else {
+      this.getSocket().off('bidUpdated');
+    }
   }
 
   onAuctionStarted(callback: (data: any) => void) {
     this.getSocket().on('auctionStarted', callback);
+    return () => this.getSocket().off('auctionStarted', callback);
   }
 
-  offAuctionStarted() {
-    this.getSocket().off('auctionStarted');
+  offAuctionStarted(callback?: (data: any) => void) {
+    if (callback) {
+      this.getSocket().off('auctionStarted', callback);
+    } else {
+      this.getSocket().off('auctionStarted');
+    }
   }
 
   onAuctionEnded(callback: (data: any) => void) {
     this.getSocket().on('auctionEnded', callback);
+    return () => this.getSocket().off('auctionEnded', callback);
   }
 
-  offAuctionEnded() {
-    this.getSocket().off('auctionEnded');
+  offAuctionEnded(callback?: (data: any) => void) {
+    if (callback) {
+      this.getSocket().off('auctionEnded', callback);
+    } else {
+      this.getSocket().off('auctionEnded');
+    }
   }
 
-  onUserConnected(callback: (data: any) => void) {
-    this.getSocket().on('userConnected', callback);
-  }
-
-  onUserDisconnected(callback: (data: any) => void) {
-    this.getSocket().on('userDisconnected', callback);
-  }
-
-  // --- Notifications (Keeping existing functionality) ---
+  // --- Notifications ---
 
   subscribeToNotifications(userId: string) {
     this.getSocket().emit('notifications:subscribe', { userId });
@@ -124,10 +134,15 @@ class SocketService {
 
   onNotificationNew(callback: (data: { notification: any }) => void) {
     this.getSocket().on('notification:new', callback);
+    return () => this.getSocket().off('notification:new', callback);
   }
 
-  offNotificationNew() {
-    this.getSocket().off('notification:new');
+  offNotificationNew(callback?: (data: { notification: any }) => void) {
+    if (callback) {
+      this.getSocket().off('notification:new', callback);
+    } else {
+      this.getSocket().off('notification:new');
+    }
   }
 }
 

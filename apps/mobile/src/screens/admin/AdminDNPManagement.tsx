@@ -17,6 +17,7 @@ import { useAuth } from '../../AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { API_BASE_URL } from '../../config';
 
 const MOCK_DNP_USERS = [
   {
@@ -79,7 +80,7 @@ export default function AdminDNPManagementScreen() {
   const fetchDNPUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/admin/dnp/profiles`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/dnp/profiles`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -102,7 +103,7 @@ export default function AdminDNPManagementScreen() {
   const handleStatusUpdate = async (userId: string, newStatus: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/admin/dnp/profiles/${userId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/dnp/profiles/${userId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

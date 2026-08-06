@@ -19,16 +19,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { ApiListing, getListing, placeBid as placeBidApi } from '../api';
 import { useAuth } from '../AuthContext';
-import { COLORS, FONTS, TYPOGRAPHY } from '../theme';
+import { COLORS, FONTS, TYPOGRAPHY, getShadow } from '../theme';
 import { socketService } from '../utils/socket';
 import { useAppStore } from '../store/useAppStore';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-export default function PlaceBid() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'PlaceBid'>>();
-  const { listingId } = route.params;
+export default function PlaceBid({ navigation, route }: any) {
+  const { listingId } = route.params || {};
   const { user } = useAuth();
   const userId = user?.id;
 
@@ -103,7 +101,8 @@ export default function PlaceBid() {
         try {
             await placeBidApi(listing.id, userId, offerAmount);
         } catch (apiError: any) {
-            console.warn('REST API Bid failed, trying socket', apiError);
+            console.warn('REST API Bid failed:', apiError);
+            console.warn('Error details:', apiError.message);
             await socketService.placeBid(listing.id, offerAmount);
         }
 
@@ -261,11 +260,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10
+    ...getShadow(0, 10, 0.2, 20, '#000', 10),
   },
   header: {
     flexDirection: 'row',

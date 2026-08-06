@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { COLORS, TYPOGRAPHY, FONTS } from '../theme';
+import { logger } from '../utils/logger';
 import { useAuth } from '../AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -101,8 +102,8 @@ export default function DNPShareListingScreen() {
       await Share.share({
         message: `Check out this ${selectedListing.brand} ${selectedListing.model} on Auto Bidder!\n\nView details: ${shareLink}`,
       });
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      logger.error('Share error:', error.message);
     }
   };
 
@@ -128,7 +129,10 @@ export default function DNPShareListingScreen() {
     <View style={styles.container}>
       <StatusBar style="dark" />
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Pressable
+          style={styles.backBtn}
+          onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainDrawer')}
+        >
           <Ionicons name="arrow-back" size={24} color={COLORS.black2} />
         </Pressable>
         <Text style={styles.headerTitle}>Browse & Share</Text>

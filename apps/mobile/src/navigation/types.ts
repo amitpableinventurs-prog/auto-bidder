@@ -6,10 +6,11 @@ export type RootStackParamList = {
   Register: undefined;
   Otp: {
     phoneNumber: string;
+    userType?: 'BUYER' | 'SELLER';
     registrationData?: {
       name: string;
       email: string;
-      userType: 'OWNER' | 'DEALER';
+      userType: 'BUYER' | 'SELLER';
     }
   };
   CompleteProfile: undefined;
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   LiveAuction: { listingId: string };
   PlaceBid: { listingId: string };
   UpdateOffer: { listingId: string };
+  Notifications: undefined;
   SellCarNew: undefined;
   ChooseCarType: { brand?: string; listingData?: any };
   SellerDashboard: undefined;

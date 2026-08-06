@@ -1,11 +1,14 @@
 import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { logger } from './logger';
 
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 export async function registerForPushNotificationsAsync() {
+  if (Platform.OS === 'web') return null;
+
   if (isExpoGo) {
-    console.log('Push notifications are not supported in Expo Go on SDK 53+. Please use a development build.');
+    logger.log('Push notifications are not supported in Expo Go on SDK 53+. Please use a development build.');
     return null;
   }
 
@@ -42,7 +45,7 @@ export async function registerForPushNotificationsAsync() {
     }
 
     if (!Device.isDevice) {
-      console.log('Must use physical device for Push Notifications');
+      logger.log('Must use physical device for Push Notifications');
       return null;
     }
 
@@ -62,10 +65,10 @@ export async function registerForPushNotificationsAsync() {
       Constants?.easConfig?.projectId;
 
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-    console.log('Expo Push Token:', token);
+    logger.log('Expo Push Token:', token);
     return token;
-  } catch (e) {
-    console.warn('Push notification setup failed:', e);
+  } catch (e: any) {
+    logger.warn('Push notification setup failed:', e.message);
     return null;
   }
 }

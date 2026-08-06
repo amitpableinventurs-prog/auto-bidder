@@ -42,17 +42,21 @@ export default function CameraGuidance() {
 
   useEffect(() => {
     async function changeOrientation() {
-      // Step 2, 3, 4 are Landscape
-      if (isFocused && step >= 2) {
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
-      } else {
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      // Screen orientation locking is often not supported or restricted on Web
+      try {
+        if (isFocused && step >= 2) {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
+        } else {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+        }
+      } catch (error) {
+        logger.warn('Orientation lock failed:', error);
       }
     }
     changeOrientation();
 
     return () => {
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
     };
   }, [isFocused, step]);
 

@@ -73,9 +73,17 @@ export default function DNPOnboardingScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.skipBtn} onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
-        </Pressable>
+        <View style={styles.headerLeft}>
+          <Pressable
+            style={styles.backBtn}
+            onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainDrawer')}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.black2} />
+          </Pressable>
+          <Pressable style={styles.skipBtn} onPress={handleSkip}>
+            <Text style={styles.skipText}>Skip</Text>
+          </Pressable>
+        </View>
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>{currentIndex + 1}/{ONBOARDING_SLIDES.length}</Text>
         </View>
@@ -157,6 +165,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  backBtn: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.lightGrey2,
   },
   skipBtn: {
     paddingHorizontal: 16,

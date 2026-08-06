@@ -21,6 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { updateUser, uploadFile } from '../api';
+import { logger } from '../utils/logger';
 import * as ImagePicker from 'expo-image-picker';
 import { z } from 'zod';
 
@@ -103,6 +104,7 @@ export default function EditProfile() {
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (err: any) {
+      logger.error('Update profile failed:', err.message);
       Alert.alert('Error', err.message || 'Failed to update profile');
     } finally {
       setLoading(false);

@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { COLORS, TYPOGRAPHY, FONTS, TAB_BAR_HEIGHT } from '../theme';
+import { COLORS, TYPOGRAPHY, FONTS, TAB_BAR_HEIGHT, getShadow } from '../theme';
 import { useAuth } from '../AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,9 +22,8 @@ import { request } from '../api';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-export default function DNPDashboardScreen() {
+export default function DNPDashboardScreen({ navigation }: any) {
   const { user, token } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<any>(null);
@@ -52,74 +51,84 @@ export default function DNPDashboardScreen() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <View>
-        <Text style={styles.greeting}>Welcome to DNP</Text>
-        <Text style={styles.userName}>{user?.name || 'Partner'}</Text>
-        <View style={styles.partnerIdRow}>
-          <Text style={styles.partnerId}>Partner ID: {stats?.profileId?.substring(0, 8).toUpperCase() || '---'}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: stats?.status === 'ACTIVE' ? COLORS.green + '20' : COLORS.yellow + '20' }]}>
-            <View style={[styles.statusDot, { backgroundColor: stats?.status === 'ACTIVE' ? COLORS.green : COLORS.yellow }]} />
-            <Text style={[styles.statusText, { color: stats?.status === 'ACTIVE' ? COLORS.green : COLORS.yellow }]}>{stats?.status || 'ACTIVE'}</Text>
+      <View style={styles.headerTop}>
+        <View style={styles.headerLeft}>
+          <Pressable
+            style={styles.backBtn}
+            onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainDrawer')}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.black2} />
+          </Pressable>
+          <View>
+            <Text style={styles.greeting}>Welcome back,</Text>
+            <Text style={styles.userName}>{user?.name || 'Partner'}</Text>
           </View>
         </View>
-      </View>
-      <View style={styles.headerActions}>
-        <Pressable style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
+        <Pressable style={styles.notificationBtn} onPress={() => navigation.navigate('Notifications')}>
           <Ionicons name="notifications-outline" size={24} color={COLORS.black2} />
+          <View style={styles.notificationBadge} />
         </Pressable>
+      </View>
+
+      <View style={styles.partnerInfoRow}>
+        <View style={styles.idContainer}>
+          <Text style={styles.partnerIdLabel}>PARTNER ID</Text>
+          <Text style={styles.partnerIdValue}>{stats?.profileId?.substring(0, 8).toUpperCase() || '---'}</Text>
+        </View>
+        <View style={styles.vDivider} />
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusLabel}>STATUS</Text>
+          <View style={[styles.statusBadge, { backgroundColor: stats?.status === 'ACTIVE' ? '#DCFCE7' : '#FEF9C3' }]}>
+            <View style={[styles.statusDot, { backgroundColor: stats?.status === 'ACTIVE' ? COLORS.green : COLORS.yellow }]} />
+            <Text style={[styles.statusText, { color: stats?.status === 'ACTIVE' ? '#166534' : '#854d0e' }]}>{stats?.status || 'ACTIVE'}</Text>
+          </View>
+        </View>
       </View>
     </View>
   );
 
   const renderFinancialSummary = () => (
     <View style={styles.financialSection}>
-      <View style={styles.membershipBanner}>
-        <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.secondary} />
-        <Text style={styles.membershipText}>Plan: Pay After You Earn</Text>
-      </View>
-
-      <View style={styles.earningsGrid}>
-        <FinancialCard
-          label="Total Earnings"
-          value={`₹${(stats?.financials?.totalEarnings || 0).toLocaleString('en-IN')}`}
-          icon="wallet-outline"
-          color={COLORS.black2}
-        />
-        <FinancialCard
-          label="Pending"
-          value={`₹${(stats?.financials?.pendingEarnings || 0).toLocaleString('en-IN')}`}
-          icon="time-outline"
-          color={COLORS.accent}
-        />
-        <FinancialCard
-          label="Approved"
-          value={`₹${(stats?.financials?.approvedEarnings || 0).toLocaleString('en-IN')}`}
-          icon="checkmark-done-outline"
-          color={COLORS.green}
-        />
-      </View>
-
-      <View style={styles.recoveryCard}>
-        <View style={styles.recoveryRow}>
-          <View style={styles.recoveryItem}>
-            <Text style={styles.recoveryLabel}>Fee Recovered</Text>
-            <Text style={styles.recoveryValue}>₹{(stats?.financials?.recoveredFee || 0).toLocaleString('en-IN')}</Text>
-          </View>
-          <View style={styles.recoveryDivider} />
-          <View style={styles.recoveryItem}>
-            <Text style={styles.recoveryLabel}>Remaining Fee</Text>
-            <Text style={styles.recoveryValue}>₹{(stats?.financials?.remainingFee || 5000).toLocaleString('en-IN')}</Text>
-          </View>
+      <View style={styles.balanceHeader}>
+        <View>
+          <Text style={styles.balanceLabel}>Withdrawable Balance</Text>
+          <Text style={styles.balanceValue}>₹{(stats?.financials?.availableBalance || 0).toLocaleString('en-IN')}</Text>
         </View>
+        <Pressable style={styles.withdrawBtn} onPress={() => navigation.navigate('DNPWithdraw')}>
+          <Text style={styles.withdrawBtnText}>Withdraw</Text>
+          <Ionicons name="arrow-forward" size={14} color={COLORS.white} />
+        </Pressable>
+      </View>
 
-        <View style={styles.balanceRow}>
-          <View>
-            <Text style={styles.balanceLabel}>Withdrawable Balance</Text>
-            <Text style={styles.balanceValue}>₹{(stats?.financials?.availableBalance || 0).toLocaleString('en-IN')}</Text>
+      <View style={styles.earningsRow}>
+        <View style={styles.earningItem}>
+          <Text style={styles.earningLabel}>Total Earned</Text>
+          <Text style={styles.earningValue}>₹{(stats?.financials?.totalEarnings || 0).toLocaleString('en-IN')}</Text>
+        </View>
+        <View style={styles.hDivider} />
+        <View style={styles.earningItem}>
+          <Text style={styles.earningLabel}>Pending</Text>
+          <Text style={styles.earningValue}>₹{(stats?.financials?.pendingEarnings || 0).toLocaleString('en-IN')}</Text>
+        </View>
+        <View style={styles.hDivider} />
+        <View style={styles.earningItem}>
+          <Text style={styles.earningLabel}>Approved</Text>
+          <Text style={styles.earningValue}>₹{(stats?.financials?.approvedEarnings || 0).toLocaleString('en-IN')}</Text>
+        </View>
+      </View>
+
+      <View style={styles.membershipRecovery}>
+        <View style={styles.recoveryInfo}>
+          <View style={styles.recoveryTextRow}>
+            <MaterialCommunityIcons name="shield-check" size={16} color={COLORS.secondary} />
+            <Text style={styles.recoveryTitle}>Membership Recovery Plan</Text>
           </View>
-          <Pressable style={styles.withdrawBtn} onPress={() => navigation.navigate('DNPWithdraw')}>
-            <Text style={styles.withdrawBtnText}>Withdraw</Text>
-          </Pressable>
+          <Text style={styles.recoveryProgressText}>
+            ₹{(stats?.financials?.recoveredFee || 0).toLocaleString('en-IN')} / ₹{(stats?.financials?.totalFee || 5000).toLocaleString('en-IN')}
+          </Text>
+        </View>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: `${((stats?.financials?.recoveredFee || 0) / 5000) * 100}%` }]} />
         </View>
       </View>
     </View>
@@ -255,11 +264,13 @@ function StatCard({ icon, label, value, color }: {
 }) {
   return (
     <View style={styles.statCard}>
-      <View style={[styles.statIcon, { backgroundColor: color + '15' }]}>
-        <Ionicons name={icon} size={24} color={color} />
+      <View style={[styles.statIconContainer, { backgroundColor: color + '10' }]}>
+        <Ionicons name={icon} size={22} color={color} />
       </View>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <View>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </View>
     </View>
   );
 }
@@ -272,7 +283,7 @@ function QuickAction({ icon, label, color, onPress }: {
 }) {
   return (
     <Pressable style={styles.quickAction} onPress={onPress}>
-      <View style={[styles.quickActionIcon, { backgroundColor: color + '15' }]}>
+      <View style={[styles.quickActionIcon, { backgroundColor: COLORS.white, borderColor: color + '20' }]}>
         <Ionicons name={icon} size={24} color={color} />
       </View>
       <Text style={styles.quickActionLabel}>{label}</Text>
@@ -283,7 +294,7 @@ function QuickAction({ icon, label, color, onPress }: {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F3F4F6',
   },
   centered: {
     flex: 1,
@@ -291,45 +302,113 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    ...getShadow(0, 10, 0.05, 20, "#000", 5),
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGrey2,
+    marginBottom: 20,
   },
-  greeting: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textMuted,
-    fontSize: 12,
-  },
-  userName: {
-    ...TYPOGRAPHY.h5,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-    fontSize: 20,
-  },
-  partnerIdRow: {
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 4,
   },
-  partnerId: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.grey,
-    fontSize: 11,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  greeting: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    fontFamily: FONTS.poppins.medium,
+  },
+  userName: {
+    fontSize: 22,
     fontFamily: FONTS.poppins.bold,
+    color: COLORS.black2,
+    marginTop: -2,
+  },
+  notificationBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.coral,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+  },
+  partnerInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 12,
+  },
+  idContainer: {
+    flex: 1,
+    paddingLeft: 8,
+  },
+  partnerIdLabel: {
+    fontSize: 9,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.textMuted,
+    letterSpacing: 1,
+  },
+  partnerIdValue: {
+    fontSize: 14,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.black2,
+  },
+  vDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 16,
+  },
+  statusContainer: {
+    flex: 1.2,
+  },
+  statusLabel: {
+    fontSize: 9,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.textMuted,
+    letterSpacing: 1,
+    marginBottom: 2,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-    gap: 4,
+    paddingVertical: 3,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    gap: 6,
   },
   statusDot: {
     width: 6,
@@ -337,21 +416,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   statusText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: FONTS.poppins.bold,
-    textTransform: 'uppercase',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   scroll: {
     flex: 1,
@@ -372,194 +438,179 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   suspiciousText: {
-    ...TYPOGRAPHY.bodySmall,
+    fontSize: 11,
     color: '#991B1B',
     fontFamily: FONTS.poppins.bold,
-    fontSize: 11,
   },
   financialSection: {
-    backgroundColor: COLORS.white,
-    borderRadius: 24,
-    padding: 20,
+    backgroundColor: COLORS.secondary,
+    borderRadius: 28,
+    padding: 24,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
+    ...getShadow(0, 8, 0.2, 16, COLORS.secondary, 8),
   },
-  membershipBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.lightBlue1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    gap: 6,
-    marginBottom: 20,
-  },
-  membershipText: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.secondary,
-    fontFamily: FONTS.poppins.bold,
-    fontSize: 12,
-  },
-  earningsGrid: {
+  balanceHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  financialCard: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  financialLabel: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textMuted,
-    fontSize: 11,
-    marginBottom: 2,
-  },
-  financialValue: {
-    ...TYPOGRAPHY.bodyMedium,
-    fontFamily: FONTS.poppins.bold,
-    fontSize: 16,
-  },
-  recoveryCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 16,
-  },
-  recoveryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGrey2,
-  },
-  recoveryItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  recoveryDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: COLORS.lightGrey1,
-  },
-  recoveryLabel: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textMuted,
-    fontSize: 11,
-  },
-  recoveryValue: {
-    ...TYPOGRAPHY.bodyMedium,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.black2,
-  },
-  balanceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 28,
   },
   balanceLabel: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.black2,
-    fontFamily: FONTS.poppins.bold,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    fontFamily: FONTS.poppins.medium,
+    marginBottom: 4,
   },
   balanceValue: {
-    ...TYPOGRAPHY.h5,
+    fontSize: 32,
     fontFamily: FONTS.poppins.bold,
-    color: COLORS.secondary,
+    color: COLORS.white,
   },
   withdrawBtn: {
-    backgroundColor: COLORS.secondary,
-    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   withdrawBtnText: {
-    ...TYPOGRAPHY.bodySmall,
+    fontSize: 12,
     color: COLORS.white,
     fontFamily: FONTS.poppins.bold,
+  },
+  earningsRow: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 24,
+  },
+  earningItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  hDivider: {
+    width: 1,
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  earningLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.6)',
+    fontFamily: FONTS.poppins.medium,
+    marginBottom: 2,
+  },
+  earningValue: {
+    fontSize: 14,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.white,
+  },
+  membershipRecovery: {
+    gap: 10,
+  },
+  recoveryInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  recoveryTextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  recoveryTitle: {
+    fontSize: 11,
+    color: COLORS.white,
+    fontFamily: FONTS.poppins.bold,
+  },
+  recoveryProgressText: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)',
+    fontFamily: FONTS.poppins.bold,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.white,
+    borderRadius: 3,
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    ...TYPOGRAPHY.h6,
+    fontSize: 18,
     fontFamily: FONTS.poppins.bold,
     color: COLORS.black2,
     marginBottom: 16,
-    fontSize: 18,
   },
   statsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -8,
+    marginHorizontal: -6,
   },
   statCard: {
-    width: (SCREEN_W - 56) / 2,
+    width: (SCREEN_W - 52) / 2,
     backgroundColor: COLORS.white,
     borderRadius: 20,
     padding: 16,
-    margin: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 1,
+    margin: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    ...getShadow(0, 2, 0.03, 8, "#000", 2),
   },
-  statIcon: {
+  statIconContainer: {
     width: 44,
     height: 44,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
   },
   statLabel: {
-    ...TYPOGRAPHY.bodySmall,
+    fontSize: 11,
     color: COLORS.textMuted,
-    fontSize: 12,
-    marginBottom: 4,
+    fontFamily: FONTS.poppins.medium,
+    marginTop: -2,
   },
   statValue: {
-    ...TYPOGRAPHY.h6,
+    fontSize: 18,
     fontFamily: FONTS.poppins.bold,
-    fontSize: 20,
+    color: COLORS.black2,
   },
   actionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginHorizontal: -8,
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    paddingVertical: 10,
+    ...getShadow(0, 4, 0.03, 12, "#000", 2),
   },
   quickAction: {
     width: (SCREEN_W - 56) / 3,
     alignItems: 'center',
-    marginVertical: 12,
-    marginHorizontal: 4,
+    marginVertical: 14,
   },
   quickActionIcon: {
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
-    backgroundColor: COLORS.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    borderWidth: 1,
   },
   quickActionLabel: {
-    ...TYPOGRAPHY.bodySmall,
+    fontSize: 11,
     fontFamily: FONTS.poppins.bold,
     color: COLORS.black2,
     textAlign: 'center',
-    fontSize: 11,
   },
 });

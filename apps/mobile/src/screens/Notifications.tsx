@@ -14,8 +14,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-import { getUserNotifications } from '../api';
+import { getNotifications } from '../api';
 import { useAuth } from '../AuthContext';
+import { logger } from '../utils/logger';
 
 const COLORS = {
   bg: "#FFFFFF",
@@ -31,8 +32,7 @@ const COLORS = {
   green: "#10B981",
 };
 
-export default function Notifications() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export default function Notifications({ navigation }: any) {
   const { user } = useAuth();
   const userId = user?.id;
   const [notifs, setNotifs] = useState<any[]>([]);
@@ -43,9 +43,9 @@ export default function Notifications() {
         setLoading(false);
         return;
     }
-    getUserNotifications(userId)
+    getNotifications(userId)
       .then(res => setNotifs(res.notifications))
-      .catch(err => console.warn(err))
+      .catch(err => logger.warn(err.message))
       .finally(() => setLoading(false));
   }, [userId]);
 

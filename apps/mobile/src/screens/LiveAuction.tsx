@@ -41,10 +41,8 @@ import { useAuth } from '../AuthContext';
 import { socketService } from '../utils/socket';
 import { useAppStore } from '../store/useAppStore';
 
-export default function LiveAuction() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'LiveAuction'>>();
-  const { listingId } = route.params;
+export default function LiveAuction({ navigation, route }: any) {
+  const { listingId } = route.params || {};
   const { user } = useAuth();
   const { selectedListing } = useAppStore();
   const insets = useSafeAreaInsets();
@@ -66,7 +64,7 @@ export default function LiveAuction() {
       socketService.joinAuction(listingId);
 
       // Listen for real-time bids
-      socketService.onBidUpdated(({ bid }) => {
+      const offBid = socketService.onBidUpdated(({ bid }) => {
         if (!bid || !bid.id || bid.amount === undefined) return;
 
         setListing(prev => {
@@ -85,15 +83,24 @@ export default function LiveAuction() {
       });
 
       // Listen for auction events
-      socketService.onAuctionStarted(() => {
+      const offStart = socketService.onAuctionStarted(() => {
         setListing(prev => prev ? { ...prev, status: 'ACTIVE' } : null);
         Alert.alert('Auction Started', 'The auction for this vehicle has started!');
       });
 
-      socketService.onAuctionEnded(() => {
+      const offEnd = socketService.onAuctionEnded(() => {
         setListing(prev => prev ? { ...prev, status: 'SOLD' } : null);
         Alert.alert('Auction Ended', 'This auction has concluded.');
       });
+
+      return () => {
+        if (listingId) {
+          socketService.leaveAuction(listingId);
+          offBid();
+          offStart();
+          offEnd();
+        }
+      };
     }
 
     const timer = setInterval(() => {
@@ -102,12 +109,6 @@ export default function LiveAuction() {
 
     return () => {
         clearInterval(timer);
-        if (listingId) {
-          socketService.leaveAuction(listingId);
-          socketService.offBidUpdated();
-          socketService.offAuctionStarted();
-          socketService.offAuctionEnded();
-        }
     };
   }, [listingId]);
 

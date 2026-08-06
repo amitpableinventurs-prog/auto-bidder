@@ -19,6 +19,7 @@ import { useNavigation, useRoute, RouteProp, useIsFocused } from '@react-navigat
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { uploadFile } from '../api';
+import { logger } from '../utils/logger';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -89,27 +90,41 @@ export default function CarCamera() {
   // Screen Orientation
   useEffect(() => {
     async function changeOrientation() {
-      if (isFocused) {
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
-      } else {
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      try {
+        if (isFocused) {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
+        } else {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+        }
+      } catch (error) {
+        logger.warn('Orientation lock failed:', error);
       }
     }
     changeOrientation();
 
     return () => {
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
     };
   }, [isFocused]);
 
   // Sync FlatList on index change
   useEffect(() => {
-    angleListRef.current?.scrollToIndex({
-        index: selectedAngleIndex,
-        animated: true,
-        viewPosition: 0.5
-    });
-  }, [selectedAngleIndex]);
+    if (currentAngles.length > 0 && selectedAngleIndex >= 0 && selectedAngleIndex < currentAngles.length) {
+        // Use a small timeout to ensure the FlatList has updated its internal data
+        const timer = setTimeout(() => {
+            try {
+                angleListRef.current?.scrollToIndex({
+                    index: selectedAngleIndex,
+                    animated: true,
+                    viewPosition: 0.5
+                });
+            } catch (e) {
+                // Ignore scroll errors if list is still rendering
+            }
+        }, 100);
+        return () => clearTimeout(timer);
+    }
+  }, [selectedAngleIndex, selectedCategory]);
 
   // Mock angle detection
   useEffect(() => {
@@ -146,41 +161,50 @@ export default function CarCamera() {
         return;
     }
 
-    try {
-      setUploading(true);
-      const key = `${selectedCategory}_${currentAngle.id}`;
+    const key = `${selectedCategory}_${currentAngle.id}`;
+    let photoUri: string | null = null;
 
-      // Capture only 1 photo instead of 5 for better reliability
+    try {
+      // 1. Instant Shutter Feedback
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.6,
+        shutterSound: true,
       });
 
       if (photo?.uri) {
-        console.log('Photo captured:', photo.uri);
-        try {
-          const { url } = await uploadFile(photo.uri, 'image/jpeg', `captured_${key}_${Date.now()}.jpg`);
-          console.log('Photo uploaded:', url);
+        photoUri = photo.uri;
+        logger.log('Photo captured locally:', photoUri);
 
-          setCapturedImages(prev => ({
-            ...prev,
-            [key]: [...(prev[key] || []), url]
-          }));
+        // 2. Immediate Local Preview (Non-blocking)
+        setCapturedImages(prev => ({
+          ...prev,
+          [key]: [...(prev[key] || []), photoUri!]
+        }));
 
-          // Proceed to next angle automatically on success
-          handleNext();
-        } catch (uploadError: any) {
-          console.error('Upload failed:', uploadError);
-          Alert.alert('Upload Failed', uploadError.message || 'Failed to upload image. Please check your internet connection.');
-        }
+        // 3. Move to next angle immediately
+        handleNext();
+
+        // 4. Background Upload
+        uploadFile(photoUri, 'image/jpeg', `captured_${key}_${Date.now()}.jpg`)
+          .then(({ url }) => {
+            logger.log('Background upload success:', url);
+            // Replace local URI with server URL
+            setCapturedImages(prev => ({
+              ...prev,
+              [key]: prev[key].map(uri => uri === photoUri ? url : uri)
+            }));
+          })
+          .catch(err => {
+            logger.error('Background upload failed:', err.message);
+            // Optionally notify user or mark as failed in UI
+          });
+
       } else {
         Alert.alert('Error', 'Could not capture photo.');
       }
-    } catch (error) {
-      console.error('Capture Error:', error);
-      Alert.alert('Error', 'Could not capture photos. Please try again.');
-    } finally {
-      setUploading(false);
-      setBurstCount(0);
+    } catch (error: any) {
+      logger.error('Capture Process Error:', error.message);
+      Alert.alert('Error', 'Camera capture failed. Please try again.');
     }
   };
 
@@ -279,181 +303,183 @@ export default function CarCamera() {
         facing="back"
         ref={cameraRef}
         onCameraReady={() => {
-            console.log('Camera is ready');
+            logger.log('Camera is ready');
             setIsCameraReady(true);
         }}
         onMountError={(error) => {
-            console.error('Camera mount error:', error);
+            logger.error('Camera mount error:', error.message);
             Alert.alert('Camera Error', 'Failed to start camera: ' + error.message);
         }}
-      >
-        <View style={styles.darkenLayer} />
+      />
 
-        {/* Green Guide Box - Edge to Edge */}
-        <View style={[
-            styles.edgeGuideBox,
-            {
-              top: Math.max(insets.top, 10),
-              left: Math.max(insets.left, 10),
-              right: Math.max(insets.right, 10),
-              bottom: Math.max(insets.bottom, 10)
-            },
-            isAngleCorrect && styles.edgeGuideBoxGreen,
-            { pointerEvents: 'none' }
-        ]} />
+      <View style={[styles.darkenLayer, { pointerEvents: 'none' }]} />
 
-        {/* Top Controls */}
-        <View style={[styles.topControls, {
-          top: Math.max(insets.top, 20),
-          left: Math.max(insets.left, 20),
-          right: Math.max(insets.right, 20)
-        }]}>
-          <Pressable onPress={handleBack} style={styles.iconBtn}>
-            <Ionicons name="arrow-back" size={28} color="#fff" />
-          </Pressable>
-          <View style={styles.categoryBarLandscape}>
-            {CATEGORIES.map((cat) => (
-              <Pressable
-                key={cat}
-                onPress={() => {
-                  setSelectedCategory(cat);
-                  setSelectedAngleIndex(0);
-                }}
-                style={[styles.categoryTab, selectedCategory === cat && styles.categoryTabActive]}
-              >
-                <Text style={[styles.categoryTabText, selectedCategory === cat && styles.categoryTabTextActive]}>
-                  {cat}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          <Pressable style={styles.iconBtn}>
-            <MaterialCommunityIcons name="flash" size={28} color="#fff" />
-          </Pressable>
+      {/* Green Guide Box - Edge to Edge */}
+      <View style={[
+          styles.edgeGuideBox,
+          {
+            top: Math.max(insets.top, 10),
+            left: Math.max(insets.left, 10),
+            right: Math.max(insets.right, 10),
+            bottom: Math.max(insets.bottom, 10)
+          },
+          isAngleCorrect && styles.edgeGuideBoxGreen,
+          { pointerEvents: 'none' }
+      ]} />
+
+      {/* Top Controls */}
+      <View style={[styles.topControls, {
+        top: Math.max(insets.top, 20),
+        left: Math.max(insets.left, 20),
+        right: Math.max(insets.right, 20)
+      }]}>
+        <Pressable onPress={handleBack} style={styles.iconBtn}>
+          <Ionicons name="arrow-back" size={28} color="#fff" />
+        </Pressable>
+        <View style={styles.categoryBarLandscape}>
+          {CATEGORIES.map((cat) => (
+            <Pressable
+              key={cat}
+              onPress={() => {
+                setSelectedCategory(cat);
+                setSelectedAngleIndex(0);
+              }}
+              style={[styles.categoryTab, selectedCategory === cat && styles.categoryTabActive]}
+            >
+              <Text style={[styles.categoryTabText, selectedCategory === cat && styles.categoryTabTextActive]}>
+                {cat}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable style={styles.iconBtn}>
+          <MaterialCommunityIcons name="flash" size={28} color="#fff" />
+        </Pressable>
+      </View>
+
+      {/* Center Content / Instructions */}
+      <View style={[styles.centerContentLandscape, { pointerEvents: 'none' }]}>
+        <View style={styles.instructionWrap}>
+            <Text style={styles.instructionText}>
+              {currentAngle.instruction}
+            </Text>
         </View>
 
-        {/* Center Content / Instructions */}
-        <View style={styles.centerContentLandscape}>
-          <View style={styles.instructionWrap}>
-              <Text style={styles.instructionText}>
-                {currentAngle.instruction}
+        <View style={styles.outlineWrapperLandscape}>
+          {capturedImages[`${selectedCategory}_${currentAngle.id}`]?.length > 0 ? (
+            <Image source={{ uri: capturedImages[`${selectedCategory}_${currentAngle.id}`][0] }} style={styles.capturedImg} resizeMode="cover" />
+          ) : (
+            <>
+              {currentAngle.outline ? (
+                 <Image
+                    source={currentAngle.outline}
+                    style={[
+                      styles.mainCarOutlineLandscape,
+                      selectedCategory !== 'Exterior' && { transform: [{ scale: 1.4 }] }
+                    ]}
+                    tintColor={isAngleCorrect ? "#22c55e" : "rgba(255,255,255,0.4)"}
+                    resizeMode="contain"
+                  />
+              ) : (
+                <MaterialCommunityIcons name="camera-outline" size={120} color="rgba(255,255,255,0.2)" />
+              )}
+            </>
+          )}
+        </View>
+      </View>
+
+      {/* Sliding Angle Selector (Bottom) */}
+      <View style={[styles.angleSelectorContainer, { bottom: Math.max(insets.bottom, 20), left: Math.max(insets.left, 20), right: 140 + insets.right }]}>
+          <FlatList
+              ref={angleListRef}
+              data={currentAngles}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.angleListContent}
+              snapToAlignment="center"
+              snapToInterval={110}
+              decelerationRate="fast"
+              onMomentumScrollEnd={(e) => {
+                  const index = Math.round(e.nativeEvent.contentOffset.x / 110);
+                  if (index !== selectedAngleIndex && index >= 0 && index < currentAngles.length) {
+                      setSelectedAngleIndex(index);
+                  }
+              }}
+              renderItem={({ item, index }) => (
+                  <Pressable
+                      onPress={() => setSelectedAngleIndex(index)}
+                      style={[
+                          styles.angleItem,
+                          selectedAngleIndex === index && styles.angleItemActive
+                      ]}
+                  >
+                      {capturedImages[`${selectedCategory}_${item.id}`]?.length > 0 && (
+                          <View style={styles.checkBadge}>
+                              <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+                          </View>
+                      )}
+                      <View style={styles.angleMiniPreview}>
+                           <Image
+                              source={item.outline}
+                              style={styles.miniOutlineImg}
+                              tintColor={selectedAngleIndex === index ? "#fff" : "rgba(255,255,255,0.3)"}
+                              resizeMode="contain"
+                          />
+                      </View>
+                      <Text style={[styles.angleItemLabel, selectedAngleIndex === index && styles.angleItemLabelActive]} numberOfLines={1}>
+                          {item.label}
+                      </Text>
+                  </Pressable>
+              )}
+          />
+      </View>
+
+      {/* Right Controls - Capture & Zoom */}
+      <View style={[styles.rightControlsLandscape, { right: Math.max(insets.right, 10), paddingBottom: insets.bottom, paddingTop: insets.top }]}>
+          <View style={styles.zoomContainerLandscape}>
+              <Pressable style={styles.zoomBtn}><Ionicons name="add" size={24} color="#fff" /></Pressable>
+              <View style={styles.zoomLevel}><Text style={styles.zoomText}>1.0x</Text></View>
+              <Pressable style={styles.zoomBtn}><Ionicons name="remove" size={24} color="#fff" /></Pressable>
+          </View>
+
+          <Pressable style={styles.cameraBtnOuter} onPress={handleCapture} disabled={uploading}>
+              <View style={styles.cameraBtnInner}>
+                  {uploading ? (
+                  <View style={{ alignItems: 'center' }}>
+                      <ActivityIndicator size="small" color="#1e6bd6" />
+                      {burstCount > 0 && <Text style={styles.burstText}>{burstCount}/5</Text>}
+                  </View>
+                  ) : (
+                  <MaterialCommunityIcons name="camera-iris" size={40} color="#0b2447" />
+                  )}
+              </View>
+          </Pressable>
+
+          <Pressable style={styles.galleryBtn} onPress={handlePickFromGallery} disabled={uploading}>
+              <Ionicons name="images-outline" size={24} color="#fff" />
+          </Pressable>
+
+          {/* Bottom Right Info Box */}
+          <View style={styles.angleInfoBox}>
+              <Text style={styles.angleInfoLabel}>{currentAngle.label}</Text>
+              <View style={styles.angleInfoPreview}>
+                  <Image
+                      source={currentAngle.outline}
+                      style={styles.angleInfoOutline}
+                      tintColor="rgba(255,255,255,0.6)"
+                      resizeMode="contain"
+                  />
+              </View>
+              <Text style={styles.angleInfoMandatory}>
+                  {currentAngle.mandatory ? 'Mandatory' : 'Non-mandatory'}
               </Text>
           </View>
 
-          <View style={styles.outlineWrapperLandscape}>
-            {capturedImages[`${selectedCategory}_${currentAngle.id}`]?.length > 0 ? (
-              <Image source={{ uri: capturedImages[`${selectedCategory}_${currentAngle.id}`][0] }} style={styles.capturedImg} resizeMode="cover" />
-            ) : (
-              <>
-                {currentAngle.outline ? (
-                   <Image
-                      source={currentAngle.outline}
-                      style={[
-                        styles.mainCarOutlineLandscape,
-                        { tintColor: isAngleCorrect ? "#22c55e" : "rgba(255,255,255,0.4)" },
-                        selectedCategory !== 'Exterior' && { transform: [{ scale: 1.4 }] }
-                      ]}
-                      resizeMode="contain"
-                    />
-                ) : (
-                  <MaterialCommunityIcons name="camera-outline" size={120} color="rgba(255,255,255,0.2)" />
-                )}
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* Sliding Angle Selector (Bottom) */}
-        <View style={[styles.angleSelectorContainer, { bottom: Math.max(insets.bottom, 20), left: Math.max(insets.left, 20), right: 140 + insets.right }]}>
-            <FlatList
-                ref={angleListRef}
-                data={currentAngles}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.angleListContent}
-                snapToAlignment="center"
-                snapToInterval={110}
-                decelerationRate="fast"
-                onMomentumScrollEnd={(e) => {
-                    const index = Math.round(e.nativeEvent.contentOffset.x / 110);
-                    if (index !== selectedAngleIndex && index >= 0 && index < currentAngles.length) {
-                        setSelectedAngleIndex(index);
-                    }
-                }}
-                renderItem={({ item, index }) => (
-                    <Pressable
-                        onPress={() => setSelectedAngleIndex(index)}
-                        style={[
-                            styles.angleItem,
-                            selectedAngleIndex === index && styles.angleItemActive
-                        ]}
-                    >
-                        {capturedImages[`${selectedCategory}_${item.id}`]?.length > 0 && (
-                            <View style={styles.checkBadge}>
-                                <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
-                            </View>
-                        )}
-                        <View style={styles.angleMiniPreview}>
-                             <Image
-                                source={item.outline}
-                                style={[styles.miniOutlineImg, { tintColor: selectedAngleIndex === index ? "#fff" : "rgba(255,255,255,0.3)" }]}
-                                resizeMode="contain"
-                            />
-                        </View>
-                        <Text style={[styles.angleItemLabel, selectedAngleIndex === index && styles.angleItemLabelActive]} numberOfLines={1}>
-                            {item.label}
-                        </Text>
-                    </Pressable>
-                )}
-            />
-        </View>
-
-        {/* Right Controls - Capture & Zoom */}
-        <View style={[styles.rightControlsLandscape, { right: Math.max(insets.right, 10), paddingBottom: insets.bottom, paddingTop: insets.top }]}>
-            <View style={styles.zoomContainerLandscape}>
-                <Pressable style={styles.zoomBtn}><Ionicons name="add" size={24} color="#fff" /></Pressable>
-                <View style={styles.zoomLevel}><Text style={styles.zoomText}>1.0x</Text></View>
-                <Pressable style={styles.zoomBtn}><Ionicons name="remove" size={24} color="#fff" /></Pressable>
-            </View>
-
-            <Pressable style={styles.cameraBtnOuter} onPress={handleCapture} disabled={uploading}>
-                <View style={styles.cameraBtnInner}>
-                    {uploading ? (
-                    <View style={{ alignItems: 'center' }}>
-                        <ActivityIndicator size="small" color="#1e6bd6" />
-                        {burstCount > 0 && <Text style={styles.burstText}>{burstCount}/5</Text>}
-                    </View>
-                    ) : (
-                    <MaterialCommunityIcons name="camera-iris" size={40} color="#0b2447" />
-                    )}
-                </View>
-            </Pressable>
-
-            <Pressable style={styles.galleryBtn} onPress={handlePickFromGallery} disabled={uploading}>
-                <Ionicons name="images-outline" size={24} color="#fff" />
-            </Pressable>
-
-            {/* Bottom Right Info Box */}
-            <View style={styles.angleInfoBox}>
-                <Text style={styles.angleInfoLabel}>{currentAngle.label}</Text>
-                <View style={styles.angleInfoPreview}>
-                    <Image
-                        source={currentAngle.outline}
-                        style={styles.angleInfoOutline}
-                        resizeMode="contain"
-                    />
-                </View>
-                <Text style={styles.angleInfoMandatory}>
-                    {currentAngle.mandatory ? 'Mandatory' : 'Non-mandatory'}
-                </Text>
-            </View>
-
-            <Pressable style={styles.nextBtnOverlayLandscape} onPress={nextAngle ? handleNext : handleFinish}>
-                <Text style={styles.nextBtnText}>{nextAngle ? 'NEXT >' : 'FINISH >'}</Text>
-            </Pressable>
-        </View>
-      </CameraView>
+          <Pressable style={styles.nextBtnOverlayLandscape} onPress={nextAngle ? handleNext : handleFinish}>
+              <Text style={styles.nextBtnText}>{nextAngle ? 'NEXT >' : 'FINISH >'}</Text>
+          </Pressable>
+      </View>
     </View>
   );
 }
@@ -710,7 +736,6 @@ const styles = StyleSheet.create({
   angleInfoOutline: {
       width: '80%',
       height: '80%',
-      tintColor: 'rgba(255,255,255,0.6)'
   },
   angleInfoMandatory: {
       color: 'rgba(255,255,255,0.6)',

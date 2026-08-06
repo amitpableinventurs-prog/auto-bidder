@@ -1,4 +1,5 @@
 import { prisma } from '../prisma.js';
+/*
 import {
   DNPStatus,
   VehicleLeadStatus,
@@ -7,6 +8,13 @@ import {
   WalletTransactionType,
   NotificationType
 } from '@prisma/client';
+*/
+type DNPStatus = any;
+type VehicleLeadStatus = any;
+type BuyerLeadStatus = any;
+type CommissionStatus = any;
+type WalletTransactionType = any;
+type NotificationType = any;
 
 export class DNPService {
   /**
@@ -37,7 +45,7 @@ export class DNPService {
     leadType: 'VEHICLE' | 'BUYER',
     listingId?: string
   ) {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: any) => {
       const commission = await (tx as any).dNPCommission.create({
         data: {
           dnpProfileId,
@@ -89,7 +97,7 @@ export class DNPService {
    * Approve a pending commission and handle membership fee recovery
    */
   static async approveCommission(commissionId: string) {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: any) => {
       const commission = await (tx as any).dNPCommission.findUnique({
         where: { id: commissionId },
         include: { dnpProfile: true }

@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { ApiListing, getListing, placeBid as placeBidApi } from '../api';
@@ -24,9 +24,7 @@ import { useAppStore } from '../store/useAppStore';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-export default function UpdateOffer() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'UpdateOffer'>>();
+export default function UpdateOffer({ navigation, route }: any) {
   const { listingId } = route.params;
   const { user } = useAuth();
   const userId = user?.id;
@@ -80,10 +78,10 @@ export default function UpdateOffer() {
         .finally(() => setFetching(false));
 
       socketService.connect();
-      socketService.joinListing(listingId);
+      socketService.joinAuction(listingId);
     }
     return () => {
-        if (listingId) socketService.leaveListing(listingId);
+        if (listingId) socketService.leaveAuction(listingId);
     };
   }, [listingId]);
 
@@ -119,9 +117,10 @@ export default function UpdateOffer() {
         try {
             await placeBidApi(listing.id, userId, offerAmount);
         } catch (apiError: any) {
-            console.warn('REST API Bid failed, trying socket', apiError);
+            console.warn('REST API Bid failed:', apiError);
+            console.warn('Error details:', apiError.message);
             // If REST API fails, try socket as backup
-            await socketService.placeBid(listing.id, userId, offerAmount);
+            await socketService.placeBid(listing.id, offerAmount);
         }
 
         Alert.alert('Success', 'Your offer has been updated successfully!');

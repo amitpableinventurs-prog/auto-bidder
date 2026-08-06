@@ -17,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { getListings, ApiListing } from '../api';
 import { getMockListings } from '../utils/mockData';
-import { COLORS, FONTS } from '../theme';
+import { COLORS, FONTS, getShadow } from '../theme';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -64,7 +64,7 @@ export default function BrandDetails() {
         navigation.navigate('CarDetails', { listingId: item.id });
       }}
     >
-      <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/300' }} style={styles.carImage} />
+      <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/300' }} style={styles.carImage} resizeMode="cover" />
       <View style={styles.carInfo}>
         <Text style={styles.carTitle} numberOfLines={1}>{item.title}</Text>
         <Text style={styles.carPrice}>₹{(item.demandPrice || 0).toLocaleString('en-IN')}</Text>
@@ -89,7 +89,11 @@ export default function BrandDetails() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.brandHero}>
           <View style={styles.logoContainer}>
-            <Image source={typeof brand.logo === 'string' ? { uri: brand.logo } : brand.logo} style={styles.brandLogo} />
+            <Image
+              source={typeof brand.logo === 'string' ? { uri: brand.logo } : brand.logo}
+              style={styles.brandLogo}
+              resizeMode="contain"
+            />
           </View>
           <Text style={styles.brandName}>{brand.name}</Text>
           <Text style={styles.brandCount}>{brand.count} Available</Text>
@@ -167,14 +171,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    ...getShadow(0, 2, 0.1, 4, "#000", 4),
     marginBottom: 15,
   },
-  brandLogo: { width: 60, height: 60, resizeMode: 'contain' },
+  brandLogo: { width: 60, height: 60 },
   brandName: { fontSize: 24, fontFamily: FONTS.poppins.bold, color: COLORS.black2 },
   brandCount: { fontSize: 14, color: COLORS.secondary, fontFamily: FONTS.poppins.semiBold, marginTop: 4 },
   descriptionBox: {
@@ -206,11 +206,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#F1F5F9',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    ...getShadow(0, 1, 0.05, 2, "#000", 2),
   },
   carImage: { width: 120, height: 100 },
   carInfo: { flex: 1, padding: 12, justifyContent: 'center' },

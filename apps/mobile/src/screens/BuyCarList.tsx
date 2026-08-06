@@ -13,6 +13,7 @@ import {
   FlatList,
   Alert,
   Modal,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
@@ -21,6 +22,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 
 import { getListings, toggleFavorite, getFavorites, type ApiListing, getSliders, ApiSlider } from '../api';
+import { logger } from '../utils/logger';
 import { getMockListings, MOCK_VEHICLES } from '../utils/mockData';
 import Logo from '../components/Logo';
 import NeedAssistance from '../components/NeedAssistance';
@@ -28,7 +30,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS, TYPOGRAPHY, FONTS, TAB_BAR_HEIGHT } from '../theme';
+import { COLORS, TYPOGRAPHY, FONTS, TAB_BAR_HEIGHT, getShadow } from '../theme';
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -54,10 +56,8 @@ const MOCK_LISTINGS: ApiListing[] = MOCK_VEHICLES.filter(v => v.status === 'ACTI
 
 const MOCK_FINAL_OFFERS: ApiListing[] = MOCK_VEHICLES.filter(v => v.status === 'SOLD') as ApiListing[];
 
-export default function BuyCarList() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export default function BuyCarList({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
-  const route = useRoute<RouteProp<RootStackParamList, 'BuyCar'>>();
   const { filters: routeFilters } = route.params || {};
   const { selectedCity, setSelectedListing } = useAppStore();
   const { user } = useAuth();
@@ -74,9 +74,17 @@ export default function BuyCarList() {
   const [sortOption, setSortOption] = useState('Newest First');
 
   useEffect(() => {
-    fetchListings();
-    fetchFavorites();
-    fetchBanners();
+    const startTime = Date.now();
+    setLoading(true);
+
+    Promise.all([
+      fetchListings(),
+      fetchFavorites(),
+      fetchBanners()
+    ]).finally(() => {
+      setLoading(false);
+      logger.perf('BuyCarList ready', Date.now() - startTime);
+    });
   }, [selectedCity, routeFilters, user?.id, activeTab]);
 
   const fetchBanners = async () => {
@@ -85,8 +93,8 @@ export default function BuyCarList() {
       if (res.sliders && res.sliders.length > 0) {
         setBanners(res.sliders);
       }
-    } catch (e) {
-      console.warn("Failed to fetch banners in BuyCarList", e);
+    } catch (e: any) {
+      logger.warn("Failed to fetch banners in BuyCarList", e.message);
     }
   };
 
@@ -160,8 +168,6 @@ export default function BuyCarList() {
   }, [activeTab, listings, finalOfferListings, sortOption]);
 
   const fetchListings = async () => {
-    setLoading(true);
-
     try {
       const status = activeTab === 'final' ? 'SOLD' : 'ACTIVE';
       const params: any = {
@@ -179,14 +185,9 @@ export default function BuyCarList() {
       const res = await getListings(params);
       let results = res.listings || [];
 
-      // Fallback to mock data if no listings found or to ensure diversity
-      const mockResults = getMockListings({ status, brand: routeFilters?.brand });
-
+      // Fallback to mock data if no listings found
       if (results.length === 0) {
-        results = mockResults;
-      } else if (!query && !routeFilters?.brand) {
-        // Merge for a richer showcase if no specific search
-        results = [...results, ...mockResults.filter(m => !results.find(r => r.id === m.id))];
+        results = getMockListings({ status, brand: routeFilters?.brand });
       }
 
       if (activeTab === 'final') {
@@ -203,8 +204,6 @@ export default function BuyCarList() {
       } else {
         setListings(mockResults);
       }
-    } finally {
-        setLoading(false);
     }
   };
 
@@ -309,7 +308,7 @@ export default function BuyCarList() {
            </Pressable>
 
            <View style={styles.footerRow}>
-              <Image source={{ uri: 'https://img.icons8.com/color/48/verified-account.png' }} style={styles.verifiedIcon} />
+              <Image source={{ uri: 'https://img.icons8.com/color/48/verified-account.png' }} style={styles.verifiedIcon} resizeMode="contain" />
               <Text style={styles.footerMsg}>RC Owner Negotiation Deal</Text>
               {l.seller?.isVerified && (
                   <View style={styles.cardVerifiedTag}>
@@ -324,132 +323,145 @@ export default function BuyCarList() {
   };
 
   return (
-    <ScreenWrapper scrollable withTabBar>
+    <ScreenWrapper scrollable={false} withTabBar>
       <StatusBar style="dark" />
 
-      {/* Header */}
-      <View style={[styles.header, {
-        paddingLeft: Math.max(insets.left, 16),
-        paddingRight: Math.max(insets.right, 16)
-      }]}>
-        <Logo height={38} width={150} />
-        <View style={styles.headerRight}>
-          <Pressable style={styles.locationHeader} onPress={() => navigation.navigate('Location', {})}>
-            <Ionicons name="location-outline" size={16} color={COLORS.black2} />
-            <Text style={styles.locationTextHeader} numberOfLines={1}>{selectedCity || 'Select City'}</Text>
-            <Ionicons name="chevron-down" size={12} color={COLORS.textMuted} />
-          </Pressable>
+      {/* Header and other static content should be in ListHeaderComponent */}
+      <FlatList
+        data={displayedListings}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item, index }) => renderCarCard(item, index)}
+        ListHeaderComponent={
+          <>
+            {/* Header */}
+            <View style={[styles.header, {
+              paddingLeft: Math.max(insets.left, 16),
+              paddingRight: Math.max(insets.right, 16)
+            }]}>
+              <Logo height={38} width={150} />
+              <View style={styles.headerRight}>
+                <Pressable style={styles.locationHeader} onPress={() => navigation.navigate('Location', {})}>
+                  <Ionicons name="location-outline" size={16} color={COLORS.black2} />
+                  <Text style={styles.locationTextHeader} numberOfLines={1}>{selectedCity || 'Select City'}</Text>
+                  <Ionicons name="chevron-down" size={12} color={COLORS.textMuted} />
+                </Pressable>
 
-          <Pressable style={styles.iconBtn} onPress={() => navigation.navigate('MainDrawer', { screen: 'MainTabs', params: { screen: 'Activity', params: { initialTab: 'Notifications' } } } as any)}>
-            <View style={styles.notifWrapper}>
-              <Ionicons name="notifications-outline" size={24} color={COLORS.black2} />
-              <View style={styles.notifDot} />
-            </View>
-          </Pressable>
+                <Pressable style={styles.iconBtn} onPress={() => navigation.navigate('MainDrawer', { screen: 'MainTabs', params: { screen: 'Activity', params: { initialTab: 'Notifications' } } } as any)}>
+                  <View style={styles.notifWrapper}>
+                    <Ionicons name="notifications-outline" size={24} color={COLORS.black2} />
+                    <View style={styles.notifDot} />
+                  </View>
+                </Pressable>
 
-          <Pressable style={styles.avatarBtn} onPress={() => navigation.navigate('Profile')}>
-            <View style={styles.avatarWrapper}>
-              <Image
-                source={{ uri: user?.avatarUrl || "https://i.pravatar.cc/100" }}
-                style={styles.avatar}
-              />
-            </View>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Row 2: Menu and Search */}
-      <View style={styles.searchSection}>
-        <View style={styles.searchRow}>
-          <Pressable style={styles.menuBtn} onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
-            <Ionicons name="menu-outline" size={32} color={COLORS.black1} />
-          </Pressable>
-          <Pressable style={styles.searchBarContainer} onPress={() => navigation.navigate('CarFilter')}>
-            <View style={styles.searchInputWrapper}>
-              <Ionicons name="search-outline" size={22} color={COLORS.textDim} />
-              <View style={styles.searchPlaceholderBox}>
-                <Text style={styles.searchPlaceholderText}>Search for </Text>
-                <Text style={styles.placeholderHighlight}>"New Cars"</Text>
+                <Pressable style={styles.avatarBtn} onPress={() => navigation.navigate('Profile')}>
+                  <View style={styles.avatarWrapper}>
+                    <Image
+                      source={{ uri: user?.avatarUrl || "https://i.pravatar.cc/100" }}
+                      style={styles.avatar}
+                    />
+                  </View>
+                </Pressable>
               </View>
             </View>
-          </Pressable>
-        </View>
-      </View>
 
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        {TAB_DATA.map(tab => (
-          <Pressable
-            key={tab.id}
-            onPress={() => setActiveTab(tab.id)}
-            style={[styles.tab, activeTab === tab.id && styles.activeTab]}
-          >
-            <Text style={[styles.tabLabel, activeTab === tab.id && styles.activeTabLabel]}>{tab.label} ({tab.id === 'tell' ? listings.length : finalOfferListings.length})</Text>
-          </Pressable>
-        ))}
-      </View>
+            {/* Row 2: Menu and Search */}
+            <View style={styles.searchSection}>
+              <View style={styles.searchRow}>
+                <Pressable style={styles.menuBtn} onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+                  <Ionicons name="menu-outline" size={32} color={COLORS.black1} />
+                </Pressable>
+                <Pressable style={styles.searchBarContainer} onPress={() => navigation.navigate('CarFilter')}>
+                  <View style={styles.searchInputWrapper}>
+                    <Ionicons name="search-outline" size={22} color={COLORS.textDim} />
+                    <View style={styles.searchPlaceholderBox}>
+                      <Text style={styles.searchPlaceholderText}>Search for </Text>
+                      <Text style={styles.placeholderHighlight}>"New Cars"</Text>
+                    </View>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
 
-      {/* Banner */}
-      {banners.length > 0 && (
-        <View style={styles.bannerContainer}>
-          <FlatList
-            data={banners}
-            renderItem={renderBanner}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={(e) => {
-              const x = e.nativeEvent.contentOffset.x;
-              setBannerIndex(Math.round(x / SCREEN_W));
-            }}
-            scrollEventThrottle={16}
-          />
-          <View style={styles.bannerPagination}>
-             {banners.map((_, i) => (
-               <View key={i} style={[styles.bannerDot, bannerIndex === i && styles.activeBannerDot]} />
-             ))}
+            {/* Tabs */}
+            <View style={styles.tabsContainer}>
+              {TAB_DATA.map(tab => (
+                <Pressable
+                  key={tab.id}
+                  onPress={() => setActiveTab(tab.id)}
+                  style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+                >
+                  <Text style={[styles.tabLabel, activeTab === tab.id && styles.activeTabLabel]}>{tab.label} ({tab.id === 'tell' ? listings.length : finalOfferListings.length})</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Banner */}
+            {banners.length > 0 && (
+              <View style={styles.bannerContainer}>
+                <FlatList
+                  data={banners}
+                  renderItem={renderBanner}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={(e) => {
+                    const x = e.nativeEvent.contentOffset.x;
+                    setBannerIndex(Math.round(x / (SCREEN_W - 32)));
+                  }}
+                  scrollEventThrottle={16}
+                />
+                <View style={styles.bannerPagination}>
+                   {banners.map((_, i) => (
+                     <View key={i} style={[styles.bannerDot, bannerIndex === i && styles.activeBannerDot]} />
+                   ))}
+                </View>
+              </View>
+            )}
+
+            {/* Filter Row */}
+            <View style={styles.filterActionRow}>
+              <Pressable style={styles.actionBtn} onPress={() => navigation.navigate('CarFilter')}>
+                <Ionicons name="options-outline" size={18} color={COLORS.black2} />
+                <Text style={styles.actionBtnText}>Filter</Text>
+              </Pressable>
+              <View style={styles.vDivider} />
+              <Pressable style={styles.actionBtn} onPress={() => setShowSortModal(true)}>
+                <MaterialCommunityIcons name="swap-vertical" size={18} color={COLORS.black2} />
+                <Text style={styles.actionBtnText}>Sort</Text>
+              </Pressable>
+              <View style={styles.vDivider} />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}><View style={[styles.chip, { backgroundColor: COLORS.lightBlue2 }]}><Text style={styles.chipText}>New like</Text></View><View style={[styles.chip, { backgroundColor: COLORS.lightBlue1 }]}><Text style={styles.chipText}>Excellent</Text></View></ScrollView>
+            </View>
+
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { marginHorizontal: 16 }]}>Urgent Sell</Text>
+            </View>
+          </>
+        }
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator color={COLORS.secondary} size="large" style={{ marginTop: 40 }} />
+          ) : (
+            <View style={styles.emptyWrap}>
+                <Ionicons name="car-outline" size={64} color={COLORS.lightGrey1} />
+                <Text style={styles.emptyText}>No cars found matching your criteria.</Text>
+            </View>
+          )
+        }
+        ListFooterComponent={
+          <View style={{ marginTop: 20 }}>
+            <NeedAssistance
+              showTitle={true}
+              horizontalPadding={16}
+            />
           </View>
-        </View>
-      )}
-
-      {/* Filter Row */}
-      <View style={styles.filterActionRow}>
-        <Pressable style={styles.actionBtn} onPress={() => navigation.navigate('CarFilter')}>
-          <Ionicons name="options-outline" size={18} color={COLORS.black2} />
-          <Text style={styles.actionBtnText}>Filter</Text>
-        </Pressable>
-        <View style={styles.vDivider} />
-        <Pressable style={styles.actionBtn} onPress={() => setShowSortModal(true)}>
-          <MaterialCommunityIcons name="swap-vertical" size={18} color={COLORS.black2} />
-          <Text style={styles.actionBtnText}>Sort</Text>
-        </Pressable>
-        <View style={styles.vDivider} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}><View style={[styles.chip, { backgroundColor: COLORS.lightBlue2 }]}><Text style={styles.chipText}>New like</Text></View><View style={[styles.chip, { backgroundColor: COLORS.lightBlue1 }]}><Text style={styles.chipText}>Excellent</Text></View></ScrollView>
-      </View>
-
-      <View style={styles.list}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Urgent Sell</Text>
-        </View>
-
-        {loading && displayedListings.length === 0 ? (
-          <ActivityIndicator color={COLORS.secondary} size="large" style={{ marginTop: 40 }} />
-        ) : displayedListings.length === 0 ? (
-          <View style={styles.emptyWrap}>
-              <Ionicons name="car-outline" size={64} color={COLORS.lightGrey1} />
-              <Text style={styles.emptyText}>No cars found matching your criteria.</Text>
-          </View>
-        ) : (
-          displayedListings.map((l, index) => renderCarCard(l, index))
-        )}
-      </View>
-
-      <View style={{ marginTop: 20 }}>
-        <NeedAssistance
-          showTitle={true}
-          horizontalPadding={16}
-        />
-      </View>
+        }
+        contentContainerStyle={{ paddingBottom: TAB_BAR_HEIGHT + 20 }}
+        initialNumToRender={5}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
+      />
 
       <Modal
         visible={showSortModal}
@@ -570,11 +582,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderWidth: 1,
     borderColor: COLORS.lightGrey1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    ...getShadow(0, 2, 0.05, 5, "#000", 2),
   },
   searchInputWrapper: { flex: 1, flexDirection: "row", alignItems: "center" },
   searchPlaceholderBox: { flexDirection: 'row', alignItems: 'center', marginLeft: 10 },

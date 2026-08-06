@@ -240,7 +240,7 @@ export default function Settings() {
           <SettingItem
             icon="help-circle-outline"
             title="Help Center"
-            onPress={() => Linking.openURL('https://autobidder.in/help')}
+            onPress={() => Linking.openURL('https://api.autobidder.in/help')}
           />
           <SettingItem
             icon="document-text-outline"

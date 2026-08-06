@@ -7,7 +7,7 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(4000),
   CORS_ORIGIN: z.string().default('http://localhost:8081'),
-  DATABASE_URL: z.string().default('postgresql://postgres:password@localhost:5432/autobidder'),
+  DATABASE_URL: z.string().default('postgresql://autobidder:autobidder@localhost:5432/autobidder'),
   STRIPE_SECRET_KEY: z.string().default('sk_test_51DummySecretKeyForDevOnly1234567890'),
   STRIPE_WEBHOOK_SECRET: z.string().default('whsec_dummy_key'),
   GOOGLE_MAPS_API_KEY: z.string().default('AIzaSyDummyKey'),

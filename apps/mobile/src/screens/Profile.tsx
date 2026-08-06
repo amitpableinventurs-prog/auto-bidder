@@ -21,7 +21,7 @@ import { getSellerStats } from '../api';
 import NeedAssistance from '../components/NeedAssistance';
 import Logo from '../components/Logo';
 import { useAppStore } from '../store/useAppStore';
-import { COLORS as THEME_COLORS, FONTS } from '../theme';
+import { COLORS as THEME_COLORS, FONTS, getShadow } from '../theme';
 import ScreenWrapper from '../components/ScreenWrapper';
 
 const COLORS = {
@@ -39,9 +39,8 @@ const COLORS = {
   gold: "#D4AF37"
 };
 
-export default function Profile() {
+export default function Profile({ navigation }: any) {
   const { user, logout } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { selectedCity } = useAppStore();
   const [stats, setStats] = useState<any>(null);
@@ -364,11 +363,7 @@ const styles = StyleSheet.create({
     padding: 24,
     borderWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 5
+    ...getShadow(0, 10, 0.05, 20, '#000', 5),
   },
   cardHeader: {
     flexDirection: 'row',

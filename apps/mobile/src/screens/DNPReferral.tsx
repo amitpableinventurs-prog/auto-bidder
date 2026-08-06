@@ -18,6 +18,7 @@ import { useAuth } from '../AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import { API_BASE_URL } from '../config';
 
 export default function DNPReferralScreen() {
   const { user, token } = useAuth();
@@ -25,13 +26,13 @@ export default function DNPReferralScreen() {
   const [loading, setLoading] = useState(false);
   const [referralData, setReferralData] = useState({
     code: 'LOADING...',
-    link: 'https://autobidder.in',
+    link: 'https://api.autobidder.in',
   });
 
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000'}/dnp/profile`, {
+      const response = await fetch(`${API_BASE_URL}/api/dnp/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -102,7 +103,10 @@ export default function DNPReferralScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Pressable
+          style={styles.backBtn}
+          onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainDrawer')}
+        >
           <Ionicons name="arrow-back" size={24} color={COLORS.black2} />
         </Pressable>
         <Text style={styles.headerTitle}>Share & Earn</Text>

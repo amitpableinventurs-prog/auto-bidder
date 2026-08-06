@@ -27,6 +27,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../AuthContext';
+import { logger } from '../utils/logger';
 
 export default function Register() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -38,25 +39,33 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState<'OWNER' | 'DEALER'>('OWNER');
+  const [userType, setUserType] = useState<'BUYER' | 'SELLER'>('BUYER');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!name) return Alert.alert('Required', 'Please enter your ' + (userType === 'DEALER' ? 'Showroom Name' : 'Full Name'));
+    if (!name) return Alert.alert('Required', 'Please enter your ' + (userType === 'SELLER' ? 'Business Name' : 'Full Name'));
     if (!email) return Alert.alert('Required', 'Please enter your email address');
     if (!phone) return Alert.alert('Required', 'Please enter your mobile number');
     if (phone.length !== 10) return Alert.alert('Invalid', 'Please enter a valid 10-digit mobile number');
+
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailRegex.test(email)) {
+        return Alert.alert('Invalid Email', 'Please enter a valid email address');
+    }
+
     if (!password) return Alert.alert('Required', 'Please enter a password');
     if (password.length < 6) return Alert.alert('Weak Password', 'Password must be at least 6 characters long');
     if (password !== confirmPassword) return Alert.alert('Mismatch', 'Passwords do not match');
 
     const fullPhone = '+91' + phone;
-    console.log('Registering user:', fullPhone);
+    const trimmedEmail = email.trim();
+    logger.log(`Registering user (${userType}):`, fullPhone);
 
     setLoading(true);
 
     try {
-      await register(fullPhone, name, email, userType);
+      await register(fullPhone, name, trimmedEmail, userType);
       setPhoneNumber(fullPhone);
       setLoading(false);
 
@@ -85,7 +94,7 @@ export default function Register() {
             const demoEmail = 'newuser@google.com';
             const demoName = 'New Google User';
 
-            await socialLogin(demoEmail, demoName);
+            await socialLogin(demoEmail, demoName, undefined, undefined, undefined, userType);
 
             Alert.alert('Success', 'Signed up with Google!', [
                 {
@@ -122,7 +131,7 @@ export default function Register() {
 
         <View style={styles.titleWrap}>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join DNP to start selling & buying quality cars.</Text>
+            <Text style={styles.subtitle}>Join Auto Bidder to start buying & selling quality cars.</Text>
         </View>
       </View>
 
@@ -137,23 +146,23 @@ export default function Register() {
             <View style={styles.form}>
               <View style={styles.typeSelector}>
                 <Pressable
-                  style={[styles.typeBtn, userType === 'OWNER' && styles.typeBtnActive]}
-                  onPress={() => setUserType('OWNER')}
+                  style={[styles.typeBtn, userType === 'BUYER' && styles.typeBtnActive]}
+                  onPress={() => setUserType('BUYER')}
                 >
-                  <Ionicons name="person" size={20} color={userType === 'OWNER' ? COLORS.white : COLORS.textMuted} />
-                  <Text style={[styles.typeBtnText, userType === 'OWNER' && styles.typeBtnTextActive]}>OWNER</Text>
+                  <Ionicons name="person" size={20} color={userType === 'BUYER' ? COLORS.white : COLORS.textMuted} />
+                  <Text style={[styles.typeBtnText, userType === 'BUYER' && styles.typeBtnTextActive]}>BUYER</Text>
                 </Pressable>
                 <Pressable
-                  style={[styles.typeBtn, userType === 'DEALER' && styles.typeBtnActive]}
-                  onPress={() => setUserType('DEALER')}
+                  style={[styles.typeBtn, userType === 'SELLER' && styles.typeBtnActive]}
+                  onPress={() => setUserType('SELLER')}
                 >
-                  <Ionicons name="business" size={22} color={userType === 'DEALER' ? COLORS.white : COLORS.textMuted} />
-                  <Text style={[styles.typeBtnText, userType === 'DEALER' && styles.typeBtnTextActive]}>DEALER</Text>
+                  <Ionicons name="business" size={22} color={userType === 'SELLER' ? COLORS.white : COLORS.textMuted} />
+                  <Text style={[styles.typeBtnText, userType === 'SELLER' && styles.typeBtnTextActive]}>SELLER</Text>
                 </Pressable>
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>{userType === 'DEALER' ? 'SHOWROOM NAME' : 'FULL NAME'}</Text>
+                <Text style={styles.label}>{userType === 'SELLER' ? 'BUSINESS NAME' : 'FULL NAME'}</Text>
                 <View style={styles.inputContainer}>
                   <Ionicons name="person-outline" size={20} color={COLORS.textMuted} />
                   <TextInput

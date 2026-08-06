@@ -106,7 +106,13 @@ export default function KYCVerification() {
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
+        type: [
+          'application/pdf',
+          'image/*',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ],
+        copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets[0].uri) {
@@ -289,10 +295,15 @@ export default function KYCVerification() {
           docUri.toLowerCase().endsWith('.pdf') ? (
             <View style={styles.uploadPrompt}>
                 <MaterialCommunityIcons name="file-pdf-box" size={80} color={COLORS.coral} />
-                <Text style={styles.uploadPromptText}>{docUri.split('/').pop()}</Text>
+                <Text style={styles.uploadPromptText}>{docName || docUri.split('/').pop()}</Text>
+            </View>
+          ) : (docUri.toLowerCase().endsWith('.doc') || docUri.toLowerCase().endsWith('.docx')) ? (
+            <View style={styles.uploadPrompt}>
+                <MaterialCommunityIcons name="file-word-box" size={80} color="#2873c3" />
+                <Text style={styles.uploadPromptText}>{docName || docUri.split('/').pop()}</Text>
             </View>
           ) : (
-            <Image source={{ uri: docUri }} style={styles.previewImg} />
+            <Image source={{ uri: docUri }} style={styles.previewImg} resizeMode="cover" />
           )
         ) : (
           <View style={styles.uploadPrompt}>
@@ -533,7 +544,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  previewImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+  previewImg: { width: '100%', height: '100%' },
   uploadPrompt: { alignItems: 'center', gap: 15 },
   uploadPromptText: { ...TYPOGRAPHY.bodySmall, color: COLORS.grey, fontFamily: FONTS.poppins.medium },
 

@@ -21,6 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { updateUser, uploadFile } from '../api';
+import { logger } from '../utils/logger';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function CompleteProfile() {
@@ -84,7 +85,7 @@ export default function CompleteProfile() {
       setUser(updatedUser);
       navigation.navigate('Kyc');
     } catch (err: any) {
-      console.warn('Update profile failed', err);
+      logger.warn('Update profile failed', err.message);
       Alert.alert('Error', err.message || 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);

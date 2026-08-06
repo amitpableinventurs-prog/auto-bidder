@@ -16,13 +16,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
-import { useNavigation, DrawerActions, useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { useAppStore } from "../store/useAppStore";
 import { useAuth } from "../AuthContext";
 import { getListings, toggleFavorite, getFavorites, type ApiListing, ApiUser, getSliders, ApiSlider, getBrands, getCollections, ApiCollection } from "../api";
-import { COLORS, TYPOGRAPHY, FONTS, TAB_BAR_HEIGHT } from '../theme';
+import { COLORS, TYPOGRAPHY, FONTS, TAB_BAR_HEIGHT, getShadow } from '../theme';
+import { logger } from '../utils/logger';
 import Logo from "../components/Logo";
 import * as Linking from 'expo-linking';
 import ScreenWrapper from "../components/ScreenWrapper";
@@ -159,8 +160,7 @@ function SkeletonCar() {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function MainHome() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export default function MainHome({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { selectedCity: cityName, setSelectedListing } = useAppStore();
@@ -184,18 +184,26 @@ export default function MainHome() {
 
   useFocusEffect(
     React.useCallback(() => {
-        fetchHeroBanners();
-        fetchFeaturedCars();
-        fetchFavorites();
-        fetchBrands();
-        fetchCollectionsData();
+        const startTime = Date.now();
+        logger.log('Home screen fetching started');
+
+        Promise.all([
+          fetchHeroBanners(),
+          fetchFeaturedCars(),
+          fetchFavorites(),
+          fetchBrands(),
+          fetchCollectionsData()
+        ]).then(() => {
+          logger.perf('Home screen ready', Date.now() - startTime);
+        });
+
         startHeroAutoPlay();
         startReviewsAutoPlay();
         return () => {
           stopHeroAutoPlay();
           stopReviewsAutoPlay();
         };
-    }, [cityName, user?.id, heroBanners?.length])
+    }, [cityName, user?.id])
   );
 
   const fetchCollectionsData = async () => {
@@ -558,7 +566,7 @@ export default function MainHome() {
           contentContainerStyle={styles.horizontalList}
           renderItem={({ item }) => (
             <View style={styles.serviceCard}>
-              <Image source={{ uri: item.image }} style={styles.serviceImage} />
+              <Image source={{ uri: item.image }} style={styles.serviceImage} resizeMode="cover" />
               <View style={styles.serviceInfo}>
                 <Text style={styles.serviceTitle}>{item.title}</Text>
                 <Text style={styles.serviceDesc}>{item.description}</Text>
@@ -587,7 +595,7 @@ export default function MainHome() {
           }}
           renderItem={({ item }) => (
             <Pressable style={styles.collectionCard} onPress={() => (navigation as any).navigate('MainTabs', { screen: 'BuyCar', params: { filters: { carType: item.name } } })}>
-              <Image source={{ uri: item.imageUrl }} style={styles.collectionImage} />
+              <Image source={{ uri: item.imageUrl }} style={styles.collectionImage} resizeMode="cover" />
               <View style={styles.collectionOverlay}>
                 <Text style={styles.collectionName}>{item.name}</Text>
               </View>
@@ -642,7 +650,7 @@ export default function MainHome() {
                     color={favorites.includes(item.id) ? COLORS.red : COLORS.white}
                   />
                 </Pressable>
-                <Image source={{ uri: item.imageUrl || "https://images.unsplash.com/photo-1626244795368-f9478f772712?auto=format&fit=crop&w=600&q=80" }} style={styles.carImage} />
+                <Image source={{ uri: item.imageUrl || "https://images.unsplash.com/photo-1626244795368-f9478f772712?auto=format&fit=crop&w=600&q=80" }} style={styles.carImage} resizeMode="cover" />
                 <View style={styles.carInfo}>
                   <Text style={styles.carName} numberOfLines={1}>{item.title}</Text>
                   <View style={styles.ratingRow}>
@@ -748,6 +756,7 @@ export default function MainHome() {
           <Image
             source={{ uri: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=800&q=80" }}
             style={styles.financingBg}
+            resizeMode="cover"
           />
           <View style={styles.financingOverlay}>
             <View style={styles.financingBadge}>
@@ -841,16 +850,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: COLORS.lightGrey1,
-    ...Platform.select({
-      web: { boxShadow: '0px 2px 5px rgba(0,0,0,0.05)' },
-      default: {
-        elevation: 2,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-      }
-    }),
+    ...getShadow(0, 2, 0.05, 5, "#000", 2),
   },
   searchInputWrapper: { flex: 1, flexDirection: "row", alignItems: "center" },
   searchPlaceholderBox: { flexDirection: 'row', alignItems: 'center', marginLeft: 10 },
@@ -897,16 +897,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 15,
     overflow: "hidden",
-    ...Platform.select({
-      web: { boxShadow: '0px 1px 2px rgba(0,0,0,0.1)' },
-      default: {
-        elevation: 2,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-      }
-    }),
+    ...getShadow(0, 1, 0.1, 2, "#000", 2),
   },
   serviceImage: { width: "100%", height: 140 },
   serviceInfo: { padding: 15, backgroundColor: "#eef5ff", flex: 1 },

@@ -2,7 +2,6 @@ package com.anonymous.autobidder
 
 import android.app.Application
 import android.content.res.Configuration
-import android.util.Log
 
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -30,15 +29,6 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
-    
-    // Global exception handler for native crashes
-    val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
-    Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-      Log.e("MainApplication", "FATAL UNCAUGHT EXCEPTION: ${throwable.message}", throwable)
-      // You could also log to a file or a service here
-      defaultHandler?.uncaughtException(thread, throwable)
-    }
-
     DefaultNewArchitectureEntryPoint.releaseLevel = try {
       ReleaseLevel.valueOf(BuildConfig.REACT_NATIVE_RELEASE_LEVEL.uppercase())
     } catch (e: IllegalArgumentException) {

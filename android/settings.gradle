@@ -22,10 +22,6 @@ plugins {
   id("expo-autolinking-settings")
 }
 
-expoAutolinking {
-  projectRoot = new File(rootDir, "../apps/mobile")
-}
-
 extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
     ex.autolinkLibrariesFromCommand()
@@ -41,4 +37,3 @@ expoAutolinking.useExpoVersionCatalog()
 
 include ':app'
 includeBuild(expoAutolinking.reactNativeGradlePlugin)
-// Removed manual ANDROID_USER_HOME overrides to avoid conflicts with environment variables in AGP 8.7+

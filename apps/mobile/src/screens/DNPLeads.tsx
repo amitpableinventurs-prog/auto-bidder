@@ -117,7 +117,10 @@ export default function DNPLeadsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Pressable
+          style={styles.backBtn}
+          onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainDrawer')}
+        >
           <Ionicons name="arrow-back" size={24} color={COLORS.black2} />
         </Pressable>
         <Text style={styles.headerTitle}>My Leads</Text>

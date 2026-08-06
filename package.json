@@ -33,6 +33,7 @@
     "cross-env": "^7.0.3",
     "expo": "^56.0.17",
     "expo-device": "~56.0.4",
+    "expo-image-manipulator": "~56.0.24",
     "expo-updates": "~56.0.23",
     "react": "19.2.3",
     "react-native": "0.85.3",

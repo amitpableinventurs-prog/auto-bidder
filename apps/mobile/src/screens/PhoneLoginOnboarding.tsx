@@ -306,23 +306,6 @@ export default function PhoneLoginOnboarding() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.bottomContent}>
           <Text style={styles.loginTitle}>Login With {"\n"}Your Mobile Number</Text>
 
-          <View style={styles.typeSelector}>
-            <Pressable
-              style={[styles.typeBtn, userType === 'BUYER' && styles.typeBtnActive]}
-              onPress={() => setUserType('BUYER')}
-            >
-              <Ionicons name="person" size={20} color={userType === 'BUYER' ? COLORS.white : COLORS.textMuted} />
-              <Text style={[styles.typeBtnText, userType === 'BUYER' && styles.typeBtnTextActive]}>BUYER</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.typeBtn, userType === 'SELLER' && styles.typeBtnActive]}
-              onPress={() => setUserType('SELLER')}
-            >
-              <Ionicons name="business" size={22} color={userType === 'SELLER' ? COLORS.white : COLORS.textMuted} />
-              <Text style={[styles.typeBtnText, userType === 'SELLER' && styles.typeBtnTextActive]}>SELLER</Text>
-            </Pressable>
-          </View>
-
           <View style={styles.inputContainer}>
              <View style={styles.inputRow}>
                 <Pressable

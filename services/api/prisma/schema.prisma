@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -115,7 +115,7 @@ model Listing {
   sharedListings          DNPListingShare[]
   referrals               DNPVehicleLead?
   favorites               Favorite[]
-  seller                  User              @relation(fields: [sellerId], references: [id])
+  seller                  User              @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   payments                Payment?
   rtoNoc                  RtoNoc?
 
@@ -159,7 +159,7 @@ model Appointment {
   listingId   String
   userId      String
   listing     Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  user        User              @relation(fields: [userId], references: [id])
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([listingId, scheduledAt])
   @@index([userId, status])

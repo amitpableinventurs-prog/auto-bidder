@@ -252,6 +252,21 @@ export function createApiRouter() {
   };
 
   /**
+   * Middleware to verify resource ownership (userId in params matches JWT)
+   */
+  const verifyOwner: RequestHandler = (req, res, next) => {
+    const { userId } = req.params;
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    if (user.role !== 'ADMIN' && user.userId !== userId) {
+      logger.warn(`[SECURITY] Access denied for user ${user.userId} attempting to access data of ${userId}`);
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to access this resource' });
+    }
+    next();
+  };
+
+  /**
    * Middleware to check user roles
    */
   const authorize = (roles: string[]): RequestHandler => {
@@ -594,7 +609,7 @@ export function createApiRouter() {
     res.json({ user, token });
   });
 
-  patch('/users/:userId', async (req: Request, res: Response) => {
+  patch('/users/:userId', authenticate, verifyOwner, async (req: Request, res: Response) => {
     const userId = req.params.userId;
     const body = z.object({
       name: z.string().optional(),
@@ -621,7 +636,7 @@ export function createApiRouter() {
     res.json({ user });
   });
 
-  get('/users/:userId', async (req: Request, res: Response) => {
+  get('/users/:userId', authenticate, verifyOwner, async (req: Request, res: Response) => {
     const userId = req.params.userId;
     if (useMemoryStore) {
       return res.json({ user: devStore.getUser(userId) });
@@ -631,6 +646,67 @@ export function createApiRouter() {
       select: userSelect(),
     });
     res.json({ user });
+  });
+
+  get('/users/:userId/seller-stats', authenticate, verifyOwner, async (req: Request, res: Response) => {
+    const userId = req.params.userId;
+    if (useMemoryStore) {
+      const stats = devStore.dashboard().stats;
+      return res.json({
+        totalEarnings: stats.totalRevenue / 10,
+        activeListings: stats.activeListings,
+        liveBids: stats.submittedBids,
+        soldCars: Math.floor(stats.listings / 5),
+        bidsPlaced: 12,
+        carsWon: 2,
+        savings: 45000,
+      });
+    }
+
+    const [activeListings, soldCars, listings, totalEarningsResult, bidsPlaced, carsWon] = await Promise.all([
+      prisma.listing.count({ where: { sellerId: userId, status: 'ACTIVE' } }),
+      prisma.listing.count({ where: { sellerId: userId, status: 'SOLD' } }),
+      prisma.listing.findMany({ where: { sellerId: userId }, select: { id: true } }),
+      prisma.payment.aggregate({
+        where: { listing: { sellerId: userId }, status: 'SUCCEEDED' },
+        _sum: { amount: true },
+      }),
+      prisma.bid.count({ where: { userId } }),
+      prisma.listing.count({ where: { bids: { some: { userId, status: 'ACCEPTED' } } } }),
+    ]);
+
+    const listingIds = listings.map((l: any) => l.id);
+    const liveBids = await prisma.bid.count({
+      where: { listingId: { in: listingIds }, status: 'SUBMITTED' },
+    });
+
+    res.json({
+      totalEarnings: totalEarningsResult._sum.amount || 0,
+      activeListings,
+      liveBids,
+      soldCars,
+      bidsPlaced,
+      carsWon,
+      savings: carsWon * 15000,
+    });
+  });
+
+  get('/users/:userId/seller-activities', authenticate, verifyOwner, async (req: Request, res: Response) => {
+    const userId = req.params.userId;
+    if (useMemoryStore) {
+      // Return empty activities for memory store for now or adapt if devStore supports it
+      return res.json({ activities: [] });
+    }
+    const activities = await prisma.bid.findMany({
+      where: { listing: { sellerId: userId } },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { name: true } },
+        listing: { select: { title: true } },
+      },
+    });
+    res.json({ activities });
   });
 
   get('/brands', async (_req: Request, res: Response) => {
@@ -1598,13 +1674,8 @@ export function createApiRouter() {
   });
 
   // User wallet
-  get('/users/:userId/wallet', authenticate, async (req: Request, res: Response) => {
+  get('/users/:userId/wallet', authenticate, verifyOwner, async (req: Request, res: Response) => {
     const userId = req.params.userId;
-    const authUser = (req as any).user;
-
-    if (authUser.userId !== userId && authUser.role !== 'ADMIN') {
-        return res.status(403).json({ error: 'Forbidden' });
-    }
 
     if (useMemoryStore) {
         return res.json({
@@ -1645,7 +1716,7 @@ export function createApiRouter() {
     res.json({ balance, transactions });
   });
 
-  get('/users/:userId/payments', async (req: Request, res: Response) => {
+  get('/users/:userId/payments', authenticate, verifyOwner, async (req: Request, res: Response) => {
     const userId = req.params.userId;
     if (useMemoryStore) {
         return res.json({ payments: [] });

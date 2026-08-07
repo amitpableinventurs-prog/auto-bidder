@@ -50,6 +50,7 @@ export default function AuctionSetup() {
     try {
         const payload = {
             ...listingData,
+            sellerId: user.id,
             startingBid: parseInt(basePrice.replace(/,/g, '')),
             sellingTimeline,
             status: 'PENDING_INSPECTION'
@@ -63,7 +64,7 @@ export default function AuctionSetup() {
                 [{ text: 'OK', onPress: () => navigation.navigate('MainDrawer' as any) }]
             );
         } else {
-            await api.createListing(user.id, payload);
+            await api.createListing(payload);
             Alert.alert(
                 'Success',
                 'Your car has been submitted for approval. Our team will verify the details soon.',

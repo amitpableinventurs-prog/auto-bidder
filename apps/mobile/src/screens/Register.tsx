@@ -43,7 +43,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!name) return Alert.alert('Required', 'Please enter your ' + (userType === 'SELLER' ? 'Business Name' : 'Full Name'));
+    if (!name) return Alert.alert('Required', 'Please enter your Full Name');
     if (!email) return Alert.alert('Required', 'Please enter your email address');
     if (!phone) return Alert.alert('Required', 'Please enter your mobile number');
     if (phone.length !== 10) return Alert.alert('Invalid', 'Please enter a valid 10-digit mobile number');
@@ -144,25 +144,8 @@ export default function Register() {
         >
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <View style={styles.form}>
-              <View style={styles.typeSelector}>
-                <Pressable
-                  style={[styles.typeBtn, userType === 'BUYER' && styles.typeBtnActive]}
-                  onPress={() => setUserType('BUYER')}
-                >
-                  <Ionicons name="person" size={20} color={userType === 'BUYER' ? COLORS.white : COLORS.textMuted} />
-                  <Text style={[styles.typeBtnText, userType === 'BUYER' && styles.typeBtnTextActive]}>BUYER</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.typeBtn, userType === 'SELLER' && styles.typeBtnActive]}
-                  onPress={() => setUserType('SELLER')}
-                >
-                  <Ionicons name="business" size={22} color={userType === 'SELLER' ? COLORS.white : COLORS.textMuted} />
-                  <Text style={[styles.typeBtnText, userType === 'SELLER' && styles.typeBtnTextActive]}>SELLER</Text>
-                </Pressable>
-              </View>
-
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>{userType === 'SELLER' ? 'BUSINESS NAME' : 'FULL NAME'}</Text>
+                <Text style={styles.label}>FULL NAME</Text>
                 <View style={styles.inputContainer}>
                   <Ionicons name="person-outline" size={20} color={COLORS.textMuted} />
                   <TextInput

@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "scheme": "autobidder",
     "android": {
-      "package": "com.anonymous.autobidder",
+      "package": "in.autobidder.app",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -46,7 +46,11 @@
         "expo-build-properties",
         {
           "android": {
-            "newArchEnabled": false
+            "newArchEnabled": false,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0",
+            "ndkVersion": "26.3.11579264"
           }
         }
       ],
@@ -59,9 +63,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "56841596-4ad6-409f-8eea-f4f4cd39efdc"
+        "projectId": "dd46b85b-768e-4574-b453-397a67d4b22a"
       }
     },
-    "owner": "vs0"
+    "owner": "monicinfosys"
   }
 }

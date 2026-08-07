@@ -69,3 +69,6 @@ android/app/build/
 
 .DS_Store
 Thumbs.db
+.artifacts/
+.gradle_home/
+android_root_deprecated/

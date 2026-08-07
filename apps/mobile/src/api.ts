@@ -97,6 +97,7 @@ export type ApiCollection = {
 };
 
 export type CreateListingPayload = {
+  sellerId: string;
   title?: string;
   brand?: string;
   model?: string;
@@ -202,7 +203,9 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
       if (text.trim().startsWith('<')) {
         throw new Error(`Server error (HTML returned). Please try again later.`);
       }
-      throw new Error(`Invalid server response (JSON parse error).`);
+      const snippet = text.length > 50 ? text.substring(0, 50) + '...' : text;
+      logger.error(`[API] JSON Parse Error for ${path}: "${snippet}"`);
+      throw new Error(`Invalid server response. Error near: ${snippet}`);
     }
 
     if (!response.ok) {
@@ -454,8 +457,14 @@ export async function uploadFile(
     }
   }
 
+  // Mobile URIs from ImagePicker/Manipulator should be used as-is.
+  // Aggressive decoding can break Expo cache paths that contain encoded slugs.
+  // Previously we used decodeURIComponent which corrupted paths like %40vs0%2Fauto-bidder.
+
+  // Create FormData for robust cross-platform upload
+  const formData = new FormData();
+
   if (Platform.OS === 'web') {
-    const formData = new FormData();
     try {
       const response = await fetch(finalUri);
       const blob = await response.blob();
@@ -464,115 +473,77 @@ export async function uploadFile(
       console.error('Web upload blob conversion failed', e);
       throw new Error('Failed to process image for upload');
     }
-
-    const response = await fetch(`${API_BASE_URL}/api/upload`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-        'Accept': 'application/json',
-      },
+  } else {
+    // Native (Android/iOS) FormData requirement
+    // @ts-ignore
+    formData.append('file', {
+      uri: finalUri,
+      name: filename,
+      type: type || 'image/jpeg'
     });
-
-    if (!response.ok) {
-      throw new Error(`Upload failed with status ${response.status}`);
-    }
-    return response.json();
   }
 
-  // Native Platform (Android/iOS) - Use FileSystem.uploadAsync for maximum reliability
-  let safeUri = finalUri;
-  // Sanitize filename: replace spaces and special chars with underscores to prevent URI parsing errors
-  const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.]/g, '_');
-  const tempFileUri = `${FileSystem.cacheDirectory}upload_temp_${sanitizedFilename}`;
-
-  try {
-    // Copy to app's own cache to ensure readability and fix java.io.IOException "isn't readable" on Android
-    if (Platform.OS !== 'web') {
-      try {
-        // Skip copy if already in a "safe" cache location (like DocumentPicker cache)
-        // This avoids redundant copies and potential permission issues with double copying in scoped storage
-        const uriLower = finalUri.toLowerCase();
-        const isAlreadyInCache = uriLower.includes('/cache/documentpicker/') || uriLower.includes('/cache/experiencedata/');
-
-        if (isAlreadyInCache) {
-          logger.log(`[UPLOAD] URI already in cache, skipping redundant copy: ${finalUri}`);
-          safeUri = finalUri;
-        } else {
-          // Verify source exists and is readable before copying
-          const info = await FileSystem.getInfoAsync(finalUri);
-          if (!info.exists) {
-            logger.error('Source file does not exist:', finalUri);
-            // Try adding file:// prefix if it's missing and it looks like a path
-            if (!finalUri.startsWith('file://') && !finalUri.startsWith('content://')) {
-               const prefixed = `file://${finalUri}`;
-               const info2 = await FileSystem.getInfoAsync(prefixed);
-               if (info2.exists) {
-                  finalUri = prefixed;
-               }
-            }
-          }
-
-          logger.log(`[UPLOAD] Copying ${finalUri} to ${tempFileUri}`);
-          await FileSystem.copyAsync({ from: finalUri, to: tempFileUri });
-          safeUri = tempFileUri;
-        }
-      } catch (copyErr: any) {
-        logger.warn('copyAsync failed, attempting Base64 fallback:', copyErr.message);
-
-        // Fallback: Try reading as Base64 and writing to temp file
-        // This can bypass "isn't readable" errors in some scoped storage scenarios
-        try {
-          const base64 = await FileSystem.readAsStringAsync(finalUri, { encoding: FileSystem.EncodingType.Base64 });
-          await FileSystem.writeAsStringAsync(tempFileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
-          logger.log('[UPLOAD] Base64 fallback success');
-          safeUri = tempFileUri;
-        } catch (fallbackErr: any) {
-          logger.error('[UPLOAD] Base64 fallback failed:', fallbackErr.message);
-          safeUri = finalUri;
-        }
-      }
-    }
-
-    // Ensure URI has a proper scheme for uploadAsync
-    if (!safeUri.startsWith('file://') && !safeUri.startsWith('content://') && Platform.OS !== 'web') {
-      safeUri = `file://${safeUri}`;
-    }
-
-    for (let i = 0; i < retries; i++) {
-      try {
-        logger.log(`Starting upload attempt ${i + 1} for: ${sanitizedFilename} (URI: ${safeUri})`);
-
-        const response = await FileSystem.uploadAsync(`${API_BASE_URL}/api/upload`, safeUri, {
-          httpMethod: 'POST',
-          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-          fieldName: 'file',
+  const performUpload = (): Promise<{ url: string }> => {
+    return new Promise((resolve, reject) => {
+      if (Platform.OS === 'web') {
+        // Fetch is reliable on Web
+        fetch(`${API_BASE_URL}/api/upload`, {
+          method: 'POST',
+          body: formData,
           headers: {
             'Authorization': `Bearer ${authToken}`,
             'Accept': 'application/json',
           },
-        });
+        })
+          .then(async (res) => {
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              throw new Error(err.error || `Upload failed: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then(resolve)
+          .catch(reject);
+      } else {
+        // XMLHttpRequest is MUCH more robust for FormData uploads on Native Android/iOS
+        // It bypasses the "Unsupported FormDataPart implementation" error in the fetch polyfill.
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${API_BASE_URL}/api/upload`);
 
-        if (response.status < 200 || response.status >= 300) {
-          throw new Error(`Upload failed with status ${response.status}: ${response.body}`);
-        }
+        xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
+        xhr.setRequestHeader('Accept', 'application/json');
 
-        const data = JSON.parse(response.body);
-        logger.log('[UPLOAD] Success:', data.url);
-        return data;
-      } catch (error: any) {
-        logger.warn(`[UPLOAD] Attempt ${i + 1} failed:`, error.message);
-        if (i === retries - 1) throw error;
-        // Exponential backoff
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+        xhr.onload = () => {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(response);
+            } else {
+              reject(new Error(response.error || `Upload failed with status ${xhr.status}`));
+            }
+          } catch (e) {
+            reject(new Error(`Invalid server response: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network request failed'));
+        xhr.ontimeout = () => reject(new Error('Request timed out'));
+
+        xhr.send(formData);
       }
-    }
-  } finally {
-    // Cleanup temporary file only if we actually created one
-    if (Platform.OS !== 'web' && safeUri === tempFileUri) {
-       FileSystem.deleteAsync(safeUri, { idempotent: true }).catch(e => {
-         logger.warn('Failed to delete temp upload file', e.message);
-       });
+    });
+  };
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const endpoint = `${API_BASE_URL}/api/upload`;
+      logger.log(`[UPLOAD] Attempt ${i + 1} | File: ${filename} | URI: ${finalUri} | Endpoint: ${endpoint}`);
+      return await performUpload();
+    } catch (error: any) {
+      logger.warn(`[UPLOAD] Attempt ${i + 1} failed:`, error.message);
+      if (i === retries - 1) throw error;
+      // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
     }
   }
 

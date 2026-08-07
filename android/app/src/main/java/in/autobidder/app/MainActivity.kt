@@ -1,4 +1,4 @@
-package com.anonymous.autobidder
+package `in`.autobidder.app
 
 import android.os.Build
 import android.os.Bundle

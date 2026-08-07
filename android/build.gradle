@@ -13,10 +13,10 @@ buildscript {
 }
 
 ext {
-    buildToolsVersion = "36.0.0"
+    buildToolsVersion = "35.0.0"
     minSdkVersion = 24
     compileSdkVersion = 36
-    targetSdkVersion = 36
+    targetSdkVersion = 35
     ndkVersion = "26.3.11579264"
     kotlinVersion = "2.1.20"
 }
@@ -37,12 +37,12 @@ subprojects {
     plugins.withType(com.android.build.gradle.BasePlugin).configureEach {
         project.android {
             compileSdkVersion 36
-            buildToolsVersion "36.0.0"
+            buildToolsVersion "35.0.0"
             ndkVersion "26.3.11579264"
             
             defaultConfig {
                 minSdkVersion 24
-                targetSdkVersion 36
+                targetSdkVersion 35
                 
                 externalNativeBuild {
                     cmake {

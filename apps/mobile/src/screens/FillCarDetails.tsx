@@ -24,6 +24,7 @@ import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navig
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { type CreateListingPayload, uploadFile, getBrands } from '../api';
+import { useAppStore } from '../store/useAppStore';
 import { logger } from '../utils/logger';
 import { ALL_BRANDS } from '../utils/brands';
 import { ALL_RTO_CODES } from '../utils/rto-codes';
@@ -249,6 +250,7 @@ function UploadBox({ label = "Upload Image", icon = "car", dark = false, onPress
 export default function FillCarDetails() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'FillDetails' | 'ListingDocuments'>>();
+  const { selectedCity } = useAppStore();
   const { listingToEdit, initialTab = 'basic', listingData, brand: passedBrand, carType } = (route.params as any) || {};
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -522,6 +524,7 @@ export default function FillCarDetails() {
         brand: selectedBrand === 'other' ? manualBrand : selectedBrand,
         model: currentModel,
         variant: currentVariant || undefined,
+        city: selectedCity,
         fuelType,
         manufacturingYear: parseInt(manufacturingYear),
         transmission,

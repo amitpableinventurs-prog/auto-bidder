@@ -1,11 +1,12 @@
 workflows:
   android-release:
-    name: Android Release APK
-    max_build_duration: 60
+    name: Auto Bidder Android Release APK
+    max_build_duration: 90
 
     environment:
       node: 22
       java: 17
+
       groups:
         - autobidder_env
 
@@ -13,9 +14,27 @@ workflows:
         NODE_ENV: production
 
     scripts:
+
+      - name: Check environment
+        script: |
+          echo "===== ENVIRONMENT ====="
+          node --version
+          npm --version
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+
       - name: Install dependencies
         script: |
           npm ci
+
+      - name: Generate Android project
+        script: |
+          if [ ! -d android ]; then
+            echo "Android directory not found. Running Expo prebuild..."
+            npx expo prebuild --platform android --no-install
+          else
+            echo "Android directory already exists."
+          fi
 
       - name: Verify Gradle wrapper
         script: |
@@ -23,13 +42,74 @@ workflows:
             echo "ERROR: android/gradlew not found"
             exit 1
           fi
+
           echo "Gradle wrapper found"
+
+          cd android
+          chmod +x gradlew
+          ./gradlew --version
+
+      - name: Configure Gradle memory
+        script: |
+          cd android
+
+          cat >> gradle.properties <<'EOF'
+
+          # ===== CI BUILD MEMORY =====
+          org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+
+          # ===== GRADLE STABILITY =====
+          org.gradle.daemon=false
+          org.gradle.parallel=false
+          org.gradle.workers.max=2
+          org.gradle.caching=true
+
+          # ===== ANDROID NDK =====
+          android.ndkVersion=26.1.10909125
+          EOF
+
+          echo "===== gradle.properties ====="
+          cat gradle.properties
+
+      - name: Clean Android build
+        script: |
+          cd android
+
+          chmod +x gradlew
+
+          ./gradlew clean \
+            --no-daemon \
+            --max-workers=2
 
       - name: Build Release APK
         script: |
           cd android
+
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --max-workers=2
+
+          export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
+          export JAVA_TOOL_OPTIONS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
+
+          ./gradlew assembleRelease \
+            --no-daemon \
+            --max-workers=2 \
+            --stacktrace
+
+      - name: Verify APK
+        script: |
+          echo "===== APK OUTPUT ====="
+
+          ls -lah android/app/build/outputs/apk/release/
+
+          if [ ! -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            echo "ERROR: APK was not generated"
+            exit 1
+          fi
+
+          echo "================================="
+          echo "BUILD SUCCESS"
+          echo "APK generated successfully"
+          echo "================================="
 
     artifacts:
-      - android/app/build/outputs/apk/release/*.apk
+      - android/app/build/outputs/apk/release/app-release.apk

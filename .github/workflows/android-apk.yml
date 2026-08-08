@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -41,7 +40,12 @@ jobs:
 
       - name: Create Environment File
         run: |
-          echo "EXPO_PUBLIC_API_BASE_URL=https://api.autobidder.in" > apps/mobile/.env
+          cat > apps/mobile/.env <<EOF
+          EXPO_PUBLIC_API_BASE_URL=https://api.autobidder.in
+          EXPO_PUBLIC_SOCKET_URL=https://api.autobidder.in
+          EOF
+
+          echo "Production environment configured."
 
 
       - name: Build APK
@@ -73,6 +77,189 @@ jobs:
             -x lintVitalAnalyzeRelease \
             --no-daemon \
             --max-workers=1
+
+
+      - name: Verify APK
+        run: |
+          APK="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
+
+          if [ ! -f "$APK" ]; then
+            echo "❌ APK NOT FOUND"
+            exit 1
+          fi
+
+          echo "✅ APK created successfully"
+          ls -lh "$APK"
+
+
+      # ============================================================
+      # ANDROID EMULATOR CRASH TEST
+      # ============================================================
+
+      - name: Enable KVM
+        run: |
+          echo "Checking KVM..."
+          ls -al /dev/kvm || true
+
+
+      - name: Install Android Emulator
+        run: |
+          sdkmanager "platform-tools" "emulator" "platforms;android-35"
+          sdkmanager "system-images;android-35;google_apis;x86_64"
+
+
+      - name: Create Test Emulator
+        run: |
+          echo "no" | avdmanager create avd \
+            --name "auto-bidder-test" \
+            --package "system-images;android-35;google_apis;x86_64" \
+            --device "pixel_6" \
+            --force
+
+
+      - name: Start Android Emulator
+        run: |
+          nohup emulator \
+            -avd auto-bidder-test \
+            -no-window \
+            -no-audio \
+            -no-boot-anim \
+            -no-snapshot \
+            -gpu swiftshader_indirect \
+            > emulator.log 2>&1 &
+
+          echo "Waiting for emulator..."
+
+          adb wait-for-device
+
+          timeout 180 bash -c '
+            until adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r" | grep -q "1";
+            do
+              sleep 5;
+            done
+          '
+
+          echo "✅ Emulator booted"
+
+          adb shell input keyevent 82 || true
+
+
+      - name: Install Release APK on Emulator
+        run: |
+          APK="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
+
+          echo "Installing APK..."
+          adb install -r "$APK"
+
+          echo "✅ APK installed"
+
+
+      - name: Clear Logcat
+        run: |
+          adb logcat -c
+
+
+      - name: Launch Auto Bidder
+        run: |
+          echo "Launching com.autobidder.app..."
+
+          adb shell monkey \
+            -p com.autobidder.app \
+            -c android.intent.category.LAUNCHER \
+            1
+
+          sleep 5
+
+
+      - name: Monitor App Startup
+        run: |
+          echo "Monitoring app for 45 seconds..."
+
+          for i in {1..9}
+          do
+            echo "Startup check $i/9"
+
+            if ! adb shell pidof com.autobidder.app >/dev/null 2>&1; then
+              echo "⚠️ App process is not running"
+            else
+              echo "✅ App process is running"
+            fi
+
+            sleep 5
+          done
+
+
+      - name: Capture Android Crash Logs
+        if: always()
+        run: |
+          mkdir -p crash-logs
+
+          echo "Capturing logcat..."
+          adb logcat -d > crash-logs/logcat.txt
+
+          echo "Capturing filtered crash log..."
+          adb logcat -d | grep -Ei \
+            "FATAL EXCEPTION|AndroidRuntime|ReactNativeJS|ReactNative|FirebaseApp|Reanimated|Worklets|Hermes|SIGSEGV|SIGABRT|Fatal signal|Unable to start activity|Exception" \
+            > crash-logs/filtered-crash.log || true
+
+          echo "Capturing package information..."
+          adb shell dumpsys package com.autobidder.app \
+            > crash-logs/package-info.txt || true
+
+          echo "Capturing activity information..."
+          adb shell dumpsys activity activities \
+            > crash-logs/activity.txt || true
+
+          echo "Capturing process information..."
+          adb shell dumpsys meminfo com.autobidder.app \
+            > crash-logs/meminfo.txt || true
+
+          echo "Capturing emulator log..."
+          cp emulator.log crash-logs/emulator.log || true
+
+
+      - name: Print Crash Information
+        if: always()
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "FILTERED CRASH LOG"
+          echo "=========================================="
+
+          cat crash-logs/filtered-crash.log || true
+
+          echo ""
+          echo "=========================================="
+          echo "APP PROCESS"
+          echo "=========================================="
+
+          adb shell pidof com.autobidder.app || true
+
+
+      - name: Detect Fatal Crash
+        run: |
+          LOG="crash-logs/logcat.txt"
+
+          if grep -Eiq \
+            "FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|Unable to start activity|Process: com.autobidder.app.*died" \
+            "$LOG"; then
+
+            echo ""
+            echo "❌❌❌ AUTO BIDDER CRASH DETECTED ❌❌❌"
+            echo ""
+            echo "Check the uploaded android-crash-logs artifact."
+            exit 1
+          fi
+
+          echo "✅ No fatal Android crash detected."
+
+
+      - name: Upload Crash Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-crash-logs
+          path: crash-logs/
 
 
       - name: Upload APK

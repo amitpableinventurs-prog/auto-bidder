@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
@@ -45,12 +45,38 @@ jobs:
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install
 
-      - name: Make Gradle executable
-        run: chmod +x android/gradlew
+      - name: Configure Gradle memory
+        working-directory: android
+        run: |
+          cat >> gradle.properties <<'EOF'
+
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1536m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+          org.gradle.daemon=false
+          org.gradle.parallel=false
+          org.gradle.configureondemand=true
+          org.gradle.workers.max=2
+          kotlin.daemon.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=1g
+          EOF
+
+          echo "===== Gradle memory configuration ====="
+          tail -10 gradle.properties
+
+      - name: Clean Gradle
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --stop || true
+          ./gradlew clean --no-daemon --max-workers=2
 
       - name: Build Release APK
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon --max-workers=2
+        env:
+          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1536m"
+        run: |
+          ./gradlew assembleRelease \
+            --no-daemon \
+            --max-workers=2 \
+            --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

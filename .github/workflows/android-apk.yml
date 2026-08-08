@@ -1,107 +1,291 @@
-name: Build Android APK
+name: Build Android APK and Crash Test
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+workflow_dispatch:
+push:
+branches:
+- main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+build:
+runs-on: ubuntu-latest
+timeout-minutes: 60
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+```
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+  - name: Setup Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: 22
+      cache: npm
 
-      - name: Install root packages
-        run: npm install
+  - name: Setup Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '17'
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+  - name: Setup Android SDK
+    uses: android-actions/setup-android@v3
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+  - name: Install Root Dependencies
+    run: npm install
 
-      - name: Create Environment File
-        run: |
-          cat > apps/mobile/.env <<EOF
-          EXPO_PUBLIC_API_BASE_URL=https://api.autobidder.in
-          EXPO_PUBLIC_SOCKET_URL=https://api.autobidder.in
-          EOF
+  - name: Create Production Environment
+    run: |
+      mkdir -p apps/mobile
 
-          echo "Production environment configured."
+      echo "EXPO_PUBLIC_API_BASE_URL=https://api.autobidder.in" > apps/mobile/.env
+      echo "EXPO_PUBLIC_SOCKET_URL=https://api.autobidder.in" >> apps/mobile/.env
 
-      - name: Build Release APK
-        working-directory: apps/mobile
-        run: |
-          echo "Installing mobile dependencies..."
-          npm install
+      echo "Production environment configured."
 
-          echo "Generating Android project..."
-          npx expo prebuild --clean
+  - name: Install Mobile Dependencies
+    working-directory: apps/mobile
+    run: npm install
 
-          cd android
+  - name: Generate Android Project
+    working-directory: apps/mobile
+    run: npx expo prebuild --clean
 
-          echo "Configuring Gradle memory..."
+  - name: Configure Gradle
+    working-directory: apps/mobile/android
+    run: |
+      echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=4096m" >> gradle.properties
+      echo "org.gradle.daemon=false" >> gradle.properties
+      echo "org.gradle.parallel=false" >> gradle.properties
+      echo "org.gradle.caching=true" >> gradle.properties
+      echo "kotlin.daemon.jvm.options=-Xmx4096m" >> gradle.properties
 
-          cat >> gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=4096m
-          org.gradle.daemon=false
-          org.gradle.parallel=false
-          org.gradle.caching=true
-          kotlin.daemon.jvm.options=-Xmx4096m
-          EOF
+      chmod +x gradlew
 
-          chmod +x gradlew
+  - name: Clean Android Build
+    working-directory: apps/mobile/android
+    run: ./gradlew clean --no-daemon --max-workers=1
 
-          echo "Cleaning Gradle..."
-          ./gradlew clean --no-daemon --max-workers=1
+  - name: Build Release APK
+    working-directory: apps/mobile/android
+    run: |
+      ./gradlew assembleRelease \
+        -x lintVitalAnalyzeRelease \
+        --no-daemon \
+        --max-workers=1
 
-          echo "Building Release APK..."
-          ./gradlew assembleRelease \
-            -x lintVitalAnalyzeRelease \
-            --no-daemon \
-            --max-workers=1
+  - name: Verify APK
+    run: |
+      APK="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
 
-          echo "Gradle build completed successfully."
+      if [ ! -f "$APK" ]; then
+        echo "❌ APK NOT FOUND"
+        exit 1
+      fi
 
-      - name: Verify APK
-        run: |
-          APK="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
+      echo "✅ APK CREATED"
+      ls -lh "$APK"
 
-          echo "Checking APK..."
+  - name: Install Emulator Components
+    run: |
+      sdkmanager "platform-tools" "emulator" "platforms;android-35"
+      sdkmanager "system-images;android-35;google_apis;x86_64"
 
-          if [ ! -f "$APK" ]; then
-            echo "APK NOT FOUND"
-            exit 1
-          fi
+  - name: Create Test Emulator
+    run: |
+      echo "no" | avdmanager create avd \
+        --name "auto-bidder-test" \
+        --package "system-images;android-35;google_apis;x86_64" \
+        --device "pixel_2" \
+        --force
 
-          echo "APK created successfully."
-          ls -lh "$APK"
+  - name: Start Android Emulator
+    run: |
+      mkdir -p crash-logs
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Auto-Bidder-Release-APK
-          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
+      echo "Starting Android emulator..."
 
-      - name: Build Complete
-        run: |
-          echo "=========================================="
-          echo "AUTO BIdDER APK BUILD SUCCESSFUL"
-          echo "=========================================="
-          echo "APK: app-release.apk"
-          echo "=========================================="
+      nohup emulator \
+        -avd auto-bidder-test \
+        -no-window \
+        -no-audio \
+        -no-boot-anim \
+        -no-snapshot \
+        -no-metrics \
+        -gpu swiftshader_indirect \
+        > crash-logs/emulator.log 2>&1 &
+
+      echo $! > emulator.pid
+
+      echo "Waiting for ADB device..."
+
+      for i in {1..60}; do
+        if adb devices | grep -q "emulator-"; then
+          echo "✅ Emulator detected"
+          break
+        fi
+
+        echo "Waiting for emulator... $i/60"
+        sleep 5
+      done
+
+      if ! adb devices | grep -q "emulator-"; then
+        echo "❌ Emulator did not connect within 5 minutes"
+        cat crash-logs/emulator.log || true
+        exit 1
+      fi
+
+      echo "Waiting for Android boot..."
+
+      BOOTED=false
+
+      for i in {1..60}; do
+        BOOT_STATUS=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
+
+        if [ "$BOOT_STATUS" = "1" ]; then
+          BOOTED=true
+          echo "✅ Android boot completed"
+          break
+        fi
+
+        echo "Boot check $i/60"
+        sleep 5
+      done
+
+      if [ "$BOOTED" != "true" ]; then
+        echo "❌ Emulator failed to boot within 5 minutes"
+        adb logcat -d > crash-logs/emulator-logcat.txt || true
+        cat crash-logs/emulator.log || true
+        exit 1
+      fi
+
+      adb shell input keyevent 82 || true
+
+  - name: Install Release APK
+    run: |
+      APK="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
+
+      echo "Installing APK..."
+
+      adb install -r "$APK"
+
+      echo "✅ APK installed successfully"
+
+  - name: Clear Logcat
+    run: |
+      adb logcat -c || true
+
+  - name: Launch Auto Bidder
+    run: |
+      echo "Launching Auto Bidder..."
+
+      adb shell monkey \
+        -p com.autobidder.app \
+        -c android.intent.category.LAUNCHER \
+        1
+
+      sleep 10
+
+  - name: Monitor App Startup
+    run: |
+      echo "Monitoring Auto Bidder for 60 seconds..."
+
+      for i in {1..12}; do
+        echo "Startup check $i/12"
+
+        if adb shell pidof com.autobidder.app >/dev/null 2>&1; then
+          echo "✅ Auto Bidder process is running"
+        else
+          echo "⚠️ Auto Bidder process is NOT running"
+        fi
+
+        sleep 5
+      done
+
+  - name: Capture Crash Logs
+    if: always()
+    run: |
+      mkdir -p crash-logs
+
+      echo "Capturing logcat..."
+
+      adb logcat -d > crash-logs/logcat.txt || true
+
+      echo "Capturing filtered crash log..."
+
+      adb logcat -d | grep -Ei \
+        "FATAL EXCEPTION|AndroidRuntime|ReactNativeJS|ReactNative|Hermes|Reanimated|Worklets|SIGSEGV|SIGABRT|Fatal signal|Unable to start activity|Exception" \
+        > crash-logs/filtered-crash.log || true
+
+      echo "Capturing package information..."
+
+      adb shell dumpsys package com.autobidder.app \
+        > crash-logs/package-info.txt || true
+
+      echo "Capturing activity information..."
+
+      adb shell dumpsys activity activities \
+        > crash-logs/activity.txt || true
+
+      echo "Capturing process information..."
+
+      adb shell dumpsys meminfo com.autobidder.app \
+        > crash-logs/meminfo.txt || true
+
+      echo "Capturing emulator log..."
+
+      cp emulator.log crash-logs/emulator.log 2>/dev/null || true
+
+  - name: Detect App Crash
+    run: |
+      LOG="crash-logs/logcat.txt"
+
+      echo "Checking for fatal crash..."
+
+      if grep -Eiq \
+        "FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|Unable to start activity|Process: com.autobidder.app.*died" \
+        "$LOG"; then
+
+        echo "❌ AUTO BIDDER CRASH DETECTED"
+        echo ""
+        echo "Filtered crash:"
+        cat crash-logs/filtered-crash.log || true
+        exit 1
+      fi
+
+      if ! adb shell pidof com.autobidder.app >/dev/null 2>&1; then
+        echo "❌ Auto Bidder process is not running"
+        echo ""
+        echo "Filtered crash:"
+        cat crash-logs/filtered-crash.log || true
+        exit 1
+      fi
+
+      echo "✅ No fatal crash detected"
+      echo "✅ Auto Bidder process is running"
+
+  - name: Upload Crash Logs
+    if: always()
+    uses: actions/upload-artifact@v4
+    with:
+      name: android-crash-logs
+      path: crash-logs/
+      if-no-files-found: warn
+
+  - name: Upload APK
+    if: success()
+    uses: actions/upload-artifact@v4
+    with:
+      name: Auto-Bidder-Release-APK
+      path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+      if-no-files-found: error
+
+  - name: Test Complete
+    if: success()
+    run: |
+      echo "=========================================="
+      echo "✅ AUTO BIDDER BUILD + CRASH TEST PASSED"
+      echo "=========================================="
+      echo "APK: Auto-Bidder-Release-APK"
+      echo "=========================================="
 ```

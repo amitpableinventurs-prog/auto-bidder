@@ -1,14 +1,35 @@
 workflows:
   android-release:
     name: Android Release APK
+    max_build_duration: 60
 
     environment:
-      node: 20
+      node: 22
+      java: 17
+      groups:
+        - autobidder_env
+
+      vars:
+        NODE_ENV: production
 
     scripts:
-      - npm ci
-      - cd android
-      - ./gradlew assembleRelease
+      - name: Install dependencies
+        script: |
+          npm ci
+
+      - name: Verify Gradle wrapper
+        script: |
+          if [ ! -f android/gradlew ]; then
+            echo "ERROR: android/gradlew not found"
+            exit 1
+          fi
+          echo "Gradle wrapper found"
+
+      - name: Build Release APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --max-workers=2
 
     artifacts:
       - android/app/build/outputs/apk/release/*.apk

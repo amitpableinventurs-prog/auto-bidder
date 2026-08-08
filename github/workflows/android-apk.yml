@@ -1,0 +1,61 @@
+name: Build Android Release APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Gradle wrapper
+        shell: bash
+        run: |
+          if [ ! -f android/gradlew ]; then
+            echo "ERROR: android/gradlew not found"
+            exit 1
+          fi
+          echo "Gradle wrapper found"
+
+      - name: Make Gradle executable
+        run: chmod +x android/gradlew
+
+      - name: Build Release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon --max-workers=2
+
+      - name: Verify APK
+        run: |
+          ls -lh android/app/build/outputs/apk/release/
+          test -f android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-bidder-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error

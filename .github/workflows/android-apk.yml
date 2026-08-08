@@ -1,4 +1,4 @@
-```yaml
+
 name: Build Auto Bidder Android APK
 
 on:
@@ -117,4 +117,3 @@ jobs:
             android/app/build/reports/**
           if-no-files-found: ignore
           retention-days: 7
-```

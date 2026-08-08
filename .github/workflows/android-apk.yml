@@ -1,83 +1,60 @@
-﻿name: Build Android APK
+name: Build Auto Bidder Android APK
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
 
 jobs:
   build:
+    name: Build Release APK
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
-      - name: Install Root Dependencies
-        run: npm install
-
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: 17
 
-      - name: Setup Android
-        uses: android-actions/setup-android@v3
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
 
-      - name: Create Production Environment
+      - name: Verify project
         run: |
-          echo "EXPO_PUBLIC_API_BASE_URL=https://api.autobidder.in" > apps/mobile/.env
-          echo "EXPO_PUBLIC_SOCKET_URL=https://api.autobidder.in" >> apps/mobile/.env
+          node --version
+          npm --version
+          java -version
+          test -f android/gradlew
+          echo "Gradle wrapper found"
 
-      - name: Install Mobile Dependencies
-        working-directory: apps/mobile
-        run: npm install
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Generate Android Project
-        working-directory: apps/mobile
-        run: npx expo prebuild --clean
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install
 
-      - name: Configure Gradle
-        working-directory: apps/mobile/android
-        run: |
-          echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=4096m" >> gradle.properties
-          echo "org.gradle.daemon=false" >> gradle.properties
-          echo "org.gradle.parallel=false" >> gradle.properties
-          echo "org.gradle.caching=true" >> gradle.properties
-          echo "kotlin.daemon.jvm.options=-Xmx4096m" >> gradle.properties
-          chmod +x gradlew
-
-      - name: Clean Android Build
-        working-directory: apps/mobile/android
-        run: ./gradlew clean --no-daemon --max-workers=1
+      - name: Make Gradle executable
+        run: chmod +x android/gradlew
 
       - name: Build Release APK
-        working-directory: apps/mobile/android
-        run: ./gradlew assembleRelease -x lintVitalAnalyzeRelease --no-daemon --max-workers=1
-
-      - name: Verify APK
-        run: |
-          if [ ! -f "apps/mobile/android/app/build/outputs/apk/release/app-release.apk" ]; then
-            echo "APK NOT FOUND"
-            exit 1
-          fi
-
-          echo "APK created successfully."
-
-      - name: Show APK
-        run: ls -lh apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon --max-workers=2
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Auto-Bidder-Release-APK
-          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          name: auto-bidder-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error

@@ -84,6 +84,10 @@ model Listing {
   demandPrice             Int?
   startingBid             Int
   imageUrl                String?
+  images                  String[]
+  rcImages                String[]
+  invoiceImages           String[]
+  bankNocImages           String[]
   rcOwnerName             String?
   rcOwnerNumber           String?
   rcAvailability          String?
@@ -93,14 +97,20 @@ model Listing {
   rtoTaxStatus            String?
   rtoNocIssued            String?
   rtoNocNumber            String?
+  rtoIssues               String?
   duplicateKeys           Boolean?          @default(false)
   serviceBookAvailability Boolean?          @default(true)
   remainingFreeService    Int?              @default(0)
   remainingOemWarranty    String?
   insuranceType           String?
   insuranceExpiry         String?
+  registrationDate        String?
   listedBy                String?
   sellingTimeline         String?
+  ownershipType           String?
+  cngLpgStatus            String?
+  rtoNocFor               String?
+  accidentalHistory       String?
   commission              String?
   inspectionReportUrl     String?
   inspectionReportStatus  String?           @default("PENDING")

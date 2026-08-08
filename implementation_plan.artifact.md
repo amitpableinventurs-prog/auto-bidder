@@ -1,40 +1,32 @@
-# Implementation Plan - Enhancements & Checklist Progress
+# Implementation Plan: Fix Codegen Errors and Backend Setup
 
-This plan addresses several pending items from the development checklist, focusing on Offline Support, Theme Management, and UI consistency.
+This plan addresses the bundling error in `react-native-screens` and prevents recurring issues in the backend service configuration.
+
+## User Review Required
+
+> [!CAUTION]
+> **DO NOT RUN `npx expo start` in the `services/api` directory.**
+> The `services/api` folder contains a Node.js Express backend, NOT an Expo app. Running Expo commands there will corrupt your backend configuration and try to download mobile apps unnecessarily.
 
 ## Proposed Changes
 
-### 1. Offline Support & Persistence
+### 1. Restore and Fix Codegen in `react-native-screens`
+The previous patch removed `WithDefault` wrappers, which are mandatory for certain types (like enums/unions) in React Native Codegen. I will update the patch script to use direct `WithDefault` imports without namespaces, which should resolve both the "Unknown prop type" and "Default enum value required" errors.
 
-#### [MODIFY] [store/useAppStore.ts](file:///C:/Users/Vaibhav Soni/StudioProjects/auto-bidder/auto-bidder/apps/mobile/src/store/useAppStore.ts)
-- Use `persist` middleware from Zustand to save `selectedCity`, `recentlyViewed`, and `favorites` to `AsyncStorage`.
-- This ensures user preferences and activity persist across app restarts.
+- **Action**: Run an updated `patch_screens.js` script.
+- **Goal**: Change types like `autoCapitalize?: AutoCapitalizeType` back to `autoCapitalize?: WithDefault<AutoCapitalizeType, 'systemDefault'>` but with direct imports.
 
-#### [MODIFY] [store/useSettingsStore.ts](file:///C:/Users/Vaibhav Soni/StudioProjects/auto-bidder/auto-bidder/apps/mobile/src/store/useSettingsStore.ts)
-- Use `persist` middleware to save `notifications`, `language`, and `theme` settings.
+### 2. Backend Environment Cleanup
+Expo CLI modified `services/api/tsconfig.json`. I need to ensure it's reverted to its pure Node.js state.
 
-### 2. Theme Management (Dark Mode)
-
-#### [MODIFY] [theme.ts](file:///C:/Users/Vaibhav Soni/StudioProjects/auto-bidder/auto-bidder/apps/mobile/src/theme.ts)
-- Define `LIGHT_COLORS` and `DARK_COLORS` objects.
-- Export a function `getColors(theme: 'light' | 'dark' | 'system')` to return the appropriate color palette.
-
-#### [NEW] [components/ThemeProvider.tsx](file:///C:/Users/Vaibhav Soni/StudioProjects/auto-bidder/auto-bidder/apps/mobile/src/components/ThemeProvider.tsx)
-- Create a context provider that wraps the app and provides the current color palette based on `useSettingsStore`.
-- Listen for system appearance changes if theme is set to 'system'.
-
-#### [MODIFY] [App.tsx](file:///C:/Users/Vaibhav Soni/StudioProjects/auto-bidder/auto-bidder/apps/mobile/App.tsx)
-- Wrap the app in the new `ThemeProvider`.
-
-### 3. Multi-language Support (Foundation)
-
-#### [NEW] [utils/i18n.ts](file:///C:/Users/Vaibhav Soni/StudioProjects/auto-bidder/auto-bidder/apps/mobile/src/utils/i18n.ts)
-- Setup `i18next` and `react-i18next`.
-- Create translation files for English, Hindi, and Marathi (initial boilerplate).
+- **Action**: Revert `services/api/tsconfig.json` (I'll do this again to be sure).
+- **Action**: Delete any `.expo` folder in `services/api`.
 
 ## Verification Plan
 
+### Automated Tests
+- Run `npm run dev:mobile` from the **root** directory to verify bundling succeeds.
+- Run `npm run dev` from the `services/api` directory to verify the backend starts without Expo errors.
+
 ### Manual Verification
-1. **Persistence**: Change city to "Mumbai", favorite a car, then force close and restart the app. Verify data persists.
-2. **Theme**: Toggle "Dark Mode" in Settings. Verify colors update globally.
-3. **Language**: Toggle "Language" in Settings. Verify static labels update (after adding initial translations).
+- Verify that the mobile app loads in the Metro bundler without "Unknown prop type" errors.

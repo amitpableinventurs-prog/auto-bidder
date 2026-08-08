@@ -11,4 +11,16 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
+# React Navigation
+-keep class com.facebook.react.bridge.NativeModule { *; }
+-keep class com.facebook.react.bridge.JavaScriptModule { *; }
+-keep class com.facebook.react.bridge.Callback { *; }
+
+# Vector Icons / SVG
+-keep class com.horcrux.svg.** { *; }
+
+# Gesture Handler & Screens
+-keep class com.swmansion.gesturehandler.** { *; }
+-keep class com.swmansion.rnscreens.** { *; }
+
 # Add any project specific keep options here:

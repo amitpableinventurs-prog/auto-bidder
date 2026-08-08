@@ -1,43 +1,42 @@
-# Walkthrough - DNP Share & Lead Tracking
+# Walkthrough: Fixed Backend Configuration & Building Instructions
 
-Successfully implemented the enhanced DNP sharing flow and transitioned the mobile app from mock data to live API tracking.
+I have fixed the issues caused by running the wrong command in the `services/api` directory and provided the correct instructions for starting your services.
 
 ## Changes Made
 
-### Backend (Services API)
-- **Enhanced Sharing API**: Updated `POST /dnp/share-listing` to support proactive lead creation. It now accepts optional `buyerName` and `buyerPhone` fields. If provided, a `BuyerLead` is automatically created and linked to the share.
-- **Improved Dashboard API**: Updated `GET /dnp/dashboard` to include the most recent buyer leads in the activity feed, allowing for better tracking of prospect engagement.
+### Backend Service (`services/api`)
+- **Reverted `tsconfig.json`**: Removed the accidental `extends: expo/tsconfig.base` which was added by Expo CLI.
+- **Cleanup**: Removed the `.expo/` folder that was created in the backend directory.
 
-### Mobile App (DNP Module)
-- **DNPShareListing Screen**:
-    - Implemented a choice between **Quick Share** (generic link) and **Share With Lead** (tracked link for a specific prospect).
-    - Added input validation for buyer details in the "Share With Lead" flow.
-    - Replaced mock listings with real inventory fetched from the platform.
-- **DNPLeads Screen**:
-    - Fully connected to the backend API.
-    - DNP users can now see their real-time leads, current status, and expected commissions.
-    - Status updates are now persistent and saved to the database.
-- **DNPDashboard Screen**:
-    - Statistics (Total Earnings, Referrals, Shared Listings, etc.) are now driven by real data.
-    - Recent Activity feed now combines new referrals and new buyer leads in chronological order.
-- **DNPListings Screen**:
-    - Connected to the referrals API to track listings brought to the platform.
-- **DNPReferral Screen**:
-    - Now displays the user's actual DNP referral code and link fetched from their profile.
+## Root Cause of Error
+The error `ECONNRESET` occurred because `npx expo start` was executed inside the **Backend API** folder. Expo tried to treat the backend as a mobile app, updated its configuration, and attempted to download the Expo Go app over a potentially unstable connection.
 
-## Verification Results
+## Correct Commands
 
-### Sharing Flow
-- Tested **Quick Share**: Successfully generates a link without creating a lead.
-- Tested **Share With Lead**: Successfully creates a `BuyerLead` record when name and phone are provided.
+### 1. To Start the Backend API
+Run this from the `services/api` folder:
+```bash
+npm run dev
+```
 
-### Lead Tracking
-- Verified that new leads appear immediately in the "Buyer Leads" section.
-- Verified that updating a lead's status (e.g., from 'Shared' to 'Contacted') persists across app restarts.
+### 2. To Start the Mobile App
+Run this from the **Root** folder:
+```bash
+npm run dev:mobile
+```
 
-### Dashboard & Analytics
-- Verified that stats cards correctly aggregate data from the live database.
-- Activity feed correctly shows the latest interactions.
+### 3. To Start Everything (API + Mobile + Admin)
+Run this from the **Root** folder:
+```bash
+npm run dev
+```
+
+### 4. To Build the APK
+Run this from the **Root** folder (ensure you have unset `ANDROID_PREFS_ROOT` if still building locally):
+```bash
+cd android
+./gradlew assembleRelease
+```
 
 > [!TIP]
-> DNP users can now proactively manage their sales funnel by marking leads as "Negotiation" or "Booking", giving them a clear view of their potential earnings.
+> Always verify which directory you are in before running `npx expo start`. It should only be used for the frontend mobile app folders.

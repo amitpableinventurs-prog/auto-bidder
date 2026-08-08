@@ -100,6 +100,7 @@ type Listing = {
   rtoTaxStatus?: string | null;
   rtoNocIssued?: string | null;
   rtoNocNumber?: string | null;
+  rtoIssues?: string | null;
   rtoNocFor?: string | null;
   ownershipType?: string | null;
   cngLpgStatus?: string | null;
@@ -406,6 +407,7 @@ class DevStore {
       rtoTaxStatus: input.rtoTaxStatus ?? null,
       rtoNocIssued: input.rtoNocIssued ?? null,
       rtoNocNumber: input.rtoNocNumber ?? null,
+      rtoIssues: input.rtoIssues ?? null,
       rtoNocFor: input.rtoNocFor ?? null,
       ownershipType: input.ownershipType ?? null,
       cngLpgStatus: input.cngLpgStatus ?? null,

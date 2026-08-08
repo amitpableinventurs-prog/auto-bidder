@@ -2,53 +2,39 @@ const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const projectRoot = __dirname;
-console.log('METRO CONFIG: __dirname =', __dirname);
-console.log('METRO CONFIG: projectRoot =', projectRoot);
 const mobileRoot = path.resolve(projectRoot, 'apps/mobile');
 
-const config = getDefaultConfig(path.resolve(projectRoot));
+const config = getDefaultConfig(projectRoot);
 
-// Watch monorepo folders
-config.watchFolders = [
-  projectRoot,
-  mobileRoot,
-];
+// Monorepo folders
+config.watchFolders = [projectRoot, mobileRoot];
 
-// Resolve node_modules from root + mobile
+// Use root node_modules only.
+// Expo/Metro should resolve dependencies consistently from the workspace root.
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
-  path.resolve(mobileRoot, 'node_modules'),
 ];
 
-// Force core packages from root
-config.resolver.extraNodeModules = {
-  react: path.resolve(projectRoot, 'node_modules/react'),
-  'react-dom': path.resolve(projectRoot, 'node_modules/react-dom'),
-  'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
-  expo: path.resolve(projectRoot, 'node_modules/expo'),
-};
-
-// Asset support
-config.resolver.assetExts = [
-  ...config.resolver.assetExts,
-  'ttf',
-];
-
-// SVG support
+// SVG
 config.resolver.assetExts = config.resolver.assetExts.filter(
   (ext) => ext !== 'svg'
 );
 
 config.resolver.sourceExts.push('svg');
 
-// Resolution order
+// Fonts/assets
+if (!config.resolver.assetExts.includes('ttf')) {
+  config.resolver.assetExts.push('ttf');
+}
+
+// Native-first resolution
 config.resolver.resolverMainFields = [
   'react-native',
   'browser',
   'main',
 ];
 
-// Avoid native folders scanning conflicts
+// Prevent native build folders from being scanned
 config.resolver.blockList = [
   /[/\\]\.cxx[/\\]/,
 ];

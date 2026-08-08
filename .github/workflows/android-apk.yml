@@ -1,82 +1,83 @@
-name: Build Android APK
+﻿name: Build Android APK
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
-
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-
-      - name: Install root packages
+      - name: Install Root Dependencies
         run: npm install
-
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
-
-      - name: Setup Android SDK
+      - name: Setup Android
         uses: android-actions/setup-android@v3
 
-
-      - name: Create Environment File
+      - name: Create Production Environment
         run: |
           echo "EXPO_PUBLIC_API_BASE_URL=https://api.autobidder.in" > apps/mobile/.env
+          echo "EXPO_PUBLIC_SOCKET_URL=https://api.autobidder.in" >> apps/mobile/.env
 
+      - name: Install Mobile Dependencies
+        working-directory: apps/mobile
+        run: npm install
 
-      - name: Build APK
+      - name: Generate Android Project
+        working-directory: apps/mobile
+        run: npx expo prebuild --clean
+
+      - name: Configure Gradle
+        working-directory: apps/mobile/android
         run: |
-          cd apps/mobile
-
-          echo "Installing mobile dependencies..."
-          npm install
-
-          echo "Generating Android project..."
-          npx expo prebuild --clean
-
-          cd android
-
-          echo "Configuring Gradle memory..."
           echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=4096m" >> gradle.properties
           echo "org.gradle.daemon=false" >> gradle.properties
           echo "org.gradle.parallel=false" >> gradle.properties
           echo "org.gradle.caching=true" >> gradle.properties
           echo "kotlin.daemon.jvm.options=-Xmx4096m" >> gradle.properties
-
           chmod +x gradlew
 
-          echo "Cleaning previous build..."
-          ./gradlew clean
+      - name: Clean Android Build
+        working-directory: apps/mobile/android
+        run: ./gradlew clean --no-daemon --max-workers=1
 
-          echo "Building Release APK..."
-          ./gradlew assembleRelease \
-            -x lintVitalAnalyzeRelease \
-            --no-daemon \
-            --max-workers=1
+      - name: Build Release APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease -x lintVitalAnalyzeRelease --no-daemon --max-workers=1
 
+      - name: Verify APK
+        run: |
+          if [ ! -f "apps/mobile/android/app/build/outputs/apk/release/app-release.apk" ]; then
+            echo "APK NOT FOUND"
+            exit 1
+          fi
+
+          echo "APK created successfully."
+
+      - name: Show APK
+        run: ls -lh apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Auto-Bidder-Release-APK
           path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error

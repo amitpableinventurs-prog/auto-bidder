@@ -17,7 +17,7 @@ ext {
     minSdkVersion = 24
     compileSdkVersion = 36
     targetSdkVersion = 35
-    ndkVersion = "26.3.11579264"
+    ndkVersion = "26.1.10909125"
     kotlinVersion = "2.1.20"
 }
 
@@ -38,7 +38,7 @@ subprojects {
         project.android {
             compileSdkVersion 36
             buildToolsVersion "35.0.0"
-            ndkVersion "26.3.11579264"
+            ndkVersion "26.1.10909125"
             
             defaultConfig {
                 minSdkVersion 24

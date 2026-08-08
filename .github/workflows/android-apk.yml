@@ -12,18 +12,8 @@ jobs:
     timeout-minutes: 60
 
     steps:
-
-      # ============================================================
-      # CHECKOUT
-      # ============================================================
-
       - name: Checkout code
         uses: actions/checkout@v4
-
-
-      # ============================================================
-      # NODE.JS
-      # ============================================================
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,20 +21,8 @@ jobs:
           node-version: 22
           cache: npm
 
-
-      # ============================================================
-      # INSTALL ROOT DEPENDENCIES
-      # ============================================================
-
       - name: Install root packages
-        run: |
-          echo "Installing root dependencies..."
-          npm install
-
-
-      # ============================================================
-      # JAVA
-      # ============================================================
+        run: npm install
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -52,135 +30,65 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-
-      # ============================================================
-      # ANDROID SDK
-      # ============================================================
-
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-
-      # ============================================================
-      # PRODUCTION ENVIRONMENT
-      # ============================================================
-
       - name: Create Environment File
         run: |
-          echo "Creating production environment..."
-
           cat > apps/mobile/.env <<EOF
           EXPO_PUBLIC_API_BASE_URL=https://api.autobidder.in
           EXPO_PUBLIC_SOCKET_URL=https://api.autobidder.in
           EOF
 
-          echo "✅ Production environment configured"
-
-
-      # ============================================================
-      # BUILD RELEASE APK
-      # ============================================================
+          echo "Production environment configured."
 
       - name: Build Release APK
         working-directory: apps/mobile
         run: |
-
-          echo "=========================================="
-          echo "INSTALLING MOBILE DEPENDENCIES"
-          echo "=========================================="
-
+          echo "Installing mobile dependencies..."
           npm install
 
-
-          echo "=========================================="
-          echo "GENERATING ANDROID PROJECT"
-          echo "=========================================="
-
+          echo "Generating Android project..."
           npx expo prebuild --clean
-
-
-          echo "=========================================="
-          echo "ENTERING ANDROID PROJECT"
-          echo "=========================================="
 
           cd android
 
-
-          echo "=========================================="
-          echo "CONFIGURING GRADLE"
-          echo "=========================================="
+          echo "Configuring Gradle memory..."
 
           cat >> gradle.properties <<'EOF'
-
           org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=4096m
           org.gradle.daemon=false
           org.gradle.parallel=false
           org.gradle.caching=true
           kotlin.daemon.jvm.options=-Xmx4096m
-
           EOF
-
 
           chmod +x gradlew
 
+          echo "Cleaning Gradle..."
+          ./gradlew clean --no-daemon --max-workers=1
 
-          echo "=========================================="
-          echo "CLEANING GRADLE BUILD"
-          echo "=========================================="
-
-          ./gradlew clean \
-            --no-daemon \
-            --max-workers=1
-
-
-          echo "=========================================="
-          echo "BUILDING RELEASE APK"
-          echo "=========================================="
-
+          echo "Building Release APK..."
           ./gradlew assembleRelease \
             -x lintVitalAnalyzeRelease \
             --no-daemon \
             --max-workers=1
 
-
-          echo "=========================================="
-          echo "✅ GRADLE BUILD COMPLETED"
-          echo "=========================================="
-
-
-      # ============================================================
-      # VERIFY APK
-      # ============================================================
+          echo "Gradle build completed successfully."
 
       - name: Verify APK
         run: |
-
           APK="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
 
-          echo "=========================================="
-          echo "VERIFYING APK"
-          echo "=========================================="
+          echo "Checking APK..."
 
           if [ ! -f "$APK" ]; then
-            echo "❌ APK NOT FOUND"
-            echo ""
-            echo "Expected location:"
-            echo "$APK"
+            echo "APK NOT FOUND"
             exit 1
           fi
 
-          echo "✅ APK CREATED SUCCESSFULLY"
-          echo ""
-          echo "APK LOCATION:"
-          echo "$APK"
-          echo ""
-
+          echo "APK created successfully."
           ls -lh "$APK"
-
-
-      # ============================================================
-      # UPLOAD APK
-      # ============================================================
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -189,24 +97,11 @@ jobs:
           path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
 
-
-      # ============================================================
-      # BUILD COMPLETE
-      # ============================================================
-
       - name: Build Complete
         run: |
-
-          echo ""
           echo "=========================================="
-          echo "🎉 AUTO BIdDER APK BUILD SUCCESSFUL"
+          echo "AUTO BIdDER APK BUILD SUCCESSFUL"
           echo "=========================================="
-          echo ""
-          echo "APK:"
-          echo "app-release.apk"
-          echo ""
-          echo "GitHub Actions → Artifacts"
-          echo "→ Auto-Bidder-Release-APK"
-          echo ""
+          echo "APK: app-release.apk"
           echo "=========================================="
 ```

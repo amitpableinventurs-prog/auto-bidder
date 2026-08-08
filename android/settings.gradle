@@ -16,7 +16,12 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
     ex.autolinkLibrariesFromCommand()
   } else {
-    ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
+    try {
+        ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
+    } catch (Exception e) {
+        println "Autolinking failed: " + e.message
+        ex.autolinkLibrariesFromCommand()
+    }
   }
 }
 expoAutolinking.useExpoModules()

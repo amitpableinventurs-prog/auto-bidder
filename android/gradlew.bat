@@ -22,6 +22,13 @@
 @rem
 
 @if "%DEBUG%"=="" @echo off
+
+set ANDROID_PREFS_ROOT=
+set ANDROID_USER_HOME=C:\.g
+set GRADLE_USER_HOME=C:\.g
+set EXPO_USE_COMMUNITY_AUTOLINKING=1
+set REACT_NATIVE_NODE_MODULES_DIR=Z:\auto-bidder\node_modules
+
 @rem ##########################################################################
 @rem
 @rem  Gradle startup script for Windows

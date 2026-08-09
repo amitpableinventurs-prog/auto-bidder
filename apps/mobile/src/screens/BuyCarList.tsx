@@ -29,7 +29,7 @@ import NeedAssistance from '../components/NeedAssistance';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorageItem, setStorageItem } from '../utils/storage-utils';
 import { COLORS, TYPOGRAPHY, FONTS, TAB_BAR_HEIGHT, getShadow } from '../theme';
 
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -104,10 +104,8 @@ export default function BuyCarList({ navigation, route }: any) {
         const res = await getFavorites(user.id);
         setFavorites(res.favorites?.map(f => f.id) || []);
       } else {
-        const guestFavs = await AsyncStorage.getItem('guest_favorites');
-        if (guestFavs) {
-          setFavorites(JSON.parse(guestFavs));
-        }
+        const ids = await getStorageItem<string[]>('guest_favorites', []);
+        setFavorites(ids);
       }
     } catch (e) {
       console.warn("Failed to fetch favorites", e);
@@ -130,14 +128,13 @@ export default function BuyCarList({ navigation, route }: any) {
           setFavorites(prev => prev.filter(id => id !== listingId));
         }
       } else {
-        const guestFavs = await AsyncStorage.getItem('guest_favorites');
-        let favs = guestFavs ? JSON.parse(guestFavs) : [];
+        let ids = await getStorageItem<string[]>('guest_favorites', []);
         if (isFav) {
-          favs = favs.filter((id: string) => id !== listingId);
+          ids = ids.filter((id: string) => id !== listingId);
         } else {
-          favs.push(listingId);
+          ids.push(listingId);
         }
-        await AsyncStorage.setItem('guest_favorites', JSON.stringify(favs));
+        await setStorageItem('guest_favorites', ids);
       }
     } catch (e: any) {
       console.warn("Failed to toggle favorite", e);

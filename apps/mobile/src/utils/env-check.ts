@@ -22,17 +22,7 @@ export const validateEnv = (): boolean => {
         logger.error('Missing Vars:', missing);
         logger.error('API_BASE_URL:', API_BASE_URL);
 
-        const message = "Critical configuration error detected. The application cannot start securely in production without proper environment variables.";
-
-        if (Platform.OS === 'web') {
-          alert(message);
-        } else {
-          Alert.alert(
-            'Configuration Error',
-            message,
-            [{ text: 'Exit', onPress: () => BackHandler.exitApp() }]
-          );
-        }
+        // Returning false instead of exiting. The root App will handle this.
         return false;
      }
   }

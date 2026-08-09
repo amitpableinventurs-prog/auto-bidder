@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -84,10 +84,10 @@ model Listing {
   demandPrice             Int?
   startingBid             Int
   imageUrl                String?
-  images                  String[]
-  rcImages                String[]
-  invoiceImages           String[]
-  bankNocImages           String[]
+  images                  Json?
+  rcImages                Json?
+  invoiceImages           Json?
+  bankNocImages           Json?
   rcOwnerName             String?
   rcOwnerNumber           String?
   rcAvailability          String?
@@ -106,6 +106,8 @@ model Listing {
   insuranceExpiry         String?
   registrationDate        String?
   listedBy                String?
+  sellerContactName       String?
+  sellerContactNumber     String?
   sellingTimeline         String?
   ownershipType           String?
   cngLpgStatus            String?

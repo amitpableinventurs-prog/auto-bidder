@@ -51,7 +51,7 @@ export default function AuctionSetup() {
         const payload = {
             ...listingData,
             sellerId: user.id,
-            startingBid: parseInt(basePrice.replace(/,/g, '')),
+            startingBid: parseInt(basePrice.replace(/,/g, '')) || 0,
             sellingTimeline,
             status: 'PENDING_INSPECTION'
         };

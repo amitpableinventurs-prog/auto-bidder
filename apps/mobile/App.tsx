@@ -7,9 +7,12 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/AuthContext';
 import { registerForPushNotificationsAsync } from './src/utils/notifications';
 import { validateEnv } from './src/utils/env-check';
-import { View, ActivityIndicator, LogBox } from 'react-native';
+import { View, ActivityIndicator, LogBox, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Logo from './src/components/Logo';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import { COLORS, TYPOGRAPHY } from './src/theme';
+import StripeProviderWrapper from './src/components/StripeProviderWrapper';
+import { STRIPE_PUBLISHABLE_KEY } from './src/config';
 
 // Global error handler for JS exceptions outside of React
 if (typeof ErrorUtils !== 'undefined') {
@@ -43,6 +46,7 @@ import {
 import { API_BASE_URL } from './src/config';
 
 export default function App() {
+  const [configValid, setConfigValid] = React.useState(true);
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -56,12 +60,41 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (validateEnv()) {
-      registerForPushNotificationsAsync()
-        .then(token => console.log('Push token:', token))
-        .catch(err => console.warn('Push notification registration failed:', err));
+    async function setupApp() {
+      try {
+        const isValid = validateEnv();
+        if (!isValid) {
+          setConfigValid(false);
+          return;
+        }
+
+        await registerForPushNotificationsAsync()
+          .then(token => console.log('Push token:', token))
+          .catch(err => console.warn('Push notification registration failed (handled):', err));
+      } catch (e) {
+        console.error('Startup validation failed:', e);
+      }
     }
+    setupApp();
   }, []);
+
+  if (!configValid) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>Configuration Error</Text>
+        <Text style={styles.errorText}>
+          The application is missing critical production environment variables.
+          Please check your build configuration.
+        </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => setConfigValid(validateEnv())}
+        >
+          <Text style={styles.retryButtonText}>Retry Validation</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (!fontsLoaded) {
     return (
@@ -76,15 +109,48 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <AuthProvider>
-            <NavigationContainer>
-              <AppNavigator />
-            </NavigationContainer>
-          </AuthProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
+      <StripeProviderWrapper publishableKey={STRIPE_PUBLISHABLE_KEY}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaProvider>
+            <AuthProvider>
+              <NavigationContainer>
+                <AppNavigator />
+              </NavigationContainer>
+            </AuthProvider>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </StripeProviderWrapper>
     </ErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+    backgroundColor: '#fff',
+  },
+  errorTitle: {
+    ...TYPOGRAPHY.h2,
+    color: '#DC2626',
+    marginBottom: 16,
+  },
+  errorText: {
+    ...TYPOGRAPHY.bodyMedium,
+    color: '#475569',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+});

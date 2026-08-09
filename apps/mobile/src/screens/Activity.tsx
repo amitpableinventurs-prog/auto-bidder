@@ -27,7 +27,7 @@ import { useAppStore } from '../store/useAppStore';
 import Logo from '../components/Logo';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { COLORS, FONTS, TAB_BAR_HEIGHT, getShadow } from '../theme';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorageItem } from '../utils/storage-utils';
 import { getListing } from '../api';
 
 const { width } = Dimensions.get('window');
@@ -188,18 +188,13 @@ export default function Activity({ navigation, route }: any) {
         setNotifications(notifRes.notifications || []);
       } else {
         // Guest mode - fetch only favorites from storage
-        const guestFavIdsJson = await AsyncStorage.getItem('guest_favorites');
-        if (guestFavIdsJson) {
-          const ids: string[] = JSON.parse(guestFavIdsJson);
-          if (ids.length > 0) {
-            // Fetch basic details for each favorite car
-            const favListings = await Promise.all(
-              ids.map(id => getListing(id).then(res => res.listing).catch(() => null))
-            );
-            setFavorites(favListings.filter(l => l !== null) as ApiListing[]);
-          } else {
-            setFavorites([]);
-          }
+        const ids = await getStorageItem<string[]>('guest_favorites', []);
+        if (ids.length > 0) {
+          // Fetch basic details for each favorite car
+          const favListings = await Promise.all(
+            ids.map(id => getListing(id).then(res => res.listing).catch(() => null))
+          );
+          setFavorites(favListings.filter(l => l !== null) as ApiListing[]);
         } else {
           setFavorites([]);
         }

@@ -26,6 +26,7 @@ import { COLORS, TYPOGRAPHY, FONTS, TAB_BAR_HEIGHT, getShadow } from '../theme';
 import { logger } from '../utils/logger';
 import Logo from "../components/Logo";
 import * as Linking from 'expo-linking';
+import { getStorageItem, setStorageItem } from '../utils/storage-utils';
 import ScreenWrapper from "../components/ScreenWrapper";
 
 import { ALL_BRANDS } from "../utils/brands";
@@ -230,7 +231,7 @@ export default function MainHome({ navigation }: any) {
               isAccent: true
           }));
           setHeroBanners(formattedSliders);
-          AsyncStorage.setItem('cached_hero_banners', JSON.stringify(formattedSliders));
+          setStorageItem('cached_hero_banners', formattedSliders);
         } else {
           // If empty array from server, keep default/cache
           loadCachedBanners();
@@ -245,14 +246,10 @@ export default function MainHome({ navigation }: any) {
   };
 
   const loadCachedBanners = async () => {
-    try {
-      const cached = await AsyncStorage.getItem('cached_hero_banners');
-      if (cached) {
-        setHeroBanners(JSON.parse(cached));
-      } else {
-        setHeroBanners(FALLBACK_HERO_BANNERS);
-      }
-    } catch (e) {
+    const cached = await getStorageItem<any[]>('cached_hero_banners', []);
+    if (cached.length > 0) {
+      setHeroBanners(cached);
+    } else {
       setHeroBanners(FALLBACK_HERO_BANNERS);
     }
   };
@@ -344,10 +341,8 @@ export default function MainHome({ navigation }: any) {
         const res = await getFavorites(user.id);
         setFavorites(res.favorites.map((f: any) => f.id || (f as any).listingId));
       } else {
-        const guestFavs = await AsyncStorage.getItem('guest_favorites');
-        if (guestFavs) {
-          setFavorites(JSON.parse(guestFavs));
-        }
+        const ids = await getStorageItem<string[]>('guest_favorites', []);
+        setFavorites(ids);
       }
     } catch (err) {
       console.warn("Failed to fetch favorites", err);
@@ -379,14 +374,13 @@ export default function MainHome({ navigation }: any) {
         await toggleFavorite(user.id, listingId);
       } else {
         // Handle guest favorites
-        const guestFavs = await AsyncStorage.getItem('guest_favorites');
-        let favs = guestFavs ? JSON.parse(guestFavs) : [];
+        let ids = await getStorageItem<string[]>('guest_favorites', []);
         if (isFav) {
-          favs = favs.filter((id: string) => id !== listingId);
+          ids = ids.filter((id: string) => id !== listingId);
         } else {
-          favs.push(listingId);
+          ids.push(listingId);
         }
-        await AsyncStorage.setItem('guest_favorites', JSON.stringify(favs));
+        await setStorageItem('guest_favorites', ids);
       }
     } catch (err) {
       console.warn("Failed to toggle favorite", err);
@@ -401,18 +395,13 @@ export default function MainHome({ navigation }: any) {
   };
 
   const loadCachedListings = async () => {
-    try {
-      const cached = await AsyncStorage.getItem('cached_featured_listings');
-      if (cached) {
-        setFeaturedCars(JSON.parse(cached));
-        setLoading(false);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      console.warn("Failed to load cached listings", e);
-      return false;
+    const cached = await getStorageItem<any[]>('cached_featured_listings', []);
+    if (cached.length > 0) {
+      setFeaturedCars(cached);
+      setLoading(false);
+      return true;
     }
+    return false;
   };
 
   const fetchFeaturedCars = async () => {
@@ -423,7 +412,7 @@ export default function MainHome({ navigation }: any) {
           const activeListings = res?.listings || [];
           if (activeListings.length > 0) {
             setFeaturedCars(activeListings.slice(0, 10));
-            AsyncStorage.setItem('cached_featured_listings', JSON.stringify(activeListings.slice(0, 10)));
+            setStorageItem('cached_featured_listings', activeListings.slice(0, 10));
           } else {
               loadCachedListings().then(cached => {
                 if (!cached) setFeaturedCars(SEED_DATA);

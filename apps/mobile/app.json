@@ -2,6 +2,7 @@
   "expo": {
     "name": "Auto Bidder",
     "slug": "auto-bidder-mobile",
+    "scheme": "auto-bidder",
     "version": "1.0.0",
     "description": "AutoBidder - Premium Car Auction Marketplace",
     "owner": "autobidder",
@@ -28,7 +29,28 @@
       "favicon": "./assets/favicon.png"
     },
     "android": {
-      "package": "com.autobidder.mobile"
-    }
+      "package": "com.autobidder.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": [
+      "expo-notifications",
+      "expo-dev-client",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "newArchEnabled": false,
+            "minSdkVersion": 24,
+            "targetSdkVersion": 34,
+            "compileSdkVersion": 34
+          }
+        }
+      ],
+      "expo-sharing",
+      "expo-video"
+    ]
   }
 }

@@ -53,7 +53,43 @@ findFiles(path.join(rootDir, 'node_modules'), 'componentsUtils.js', (fullPath) =
 
     if (content !== updated) {
         fs.writeFileSync(fullPath, updated);
-        console.log('Patched Utils: ' + fullPath);
+        console.log('Patched Utils (Float): ' + fullPath);
+    }
+
+    // Fix: A default enum value is required
+    const enumErrorRegex = /if \(defaultValue === undefined\) \{[\s\S]*?throw new Error\(`A default enum value is required for "\$\{name\}"`\);[\s\S]*?\}/;
+    const enumFix = `if (defaultValue === undefined) {
+    const firstType = elementTypes[0];
+    if (firstType && firstType.type === 'TSLiteralType' && firstType.literal) {
+      defaultValue = firstType.literal.value;
+    } else {
+      throw new Error(\`A default enum value is required for "\${name}" and no fallback could be determined.\`);
+    }
+  }`;
+
+    const updatedEnum = updated.replace(enumErrorRegex, enumFix);
+    if (updated !== updatedEnum) {
+        fs.writeFileSync(fullPath, updatedEnum);
+        console.log('Patched Utils (Enum Default): ' + fullPath);
+    }
+});
+
+// 3. Patch events.js
+findFiles(path.join(rootDir, 'node_modules'), 'events.js', (fullPath) => {
+    if (!fullPath.includes('typescript')) return;
+    let content = fs.readFileSync(fullPath, 'utf8');
+
+    // Support TSNumberKeyword in events (map to Double)
+    const oldCode = /case 'TSStringKeyword':[\s\S]*?return emitStringProp\(name, optional\);/;
+    const newCode = `case 'TSStringKeyword':
+      return emitStringProp(name, optional);
+    case 'TSNumberKeyword':
+      return emitDoubleProp(name, optional);`;
+
+    const updated = content.replace(oldCode, newCode);
+    if (content !== updated) {
+        fs.writeFileSync(fullPath, updated);
+        console.log('Patched Events: ' + fullPath);
     }
 });
 

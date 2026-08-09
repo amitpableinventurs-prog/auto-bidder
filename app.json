@@ -2,6 +2,7 @@
   "expo": {
     "name": "auto-bidder",
     "slug": "auto-bidder",
+    "scheme": "auto-bidder",
     "version": "1.0.0",
     "extra": {
       "eas": {

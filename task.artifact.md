@@ -1,10 +1,9 @@
-# Task: Build Stable Android APK
-
-- [x] Fix Environment Variable Conflict (Unset ANDROID_PREFS_ROOT)
-- [x] Update ProGuard Rules in `android/app/proguard-rules.pro`
-- [x] Reset Metro Bundler Cache
-- [x] Full Clean and Reinstall Dependencies
-- [x] Comprehensive Patching for react-native-screens (Numeric & Enum fixes)
-- [x] Cleanup Backend Service Configuration
-- [ ] Verify Mobile App Bundling Success
-- [ ] Manual Smoke Test (Verification)
+- [x] Resolve Metro cache and web bundling errors
+    - [x] Create implementation plan
+    - [x] Create web-only mocks for native internals
+    - [x] Consolidate and update `metro.config.js`
+    - [x] Remove redundant `metro.config.cjs`
+    - [x] Resolve deep react-native internal resolution issues for web
+    - [x] Resolve TurboModuleRegistry runtime error on web
+    - [x] Resolve `getConstants` runtime error on web using Proxy mock
+    - [ ] Verify bundling with cache clear

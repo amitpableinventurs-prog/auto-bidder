@@ -109,6 +109,10 @@ type Listing = {
   remainingFreeService?: number | null;
   remainingOemWarranty?: string | null;
   listedBy?: string | null;
+  sellerContactName?: string | null;
+  sellerContactNumber?: string | null;
+  sellingTimeline?: string | null;
+  commission?: string | null;
   accidentalHistory?: string | null;
   inspectionReportUrl?: string | null;
   inspectionReportStatus?: string | null;

@@ -1,42 +1,30 @@
-# Walkthrough: Fixed Backend Configuration & Building Instructions
+# Walkthrough - Web Bundling and Cache Fix
 
-I have fixed the issues caused by running the wrong command in the `services/api` directory and provided the correct instructions for starting your services.
+I have resolved the errors preventing the application from starting and bundling for the web.
 
 ## Changes Made
 
-### Backend Service (`services/api`)
-- **Reverted `tsconfig.json`**: Removed the accidental `extends: expo/tsconfig.base` which was added by Expo CLI.
-- **Cleanup**: Removed the `.expo/` folder that was created in the backend directory.
+### Metro Configuration
+- **Consolidated Config**: Merged `metro.config.js` and `metro.config.cjs` into a single, robust [metro.config.js](file:///C:/Users/Vaibhav Soni/StudioProjects/auto-bidder/auto-bidder/metro.config.js).
+- **Native Mocking**: Added a `resolveRequest` hook to intercept and mock native-only React Native internals when bundling for the web. This includes `react-native/Libraries/*` paths and Stripe native specs, preventing the "Importing react-native internals is not supported on web" error.
+- **Deep Internal Resolution**: Expanded mocks to cover `codegenNativeComponent`, `NativeComponentRegistry`, and `RendererProxy` which were causing cascading resolution failures on web.
+- **TurboModuleRegistry Mocking**: Patched the Stripe library's compiled JS files to bypass `TurboModuleRegistry.getEnforcing` calls, which do not exist on the web. This resolves the `Cannot read properties of undefined (reading 'getEnforcing')` runtime error.
+- **Monorepo Support**: Unified path resolution for `node_modules` and core packages (React, React Native) to prevent version conflicts.
+- **Worklets Integration**: Maintained compatibility with `react-native-worklets` bundle mode for native platforms while ensuring it doesn't break web builds.
 
-## Root Cause of Error
-The error `ECONNRESET` occurred because `npx expo start` was executed inside the **Backend API** folder. Expo tried to treat the backend as a mobile app, updated its configuration, and attempted to download the Expo Go app over a potentially unstable connection.
+### Mocking Utility
+- **New File**: Created [web-mocks.js](file:///C:/Users/Vaibhav Soni/StudioProjects/auto-bidder/auto-bidder/web-mocks.js) to provide safe, empty implementations for native functions that are referenced but not used on the web.
 
-## Correct Commands
+## How to Verify
 
-### 1. To Start the Backend API
-Run this from the `services/api` folder:
-```bash
-npm run dev
-```
+> [!IMPORTANT]
+> You **MUST** clear the corrupted Metro cache to resolve the "Unable to deserialize cloned data" error.
 
-### 2. To Start the Mobile App
-Run this from the **Root** folder:
-```bash
-npm run dev:mobile
-```
-
-### 3. To Start Everything (API + Mobile + Admin)
-Run this from the **Root** folder:
-```bash
-npm run dev
-```
-
-### 4. To Build the APK
-Run this from the **Root** folder (ensure you have unset `ANDROID_PREFS_ROOT` if still building locally):
-```bash
-cd android
-./gradlew assembleRelease
-```
-
-> [!TIP]
-> Always verify which directory you are in before running `npx expo start`. It should only be used for the frontend mobile app folders.
+1.  **Clear Cache and Start**:
+    ```bash
+    npx expo start --clear
+    ```
+2.  **Open Web**:
+    Press `w` in the terminal to open the web version.
+3.  **Check Logs**:
+    Verify that "Web Bundling" completes successfully without native internal import errors.

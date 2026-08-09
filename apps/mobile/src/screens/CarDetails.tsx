@@ -23,7 +23,7 @@ import { getListing, getListings, toggleFavorite, getFavorites, type ApiListing 
 import { useAuth } from '../AuthContext';
 import { useAppStore } from '../store/useAppStore';
 import { socketService } from '../utils/socket';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorageItem, setStorageItem } from '../utils/storage-utils';
 import StarPointsModal from '../components/StarPointsModal';
 import Logo from '../components/Logo';
 import NeedAssistance from '../components/NeedAssistance';
@@ -141,11 +141,8 @@ export default function CarDetails({ navigation, route }: any) {
         const isFav = res.favorites?.some(f => f.id === listingId);
         setIsFavorite(!!isFav);
       } else {
-        const guestFavs = await AsyncStorage.getItem('guest_favorites');
-        if (guestFavs) {
-          const favs = JSON.parse(guestFavs);
-          setIsFavorite(favs.includes(listingId));
-        }
+        const ids = await getStorageItem<string[]>('guest_favorites', []);
+        setIsFavorite(ids.includes(listingId));
       }
     } catch (err) {
         console.warn('Check favorite failed', err);
@@ -162,14 +159,13 @@ export default function CarDetails({ navigation, route }: any) {
             const res = await toggleFavorite(user.id, listingId);
             setIsFavorite(res.isFavorite);
         } else {
-            const guestFavs = await AsyncStorage.getItem('guest_favorites');
-            let favs = guestFavs ? JSON.parse(guestFavs) : [];
+            let ids = await getStorageItem<string[]>('guest_favorites', []);
             if (newStatus) {
-                if (!favs.includes(listingId)) favs.push(listingId);
+                if (!ids.includes(listingId)) ids.push(listingId);
             } else {
-                favs = favs.filter((id: string) => id !== listingId);
+                ids = ids.filter((id: string) => id !== listingId);
             }
-            await AsyncStorage.setItem('guest_favorites', JSON.stringify(favs));
+            await setStorageItem('guest_favorites', ids);
         }
     } catch (err: any) {
         console.warn('Toggle favorite failed', err);

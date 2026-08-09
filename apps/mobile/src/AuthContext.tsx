@@ -165,21 +165,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (savedUserJson) {
             try {
               const savedUser = JSON.parse(savedUserJson);
-              setUser(savedUser);
+              if (savedUser && typeof savedUser === 'object') {
+                setUser(savedUser);
 
-              // Refresh user data from server in background
-              if (savedUser?.id) {
-                getCurrentUser(savedUser.id).then(res => {
-                  if (res.user) {
-                    setUser(res.user);
-                    AsyncStorage.setItem('auth_user', JSON.stringify(res.user));
-                  }
-                }).catch(e => {
-                   logger.warn('Refresh user failed:', e.message);
-                });
+                // Refresh user data from server in background
+                if (savedUser?.id) {
+                  getCurrentUser(savedUser.id).then(res => {
+                    if (res.user) {
+                      setUser(res.user);
+                      AsyncStorage.setItem('auth_user', JSON.stringify(res.user));
+                    }
+                  }).catch(e => {
+                     logger.warn('Refresh user failed:', e.message);
+                  });
+                }
+              } else {
+                throw new Error('Invalid user data format');
               }
             } catch (e: any) {
-               logger.error('Auth state parse error:', e.message);
+               logger.error('Auth state parse error, clearing corrupted data:', e.message);
+               await AsyncStorage.removeItem('auth_user');
+               if (Platform.OS === 'web') {
+                 await AsyncStorage.removeItem('auth_token');
+               } else {
+                 await SecureStore.deleteItemAsync('auth_token');
+               }
             }
           }
         }

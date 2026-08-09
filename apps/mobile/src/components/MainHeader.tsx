@@ -5,6 +5,7 @@ import {
   Text,
   Pressable,
   Image,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -134,10 +135,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     zIndex: 1000,
     elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 2px rgba(0,0,0,0.05)' },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+    }),
   },
   headerContent: {
     height: 60,

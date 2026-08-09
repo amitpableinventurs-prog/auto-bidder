@@ -1,15 +1,18 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-  repositories {
-    google()
-    mavenCentral()
-  }
-  dependencies {
-    classpath('com.android.tools.build:gradle:8.5.1')
-    classpath('com.facebook.react:react-native-gradle-plugin')
-    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20")
-  }
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.5.1")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20")
+    }
+
+
 }
 
 ext {
@@ -22,34 +25,12 @@ ext {
 }
 
 allprojects {
-  repositories {
-    google()
-    mavenCentral()
-    maven { url 'https://www.jitpack.io' }
-  }
+    repositories {
+        google()
+        mavenCentral()
+        maven { url "https://www.jitpack.io" }
+    }
 }
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
-
-// Aggressively force NDK and SDK for all subprojects
-subprojects {
-    plugins.withType(com.android.build.gradle.BasePlugin).configureEach {
-        project.android {
-            compileSdkVersion 36
-            buildToolsVersion "35.0.0"
-            ndkVersion "26.1.10909125"
-            
-            defaultConfig {
-                minSdkVersion 24
-                targetSdkVersion 35
-                
-                externalNativeBuild {
-                    cmake {
-                        arguments "-DANDROID_STL=c++_shared"
-                    }
-                }
-            }
-        }
-    }
-}

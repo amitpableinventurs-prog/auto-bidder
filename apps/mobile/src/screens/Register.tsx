@@ -144,6 +144,35 @@ export default function Register() {
         >
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <View style={styles.form}>
+              <View style={styles.typeSelector}>
+                <Pressable
+                  style={[styles.typeBtn, userType === 'BUYER' && styles.typeBtnActive]}
+                  onPress={() => setUserType('BUYER')}
+                >
+                  <Ionicons
+                    name="car-outline"
+                    size={20}
+                    color={userType === 'BUYER' ? COLORS.white : COLORS.textMuted}
+                  />
+                  <Text style={[styles.typeBtnText, userType === 'BUYER' && styles.typeBtnTextActive]}>
+                    I want to BUY
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.typeBtn, userType === 'SELLER' && styles.typeBtnActive]}
+                  onPress={() => setUserType('SELLER')}
+                >
+                  <Ionicons
+                    name="cash-outline"
+                    size={20}
+                    color={userType === 'SELLER' ? COLORS.white : COLORS.textMuted}
+                  />
+                  <Text style={[styles.typeBtnText, userType === 'SELLER' && styles.typeBtnTextActive]}>
+                    I want to SELL
+                  </Text>
+                </Pressable>
+              </View>
+
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>FULL NAME</Text>
                 <View style={styles.inputContainer}>

@@ -1,7 +1,9 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { COLORS, TYPOGRAPHY } from '../theme';
 import * as Updates from 'expo-updates';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 interface Props {
   children: ReactNode;
@@ -38,6 +40,35 @@ class ErrorBoundary extends Component<Props, State> {
     }
   };
 
+  private handleHardReset = () => {
+    Alert.alert(
+      'Hard Reset',
+      'This will clear all local data, including your login session, and restart the app. Use this if the app is consistently crashing.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset & Restart',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.clear();
+              if (Platform.OS !== 'web') {
+                await SecureStore.deleteItemAsync('auth_token');
+              }
+              if (!__DEV__ && Platform.OS !== 'web') {
+                await Updates.reloadAsync();
+              } else {
+                this.setState({ hasError: false, error: null });
+              }
+            } catch (e) {
+              console.error('Hard reset failed:', e);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   private handleReport = () => {
     // This would typically send the error to Sentry, LogRocket, or a custom API
     console.log('Reporting error to server...', this.state.error);
@@ -61,8 +92,12 @@ class ErrorBoundary extends Component<Props, State> {
               <Text style={styles.buttonText}>Restart App</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={this.handleReport}>
-              <Text style={[styles.buttonText, styles.secondaryButtonText]}>Report Issue</Text>
+            <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={this.handleHardReset}>
+              <Text style={[styles.buttonText, styles.secondaryButtonText]}>Hard Reset (Clear Data)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.button, styles.reportButton]} onPress={this.handleReport}>
+              <Text style={[styles.buttonText, styles.reportButtonText]}>Report Issue</Text>
             </TouchableOpacity>
           </View>
 
@@ -129,6 +164,11 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: '#F1F5F9',
   },
+  reportButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
   buttonText: {
     color: '#fff',
     fontSize: 16,
@@ -136,6 +176,9 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#475569',
+  },
+  reportButtonText: {
+    color: COLORS.primary,
   },
   errorContainer: {
     maxHeight: 200,

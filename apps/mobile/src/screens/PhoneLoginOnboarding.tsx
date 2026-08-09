@@ -103,7 +103,7 @@ export default function PhoneLoginOnboarding() {
         const user = await res.json();
 
         const fullPhone = `${selectedCountry.code}${phone}`;
-        await socialLogin(user.email, user.name, user.picture, user.id, fullPhone, userType);
+        await socialLogin(user.email, user.name, user.picture, user.id, fullPhone);
 
         Alert.alert('Success', 'Logged in successfully!');
         navigation.reset({
@@ -117,7 +117,6 @@ export default function PhoneLoginOnboarding() {
     }
   };
 
-  const [userType, setUserType] = useState<'BUYER' | 'SELLER'>('BUYER');
   const [phone, setPhone] = useState('');
   const [whatsappUpdates, setWhatsappUpdates] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -400,7 +399,7 @@ export default function PhoneLoginOnboarding() {
                   // Wait for OTP request to succeed before navigating
                   setPhoneNumber(fullPhone);
                   await api.requestOTP(fullPhone);
-                  navigation.navigate('Otp', { phoneNumber: fullPhone, userType });
+                  navigation.navigate('Otp', { phoneNumber: fullPhone });
                 } catch (err: any) {
                   console.warn("OTP request failed:", err.message);
 
@@ -411,7 +410,7 @@ export default function PhoneLoginOnboarding() {
                       'Backend returned an error. Navigate to OTP screen anyway for testing?',
                       [
                         { text: 'Cancel', style: 'cancel' },
-                        { text: 'Yes (Dev)', onPress: () => navigation.navigate('Otp', { phoneNumber: fullPhone, userType }) }
+                        { text: 'Yes (Dev)', onPress: () => navigation.navigate('Otp', { phoneNumber: fullPhone }) }
                       ]
                     );
                   } else {
@@ -829,34 +828,5 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.bodyMedium,
     color: COLORS.textMuted,
     fontFamily: FONTS.poppins.semiBold,
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  typeBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    height: 52,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: COLORS.lightGrey2,
-  },
-  typeBtnActive: {
-    backgroundColor: COLORS.secondary,
-    borderColor: COLORS.secondary,
-  },
-  typeBtnText: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-    fontFamily: FONTS.poppins.bold,
-  },
-  typeBtnTextActive: {
-    color: COLORS.white,
   },
 });

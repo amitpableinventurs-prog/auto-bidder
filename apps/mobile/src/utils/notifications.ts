@@ -23,6 +23,10 @@ export async function registerForPushNotificationsAsync() {
     }
 
     const Notifications = require('expo-notifications');
+    if (!Notifications || !Notifications.setNotificationHandler) {
+      console.warn('expo-notifications module not found or incompatible.');
+      return null;
+    }
 
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
@@ -64,9 +68,19 @@ export async function registerForPushNotificationsAsync() {
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId;
 
-    const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-    logger.log('Expo Push Token:', token);
-    return token;
+    if (!projectId) {
+      console.warn('Project ID not found in Constants. Skipping push token registration.');
+      return null;
+    }
+
+    try {
+      const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+      logger.log('Expo Push Token:', token);
+      return token;
+    } catch (tokenErr: any) {
+      console.warn('Failed to get Expo Push Token. This might be due to missing Firebase configuration on Android release builds.', tokenErr.message);
+      return null;
+    }
   } catch (e: any) {
     logger.warn('Push notification setup failed:', e.message);
     return null;

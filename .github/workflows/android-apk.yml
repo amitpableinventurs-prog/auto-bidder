@@ -1,4 +1,4 @@
-```yaml
+
 name: Android APK Build + Crash Test
 
 on:
@@ -473,4 +473,3 @@ jobs:
             live-logcat.txt
             emulator.log
           retention-days: 14
-```

@@ -1,4 +1,4 @@
-package `in`.autobidder.app
+package com.monicinfosys.autobidder
 
 import android.os.Build
 import android.os.Bundle

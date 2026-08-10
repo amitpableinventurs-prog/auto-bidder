@@ -12,6 +12,9 @@
     "owner": "monicinfosys",
     "plugins": [
       "expo-build-properties"
-    ]
+    ],
+    "android": {
+      "package": "com.monicinfosys.autobidder"
+    }
   }
 }

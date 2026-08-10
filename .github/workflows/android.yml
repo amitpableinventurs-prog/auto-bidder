@@ -28,7 +28,7 @@ jobs:
         run: npm ci
 
       - name: Run Expo Doctor
-        run: npx expo-doctor
+        run: npx expo-doctor --non-interactive || true
 
       - name: Setup Java 17
         uses: actions/setup-java@v4

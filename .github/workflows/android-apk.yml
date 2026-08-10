@@ -1,0 +1,299 @@
+name: Android APK Build + Crash Test
+
+on:
+workflow_dispatch:
+push:
+branches:
+- main
+
+permissions:
+contents: read
+
+jobs:
+build-and-crash-test:
+runs-on: ubuntu-latest
+timeout-minutes: 60
+
+```
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: 22
+      cache: npm
+
+  - name: Install dependencies
+    run: npm ci
+
+  - name: Run Expo Doctor
+    run: npx expo-doctor
+
+  - name: Setup Java 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: 17
+      cache: gradle
+
+  - name: Setup Android SDK
+    uses: android-actions/setup-android@v3
+
+  - name: Accept Android licenses
+    run: yes | sdkmanager --licenses || true
+
+  - name: Generate Android project
+    run: npx expo prebuild --platform android --clean
+
+  - name: Configure Gradle memory
+    working-directory: android
+    shell: bash
+    run: |
+      cat >> gradle.properties <<'EOF'
+      org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8
+      org.gradle.daemon=false
+      org.gradle.parallel=false
+      org.gradle.workers.max=2
+      EOF
+
+  - name: Make Gradle executable
+    working-directory: android
+    run: chmod +x gradlew
+
+  - name: Clean Android
+    working-directory: android
+    run: ./gradlew clean --no-daemon
+
+  - name: Build Release APK
+    working-directory: android
+    run: ./gradlew assembleRelease --no-daemon --max-workers=2
+
+  - name: Verify APK
+    shell: bash
+    run: |
+      APK="android/app/build/outputs/apk/release/app-release.apk"
+
+      if [ ! -f "$APK" ]; then
+        echo "APK NOT FOUND"
+        exit 1
+      fi
+
+      SIZE=$(stat -c%s "$APK")
+
+      echo "APK: $APK"
+      echo "APK size: $SIZE bytes"
+
+      if [ "$SIZE" -lt 1000000 ]; then
+        echo "APK size is suspiciously small"
+        exit 1
+      fi
+
+      echo "APK generated successfully"
+
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: auto-bidder-release-apk
+      path: android/app/build/outputs/apk/release/app-release.apk
+      retention-days: 7
+
+  - name: Install Android Emulator
+    run: |
+      sdkmanager "platform-tools"
+      sdkmanager "emulator"
+      sdkmanager "platforms;android-35"
+      sdkmanager "system-images;android-35;google_apis;x86_64"
+
+  - name: Create Android Emulator
+    run: |
+      echo "no" | avdmanager create avd \
+        -n auto-bidder-test \
+        -k "system-images;android-35;google_apis;x86_64" \
+        --force
+
+  - name: Start Android Emulator
+    shell: bash
+    run: |
+      nohup emulator \
+        -avd auto-bidder-test \
+        -no-window \
+        -no-audio \
+        -no-boot-anim \
+        -no-snapshot \
+        -gpu swiftshader_indirect \
+        > emulator.log 2>&1 &
+
+      adb wait-for-device
+
+      echo "Waiting for Android boot..."
+
+      BOOT_COMPLETED=false
+
+      for i in {1..60}; do
+        BOOT=$(adb shell getprop sys.boot_completed | tr -d '\r')
+
+        if [ "$BOOT" = "1" ]; then
+          echo "Android boot completed"
+          BOOT_COMPLETED=true
+          break
+        fi
+
+        echo "Waiting... $i"
+        sleep 2
+      done
+
+      if [ "$BOOT_COMPLETED" != "true" ]; then
+        echo "Android emulator failed to boot"
+        cat emulator.log || true
+        exit 1
+      fi
+
+      adb shell settings put global window_animation_scale 0
+      adb shell settings put global transition_animation_scale 0
+      adb shell settings put global animator_duration_scale 0
+
+      adb devices
+
+  - name: Clear Logcat
+    run: adb logcat -c
+
+  - name: Install APK on emulator
+    run: |
+      adb install -r android/app/build/outputs/apk/release/app-release.apk
+
+  - name: Verify APK installation
+    run: |
+      if adb shell pm list packages | grep -qi "in.autobidder.app"; then
+        echo "APK installed successfully"
+      else
+        echo "APK package not found after installation"
+        exit 1
+      fi
+
+  - name: Launch Auto Bidder
+    run: |
+      echo "Launching Auto Bidder..."
+
+      adb shell monkey \
+        -p in.autobidder.app \
+        -c android.intent.category.LAUNCHER \
+        1
+
+      sleep 10
+
+  - name: Monitor application
+    shell: bash
+    run: |
+      adb logcat > live-logcat.txt 2>&1 &
+      echo $! > logcat.pid
+
+      echo "Monitoring app for 40 seconds..."
+
+      sleep 40
+
+  - name: Collect crash logs
+    if: always()
+    shell: bash
+    run: |
+      adb logcat -d > crash-log.txt
+
+      echo "========================================"
+      echo "FATAL EXCEPTION"
+      echo "========================================"
+
+      grep -i -A 40 -B 10 \
+        "FATAL EXCEPTION" \
+        crash-log.txt || true
+
+      echo "========================================"
+      echo "ANDROID RUNTIME"
+      echo "========================================"
+
+      grep -i -A 40 -B 10 \
+        "AndroidRuntime" \
+        crash-log.txt || true
+
+      echo "========================================"
+      echo "REACT NATIVE JS"
+      echo "========================================"
+
+      grep -i -A 30 -B 10 \
+        "ReactNativeJS" \
+        crash-log.txt || true
+
+      echo "========================================"
+      echo "NATIVE ERRORS"
+      echo "========================================"
+
+      grep -Ei -A 20 -B 10 \
+        "UnsatisfiedLinkError|ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError|IllegalStateException|SecurityException" \
+        crash-log.txt || true
+
+      echo "========================================"
+      echo "EXPO / NATIVE MODULES"
+      echo "========================================"
+
+      grep -Ei -A 20 -B 10 \
+        "FirebaseApp|Stripe|Reanimated|Worklets|RNSScreen|safe-area|expo" \
+        crash-log.txt || true
+
+  - name: Check application process
+    if: always()
+    run: |
+      echo "Checking application process..."
+
+      PID=$(adb shell pidof in.autobidder.app || true)
+
+      if [ -n "$PID" ]; then
+        echo "Application is running. PID: $PID"
+      else
+        echo "Application process is NOT running"
+      fi
+
+      echo "Package information:"
+      adb shell dumpsys package in.autobidder.app | head -100 || true
+
+  - name: Detect startup crash
+    run: |
+      if grep -Eiq \
+        "FATAL EXCEPTION|AndroidRuntime.*FATAL|UnsatisfiedLinkError|ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError" \
+        crash-log.txt
+      then
+        echo "========================================"
+        echo "STARTUP CRASH DETECTED"
+        echo "========================================"
+
+        grep -Ei -A 50 -B 15 \
+          "FATAL EXCEPTION|AndroidRuntime|UnsatisfiedLinkError|ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError" \
+          crash-log.txt || true
+
+        exit 1
+      fi
+
+      PID=$(adb shell pidof in.autobidder.app || true)
+
+      if [ -z "$PID" ]; then
+        echo "========================================"
+        echo "APP PROCESS NOT RUNNING"
+        echo "========================================"
+        exit 1
+      fi
+
+      echo "========================================"
+      echo "NO STARTUP CRASH DETECTED"
+      echo "APP PROCESS IS RUNNING"
+      echo "========================================"
+
+  - name: Upload crash logs
+    if: always()
+    uses: actions/upload-artifact@v4
+    with:
+      name: auto-bidder-crash-logs
+      path: |
+        crash-log.txt
+        live-logcat.txt
+        emulator.log
+      retention-days: 14
+```

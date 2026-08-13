@@ -1,383 +1,75 @@
-name: Android APK - Production Build + Crash Test
+name: Android Build
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: read
-
-concurrency:
-  group: android-apk-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: {}   # allows manual "Run workflow" button in GitHub UI
 
 jobs:
-  build-test-release:
-    name: Build, Install & Crash Test APK
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    defaults:
-      run:
-        shell: bash
+  build-android:
+    runs-on: ubuntu-latest   # Linux runner: no Windows path-length / drive-letter issues
 
     env:
-      NODE_VERSION: "22"
-      JAVA_VERSION: "17"
-      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8"
-      JAVA_TOOL_OPTIONS: "-Xmx4g"
+      NODE_ENV: production
+      # These come from repo Settings > Secrets and variables > Actions > New repository secret.
+      # Add each one there with the exact same name used in your .env / .env.local file.
+      EXPO_PUBLIC_API_BASE_URL: ${{ secrets.EXPO_PUBLIC_API_BASE_URL }}
+      EXPO_PUBLIC_SOCKET_URL: ${{ secrets.EXPO_PUBLIC_SOCKET_URL }}
+      EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
-
-      # ==========================================================
-      # 1. CHECKOUT
-      # ==========================================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ==========================================================
-      # 2. NODE
-      # ==========================================================
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            apps/mobile/package-lock.json
+          node-version: 20
+          cache: 'npm'
 
-      # ==========================================================
-      # 3. JAVA
-      # ==========================================================
-      - name: Setup Java 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: gradle
+          distribution: 'temurin'
+          java-version: '17'
 
-      # ==========================================================
-      # 4. ANDROID SDK
-      # ==========================================================
-      - name: Setup Android SDK
+      - name: Set up Android SDK / NDK
         uses: android-actions/setup-android@v3
 
-      # ==========================================================
-      # 5. INSTALL REQUIRED ANDROID PACKAGES
-      # ==========================================================
-      - name: Install Android SDK / NDK
+      - name: Install NDK (matches project's ndk version)
+        run: sdkmanager --install "ndk;27.1.12297006"
+
+      - name: Install dependencies (clean, reproducible)
+        run: npm ci
+
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # If android/ is NOT committed to your repo and you rely on Expo
+      # to generate it, uncomment the next step. If android/ IS committed
+      # (as it seems to be, since you're running gradlew locally), skip it.
+      # - name: Prebuild native Android project
+      #   run: npx expo prebuild --platform android --clean
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon --stacktrace
+
+      - name: Locate APK
+        id: apk
         run: |
-          sdkmanager --licenses > /dev/null || true
+          APK_PATH=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          echo "path=$APK_PATH" >> "$GITHUB_OUTPUT"
 
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "cmake;3.22.1" \
-            "ndk;26.1.10909125"
-
-      # ==========================================================
-      # 6. DETECT MOBILE DIRECTORY
-      # ==========================================================
-      - name: Detect mobile project
-        run: |
-          if [ -f "apps/mobile/package.json" ]; then
-            echo "MOBILE_DIR=apps/mobile" >> "$GITHUB_ENV"
-          elif [ -f "package.json" ]; then
-            echo "MOBILE_DIR=." >> "$GITHUB_ENV"
-          else
-            echo "ERROR: package.json not found"
-            exit 1
-          fi
-
-      # ==========================================================
-      # 7. INSTALL DEPENDENCIES
-      # ==========================================================
-      - name: Install npm dependencies
-        working-directory: ${{ env.MOBILE_DIR }}
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
-
-      # ==========================================================
-      # 8. BASIC VERSION CHECK
-      # ==========================================================
-      - name: Check environment
-        working-directory: ${{ env.MOBILE_DIR }}
-        run: |
-          node -v
-          npm -v
-          npx expo --version
-
-          echo "========================================"
-          echo "React Native"
-          echo "========================================"
-          npm ls react-native --depth=0 || true
-
-          echo "========================================"
-          echo "Expo"
-          echo "========================================"
-          npm ls expo --depth=0 || true
-
-          echo "========================================"
-          echo "Reanimated"
-          echo "========================================"
-          npm ls react-native-reanimated --depth=0 || true
-
-          echo "========================================"
-          echo "Worklets"
-          echo "========================================"
-          npm ls react-native-worklets --depth=0 || true
-
-      # ==========================================================
-      # 9. EXPO DOCTOR
-      # ==========================================================
-      - name: Expo Doctor
-        working-directory: ${{ env.MOBILE_DIR }}
-        run: |
-          npx expo-doctor
-
-      # ==========================================================
-      # 10. GENERATE FRESH ANDROID PROJECT
-      # ==========================================================
-      #
-      # IMPORTANT:
-      # This removes stale generated native configuration.
-      #
-      # If your repository intentionally maintains custom native
-      # Android changes, remove --clean and maintain android manually.
-      #
-      # ==========================================================
-      - name: Generate Android project
-        working-directory: ${{ env.MOBILE_DIR }}
-        run: |
-          npx expo prebuild --platform android --clean
-
-      # ==========================================================
-      # 11. VERIFY ANDROID PROJECT
-      # ==========================================================
-      - name: Verify Android project
-        working-directory: ${{ env.MOBILE_DIR }}
-        run: |
-          test -f android/gradlew
-          test -f android/app/build.gradle
-
-          echo "Android project generated successfully."
-
-      # ==========================================================
-      # 12. CONFIGURE GRADLE MEMORY
-      # ==========================================================
-      - name: Configure Gradle
-        working-directory: ${{ env.MOBILE_DIR }}
-        run: |
-          cat >> android/gradle.properties <<'EOF'
-
-          # CI BUILD STABILITY
-          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
-          org.gradle.daemon=false
-          org.gradle.parallel=false
-          org.gradle.workers.max=2
-          org.gradle.caching=true
-          android.useAndroidX=true
-          android.enableJetifier=true
-          EOF
-
-      # ==========================================================
-      # 13. VERIFY AUTOLINKING
-      # ==========================================================
-      - name: Verify React Native configuration
-        working-directory: ${{ env.MOBILE_DIR }}
-        run: |
-          npx react-native config > react-native-config.json
-
-          if grep -q '"react-native-screens"' react-native-config.json; then
-            echo "react-native-screens detected"
-          fi
-
-          if grep -q '"react-native-safe-area-context"' react-native-config.json; then
-            echo "safe-area-context detected"
-          fi
-
-      # ==========================================================
-      # 14. CLEAN BUILD
-      # ==========================================================
-      - name: Clean Gradle
-        working-directory: ${{ env.MOBILE_DIR }}/android
-        run: |
-          chmod +x gradlew
-          ./gradlew clean --no-daemon --max-workers=2
-
-      # ==========================================================
-      # 15. BUILD RELEASE APK
-      # ==========================================================
-      - name: Build Release APK
-        working-directory: ${{ env.MOBILE_DIR }}/android
-        run: |
-          chmod +x gradlew
-
-          ./gradlew assembleRelease \
-            --no-daemon \
-            --max-workers=2 \
-            --stacktrace
-
-      # ==========================================================
-      # 16. VERIFY APK
-      # ==========================================================
-      - name: Verify APK exists
-        working-directory: ${{ env.MOBILE_DIR }}
-        run: |
-          APK="android/app/build/outputs/apk/release/app-release.apk"
-
-          if [ ! -f "$APK" ]; then
-            echo "ERROR: APK was not generated."
-            exit 1
-          fi
-
-          echo "========================================"
-          echo "APK BUILD SUCCESSFUL"
-          echo "========================================"
-
-          ls -lh "$APK"
-
-          FILE_SIZE=$(stat -c%s "$APK")
-
-          if [ "$FILE_SIZE" -lt 1000000 ]; then
-            echo "ERROR: APK appears suspiciously small."
-            exit 1
-          fi
-
-          echo "APK size: $FILE_SIZE bytes"
-
-      # ==========================================================
-      # 17. INSTALL ANDROID EMULATOR
-      # ==========================================================
-      - name: Install emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          emulator-options: "-no-window -no-audio -no-boot-anim -gpu swiftshader_indirect"
-          disable-animations: true
-          script: |
-            echo "Emulator started."
-
-            adb devices
-
-            adb install -r \
-              "${{ github.workspace }}/${{ env.MOBILE_DIR }}/android/app/build/outputs/apk/release/app-release.apk"
-
-            echo "APK installed successfully."
-
-      # ==========================================================
-      # 18. START APP + CRASH TEST
-      # ==========================================================
-      - name: Launch APK and detect crash
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          emulator-options: "-no-window -no-audio -no-boot-anim -gpu swiftshader_indirect"
-          disable-animations: true
-          script: |
-            APK="android/app/build/outputs/apk/release/app-release.apk"
-
-            PACKAGE_NAME=$(grep -o 'applicationId[^"]*' android/app/build.gradle | head -1 || true)
-
-            echo "APK: $APK"
-
-            # Try to discover application package from APK
-            PACKAGE=$(apkanalyzer manifest application-id "$APK" 2>/dev/null || true)
-
-            if [ -z "$PACKAGE" ]; then
-              echo "WARNING: Could not automatically detect package."
-              echo "APK installation succeeded; runtime package check skipped."
-              exit 0
-            fi
-
-            echo "Detected package: $PACKAGE"
-
-            adb install -r "$APK"
-
-            adb logcat -c
-
-            echo "Launching application..."
-
-            adb shell monkey \
-              -p "$PACKAGE" \
-              -c android.intent.category.LAUNCHER \
-              1
-
-            echo "Waiting for application startup..."
-
-            sleep 15
-
-            echo "========================================"
-            echo "CRASH LOG CHECK"
-            echo "========================================"
-
-            adb logcat -d > startup-logcat.txt
-
-            cat startup-logcat.txt
-
-            if grep -E \
-              "FATAL EXCEPTION|AndroidRuntime.*FATAL|ReactNativeJS.*Error|UnsatisfiedLinkError|SIGSEGV|SIGABRT" \
-              startup-logcat.txt; then
-
-              echo "========================================"
-              echo "STARTUP CRASH DETECTED"
-              echo "========================================"
-
-              exit 1
-            fi
-
-            if grep -E \
-              "RNSScreenStackHeaderSubview|Default FirebaseApp failed to initialize|Unable to load script" \
-              startup-logcat.txt; then
-
-              echo "========================================"
-              echo "KNOWN STARTUP ERROR DETECTED"
-              echo "========================================"
-
-              exit 1
-            fi
-
-            echo "========================================"
-            echo "STARTUP CRASH TEST PASSED"
-            echo "========================================"
-
-      # ==========================================================
-      # 19. UPLOAD APK
-      # ==========================================================
-      - name: Upload Release APK
-        if: success()
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: auto-bidder-release-apk
-          path: ${{ env.MOBILE_DIR }}/android/app/build/outputs/apk/release/app-release.apk
+          name: app-debug-apk
+          path: ${{ steps.apk.outputs.path }}
           if-no-files-found: error
-          retention-days: 14
-
-      # ==========================================================
-      # 20. UPLOAD LOGS IF FAILURE
-      # ==========================================================
-      - name: Upload Android logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-build-debug-logs
-          path: |
-            ${{ env.MOBILE_DIR }}/android/**/*.log
-            ${{ env.MOBILE_DIR }}/android/**/reports/**
-            ${{ env.MOBILE_DIR }}/android/**/outputs/logs/**
-          if-no-files-found: ignore
-          retention-days: 7

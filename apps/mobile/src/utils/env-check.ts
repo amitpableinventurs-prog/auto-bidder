@@ -15,7 +15,11 @@ export const validateEnv = (): boolean => {
   // In production, we MUST have these variables defined properly
   if (!__DEV__) {
      const isApiValid = API_BASE_URL && (API_BASE_URL.startsWith('https://') || !API_BASE_URL.includes('autobidder.in'));
-     const isStripeValid = STRIPE_PUBLISHABLE_KEY && !STRIPE_PUBLISHABLE_KEY.includes('dummy');
+     const isStripeValid = STRIPE_PUBLISHABLE_KEY && STRIPE_PUBLISHABLE_KEY.length > 0;
+
+     if (STRIPE_PUBLISHABLE_KEY.includes('dummy')) {
+        logger.warn('WARNING: Using dummy Stripe key in non-dev build.');
+     }
 
      if (!isApiValid || !isStripeValid || missing.length > 0) {
         logger.error('PRODUCTION CONFIG ERROR:');

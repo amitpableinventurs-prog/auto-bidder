@@ -14,7 +14,7 @@
       "expo-build-properties"
     ],
     "android": {
-      "package": "com.monicinfosys.autobidder"
+      "package": "com.autobidder.mobile"
     }
   }
 }

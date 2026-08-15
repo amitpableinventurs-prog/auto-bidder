@@ -1164,17 +1164,78 @@ export function createApiRouter() {
       return res.status(201).json({ listing });
     }
 
-    const listing = await prisma.listing.create({
-      data: {
-        ...body,
-        title,
-        sellerId: body.sellerId || (req as any).user?.id || 'admin',
-        startingBid: body.startingBid ?? Math.max(Math.floor((body.demandPrice ?? 0) * 0.9), 0),
-      },
-      include: listingInclude(),
-    });
+    const sellerId = body.sellerId || (req as any).user?.id || 'admin';
+    const startingBid = body.startingBid ?? Math.max(Math.floor((body.demandPrice ?? 0) * 0.9), 0);
 
-    res.status(201).json({ listing });
+    try {
+      const listing = await prisma.listing.create({
+        data: {
+          sellerId,
+          title,
+          description: body.description,
+          brand: body.brand,
+          model: body.model,
+          variant: body.variant,
+          manufacturingYear: body.manufacturingYear,
+          fuelType: body.fuelType,
+          transmission: body.transmission,
+          startingBid,
+          demandPrice: body.demandPrice,
+          status: body.status,
+          city: body.city,
+          imageUrl: body.imageUrl,
+          images: body.images,
+          kilometersDriven: body.kilometersDriven,
+          ownership: body.ownership,
+          color: body.color,
+          condition: body.condition,
+          plateNumber: body.plateNumber,
+          latitude: body.latitude,
+          longitude: body.longitude,
+          rcOwnerName: body.rcOwnerName,
+          rcOwnerNumber: body.rcOwnerNumber,
+          rcAvailability: body.rcAvailability,
+          originalInvoice: body.originalInvoice,
+          bankHypothecation: body.bankHypothecation,
+          rtoTaxStatus: body.rtoTaxStatus,
+          rtoNocIssued: body.rtoNocIssued,
+          duplicateKeys: body.duplicateKeys,
+          serviceBookAvailability: body.serviceBookAvailability,
+          remainingFreeService: body.remainingFreeService,
+          remainingOemWarranty: body.remainingOemWarranty,
+          insuranceType: body.insuranceType,
+          insuranceExpiry: body.insuranceExpiry,
+          registrationDate: body.registrationDate,
+          listedBy: body.listedBy,
+          sellerContactName: body.sellerContactName,
+          sellerContactNumber: body.sellerContactNumber,
+          sellingTimeline: body.sellingTimeline,
+          commission: body.commission,
+          rcImages: body.rcImages,
+          invoiceImages: body.invoiceImages,
+          bankNocImages: body.bankNocImages,
+          loanStatus: body.loanStatus,
+          rtoNocNumber: body.rtoNocNumber,
+          rtoIssues: body.rtoIssues,
+          ownershipType: body.ownershipType,
+          cngLpgStatus: body.cngLpgStatus,
+          rtoNocFor: body.rtoNocFor,
+          accidentalHistory: body.accidentalHistory,
+          carType: body.carType,
+          inspectionReportUrl: body.inspectionReportUrl,
+          inspectionReportStatus: body.inspectionReportStatus,
+        },
+        include: listingInclude(),
+      });
+
+      res.status(201).json({ listing });
+    } catch (error: any) {
+      console.error('[API] Prisma Listing Create Error:', error);
+      res.status(500).json({
+        error: 'Failed to create listing',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
   }));
 
   get('/listings/:listingId', wrap(async (req, res) => {

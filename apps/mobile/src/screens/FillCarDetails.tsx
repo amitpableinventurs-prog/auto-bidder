@@ -513,13 +513,16 @@ export default function FillCarDetails() {
   };
 
   const buildPayload = (): CreateListingPayload & { id?: string } => {
-    const currentBrand = selectedBrand === 'other' ? manualBrand : (brands.find(b => b.id === selectedBrand)?.name || selectedBrand);
-    const currentModel = selectedModel === 'Other' ? manualModel : selectedModel;
-    const currentVariant = variant === 'Not In The List Add Your Variant' ? manualVariant : variant;
-    const fullTitle = `${currentBrand.toUpperCase()} ${currentModel} ${currentVariant}`.trim();
+    const brandObj = brands.find(b => b.id === selectedBrand);
+    const brandName = brandObj?.name || selectedBrand || '';
+    const currentBrand = selectedBrand === 'other' ? manualBrand : brandName;
+    const currentModel = selectedModel === 'Other' ? (manualModel || '') : (selectedModel || '');
+    const currentVariant = variant === 'Not In The List Add Your Variant' ? (manualVariant || '') : (variant || '');
 
-    return {
-        ...initialData,
+    const brandPart = currentBrand ? currentBrand.toUpperCase() : '';
+    const fullTitle = `${brandPart} ${currentModel} ${currentVariant}`.trim() || 'Untitled Car';
+
+    const payload: CreateListingPayload = {
         title: fullTitle,
         brand: selectedBrand === 'other' ? manualBrand : selectedBrand,
         model: currentModel,
@@ -564,7 +567,10 @@ export default function FillCarDetails() {
         remainingOemWarranty: oemWarranty,
         condition: vehicleCondition,
         description: accidentalHistory,
+        sellerId: initialData?.sellerId || '',
     };
+
+    return payload;
   };
 
   const handleFinalSubmit = (skipMore = false) => {
@@ -618,7 +624,7 @@ export default function FillCarDetails() {
     const isDoc = lower.endsWith('.doc') || lower.endsWith('.docx');
 
     return (
-        <View key={img} style={styles.previewWrap}>
+        <View style={styles.previewWrap}>
             {isPdf ? (
                 <View style={[styles.previewImg, { backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }]}>
                     <MaterialCommunityIcons name="file-pdf-box" size={32} color="#ef4444" />
@@ -773,7 +779,17 @@ export default function FillCarDetails() {
                 loading={uploading === 'car'}
             />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previewRow}>
-              {carImages.map((img) => renderFilePreview(img, 'car'))}
+              {carImages.map((img) => (
+                <Pressable
+                  key={img}
+                  onPress={() => {
+                    const currentData = buildPayload();
+                    navigation.navigate('CameraGuidance', { listingData: currentData });
+                  }}
+                >
+                  {renderFilePreview(img, 'car')}
+                </Pressable>
+              ))}
             </ScrollView>
 
             <Label text="Car Variant" />

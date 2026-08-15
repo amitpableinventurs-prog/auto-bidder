@@ -309,7 +309,7 @@ export default function AppNavigator() {
         <Stack.Screen name="FillDetails" component={FillCarDetails} />
         <Stack.Screen name="CameraGuidance" component={CameraGuidance} />
         <Stack.Screen name="CarCamera" component={CarCamera} />
-        <Stack.Screen name="ListingDocuments" component={FillCarDetails} initialParams={{ initialTab: 'more' }} />
+        <Stack.Screen name="ListingDocuments" component={FillCarDetails} initialParams={{ initialTab: 'basic' }} />
         <Stack.Screen name="AuctionSetup" component={AuctionSetup} />
         <Stack.Screen name="ListingManagement" component={ListingManagement} />
         <Stack.Screen name="Earnings" component={EarningsDashboard} />

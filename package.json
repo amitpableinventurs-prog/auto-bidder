@@ -23,7 +23,8 @@
     "ios": "npx jiti ./node_modules/expo/bin/cli run:ios",
     "start": "npm run dev:mobile",
     "start:clear": "npm run dev:mobile -- --clear",
-    "clean": "powershell -Command \"Remove-Item -Recurse -Force node_modules, package-lock.json, apps/mobile/node_modules, apps/mobile/package-lock.json, services/api/node_modules\""
+    "clean": "powershell -Command \"Remove-Item -Recurse -Force node_modules, package-lock.json, apps/mobile/node_modules, apps/mobile/package-lock.json, services/api/node_modules\"",
+    "postinstall": "patch-package"
   },
   "version": "1.0.0",
   "dependencies": {
@@ -55,6 +56,7 @@
     "concurrently": "^10.0.3",
     "expo": "~57.0.13",
     "jiti": "^2.4.2",
+    "patch-package": "^8.0.1",
     "typescript": "~6.0.3"
   },
   "allowScripts": {

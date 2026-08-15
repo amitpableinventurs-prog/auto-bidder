@@ -53,6 +53,7 @@ node_modules/
 
 android/.gradle/
 android/.gradle_home/
+android/.gradle-user-home/
 android/build/
 android/app/build/
 

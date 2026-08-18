@@ -24,41 +24,43 @@ const COLORS = {
 
 const INSPECTION_POINTS = {
   Exterior: [
-    { id: 'ext1', label: 'Front' },
-    { id: 'ext2', label: 'Front Right 45°' },
-    { id: 'ext3', label: 'Right Side' },
-    { id: 'ext4', label: 'Rear Right 45°' },
-    { id: 'ext5', label: 'Rear' },
-    { id: 'ext6', label: 'Rear Left 45°' },
-    { id: 'ext7', label: 'Left Side' },
-    { id: 'ext8', label: 'Front Left 45°' },
-    { id: 'ext9', label: 'Roof' },
-    { id: 'ext10', label: 'Windshield' },
+    { id: 'front', label: 'Front' },
+    { id: 'frontLeft45', label: 'Front Left 45°' },
+    { id: 'leftSide', label: 'Left Side' },
+    { id: 'rearLeft45', label: 'Rear Left 45°' },
+    { id: 'rear', label: 'Rear' },
+    { id: 'rearRight45', label: 'Rear Right 45°' },
+    { id: 'rightSide', label: 'Right Side' },
+    { id: 'frontRight45', label: 'Front Right 45°' },
   ],
   Interior: [
-    { id: 'int1', label: 'Dashboard' },
-    { id: 'int2', label: 'Odometer' },
-    { id: 'int3', label: 'Steering Wheel' },
-    { id: 'int4', label: 'Front Seats' },
-    { id: 'int5', label: 'Rear Seats' },
-    { id: 'int6', label: 'Roof Lining' },
-    { id: 'int7', label: 'Door Pads' },
+    { id: 'odometer', label: 'Dashboard/Odometer' },
+    { id: 'steering', label: 'Steering Wheel' },
+    { id: 'console', label: 'Center Console' },
+    { id: 'frontSeats', label: 'Front Seats' },
+    { id: 'rearSeats', label: 'Rear Seats' },
+    { id: 'roof', label: 'Roof/Sunroof' },
+    { id: 'doorPads', label: 'Door Pads' },
+    { id: 'bootSpace', label: 'Boot/Trunk Space' },
   ],
-  Mechanical: [
-    { id: 'mech1', label: 'Engine Bay' },
-    { id: 'mech2', label: 'Battery' },
-    { id: 'mech3', label: 'Tyre Tread (FR)' },
-    { id: 'mech4', label: 'Tyre Tread (FL)' },
-    { id: 'mech5', label: 'Tyre Tread (RR)' },
-    { id: 'mech6', label: 'Tyre Tread (RL)' },
-    { id: 'mech7', label: 'Spare Wheel' },
-    { id: 'mech8', label: 'Underbody' },
+  Detail: [
+    { id: 'engineBay', label: 'Engine Bay' },
+    { id: 'frontLeftTyre', label: 'Front Left Tyre' },
+    { id: 'frontRightTyre', label: 'Front Right Tyre' },
+    { id: 'rearLeftTyre', label: 'Rear Left Tyre' },
+    { id: 'rearRightTyre', label: 'Rear Right Tyre' },
+    { id: 'spareTyre', label: 'Spare Tyre' },
+    { id: 'batteryVIN', label: 'Battery/VIN' },
+    { id: 'undercarriage', label: 'Undercarriage' },
+  ],
+  Custom: [
+    { id: 'custom', label: 'Custom' },
   ]
 };
 
 export default function InspectionReport() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'FillDetails'>>(); // Reusing param type for simplicity if not defined
+  const route = useRoute<RouteProp<RootStackParamList, 'InspectionReport'>>();
   const { listingData } = (route.params as any) || {};
 
   const handleFinish = () => {

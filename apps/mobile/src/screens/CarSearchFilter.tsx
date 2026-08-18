@@ -142,7 +142,7 @@ export default function CarSearchFilter() {
         {renderTags(['Hyundai I10', 'Maruti Baleno', 'Maruti Alto', 'Hyundai Creta'], search, setSearch)}
 
         {renderSectionHeader('Car Type')}
-        {renderTags(['Budget Cars', 'SUV Cars', 'Sedan', 'Hatchback'], selectedCarType, setSelectedCarType)}
+        {renderTags(['SUV', 'Sedan', 'Hatchback', 'MUV', 'Coupe'], selectedCarType, setSelectedCarType)}
 
         {renderSectionHeader('Fuel Type')}
         {renderTags(['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'], selectedFuelType, setSelectedFuelType)}

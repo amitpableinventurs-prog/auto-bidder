@@ -35,6 +35,7 @@ export default function AdminDashboard() {
     { id: 'AdminSellerVerif', label: 'Seller Verification', icon: 'shield-checkmark', color: '#10b981' },
     { id: 'AdminVehicleVerif', label: 'Vehicle Verification', icon: 'car-sport', color: '#f59e0b' },
     { id: 'AdminRevenue', label: 'Revenue Analytics', icon: 'bar-chart', color: '#06b6d4' },
+    { id: 'AdminNews', label: 'News Management', icon: 'newspaper', color: '#8b5cf6' },
   ];
 
   const stats = [

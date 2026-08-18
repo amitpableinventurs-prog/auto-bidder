@@ -41,6 +41,18 @@ export type Collection = {
   updatedAt: Date;
 };
 
+export type News = {
+  id: string;
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  content?: string | null;
+  link?: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 type User = {
   id: string;
   email: string;
@@ -270,6 +282,7 @@ class DevStore {
   private readonly sliders: Slider[] = [];
   private readonly brands: Brand[] = [];
   private readonly collections: Collection[] = [];
+  private readonly news: News[] = [];
   private readonly leads: { id: string; name: string; email: string; phone: string; listingId: string; createdAt: Date }[] = [];
   private readonly payouts: { id: string; userId: string; amount: number; status: 'PENDING' | 'PROCESSED'; createdAt: Date }[] = [];
 
@@ -737,6 +750,39 @@ class DevStore {
     const index = this.collections.findIndex(c => c.id === id);
     if (index === -1) throw new Error('Collection not found');
     this.collections.splice(index, 1);
+    return true;
+  }
+
+  // News methods
+  listNews(query: { isActive?: boolean } = {}) {
+    return this.news
+      .filter((n) => query.isActive === undefined || n.isActive === query.isActive)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  createNews(input: Omit<News, 'id' | 'createdAt' | 'updatedAt'>) {
+    const now = new Date();
+    const item: News = {
+      id: id('nws'),
+      ...input,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.news.push(item);
+    return item;
+  }
+
+  updateNews(id: string, patch: Partial<News>) {
+    const item = this.news.find(n => n.id === id);
+    if (!item) throw new Error('News item not found');
+    Object.assign(item, patch, { updatedAt: new Date() });
+    return item;
+  }
+
+  deleteNews(id: string) {
+    const index = this.news.findIndex(n => n.id === id);
+    if (index === -1) throw new Error('News item not found');
+    this.news.splice(index, 1);
     return true;
   }
 
@@ -1446,6 +1492,20 @@ class DevStore {
       imageUrl: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1200&q=80",
       link: '/SellCar',
       order: 2,
+      isActive: true,
+    });
+
+    this.createNews({
+      title: 'Essential Tips For First-Time Buyers',
+      description: 'Learn how to navigate the car buying process...',
+      imageUrl: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=400&q=80',
+      isActive: true,
+    });
+
+    this.createNews({
+      title: 'New EV Policy Impacting Used Car Market',
+      description: 'How the latest government subsidies are changing prices.',
+      imageUrl: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=400&q=80',
       isActive: true,
     });
 

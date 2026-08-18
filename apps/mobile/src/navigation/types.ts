@@ -29,6 +29,7 @@ export type RootStackParamList = {
   CameraGuidance: { listingData: any };
   CarCamera: { listingData: any };
   ListingDocuments: { listingData: any; initialTab?: string };
+  InspectionReport: { listingData: any };
   AuctionSetup: { listingData: any };
   ListingManagement: undefined;
   Earnings: undefined;
@@ -55,6 +56,7 @@ export type RootStackParamList = {
   AdminSellerVerif: undefined;
   AdminVehicleVerif: undefined;
   AdminRevenue: undefined;
+  AdminNews: undefined;
   AdminAuctions: undefined;
   AdminFraud: undefined;
   AdminPayments: undefined;

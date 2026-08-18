@@ -7,7 +7,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/AuthContext';
 import { registerForPushNotificationsAsync } from './src/utils/notifications';
 import { validateEnv } from './src/utils/env-check';
-import { View, ActivityIndicator, LogBox, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, LogBox, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import Logo from './src/components/Logo';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { COLORS, TYPOGRAPHY } from './src/theme';
@@ -47,7 +47,7 @@ import { API_BASE_URL } from './src/config';
 
 export default function App() {
   const [configValid, setConfigValid] = React.useState(true);
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,
@@ -58,6 +58,14 @@ export default function App() {
     OpenSans_600SemiBold,
     OpenSans_700Bold
   });
+
+  useEffect(() => {
+    if (fontError) {
+      console.warn('Font loading failed (Web timeout likely), continuing with system fonts:', fontError);
+    }
+  }, [fontError]);
+
+  const appIsReady = fontsLoaded || fontError || Platform.OS === 'web';
 
   useEffect(() => {
     async function setupApp() {
@@ -96,7 +104,7 @@ export default function App() {
     );
   }
 
-  if (!fontsLoaded) {
+  if (!appIsReady) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffff' }}>
         <View style={{ marginBottom: 20 }}>

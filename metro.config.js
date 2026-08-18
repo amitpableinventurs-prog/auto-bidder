@@ -25,17 +25,35 @@ config.resolver.extraNodeModules = {
   'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
   'expo-font': path.resolve(projectRoot, 'node_modules/expo-font'),
   'expo-asset': path.resolve(projectRoot, 'node_modules/expo-asset'),
+  'expo-sensors': path.resolve(projectRoot, 'node_modules/expo-sensors'),
 };
 
 // 4. SVG handling
 config.resolver.assetExts = config.resolver.assetExts.filter((ext) => ext !== 'svg');
 config.resolver.sourceExts.push('svg');
 
+// 4b. Ensure web-specific extensions are prioritized for web builds
+const isWeb = process.argv.includes('--web') ||
+              process.env.EXPO_BUNDLER_PLATFORM === 'web' ||
+              (process.env.NODE_ENV === 'production' && process.argv.includes('export'));
+
+if (isWeb) {
+  config.resolver.sourceExts = [
+    'web.js', 'web.jsx', 'web.ts', 'web.tsx',
+    ...config.resolver.sourceExts
+  ];
+}
+
 // 5. Native internals mocking and core package resolution
-const corePackages = ['react', 'react-dom', 'react-native', 'react-native-web', 'expo', '@expo/metro-runtime'];
+const corePackages = ['react', 'react-dom', 'react-native', 'react-native-web', 'expo', '@expo/metro-runtime', 'expo-sensors', 'react-native-reanimated'];
 const webMockPath = path.resolve(projectRoot, 'web-mocks.js');
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // For web, let Expo handle react-native -> react-native-web aliasing
+  if (platform === 'web' && (moduleName === 'react-native' || moduleName.startsWith('react-native/'))) {
+    return context.resolveRequest(context, moduleName, platform);
+  }
+
   // Mock native-only modules for Web
   if (platform === 'web') {
     const isStripeInternal = context.originModulePath && context.originModulePath.includes('@stripe/stripe-react-native');
@@ -85,6 +103,4 @@ if (!config.resolver.assetExts.includes('ttf')) {
 config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
 
 // 9. Integration with React Native Worklets (Native only)
-const isWeb = process.argv.includes('--web') || process.env.EXPO_BUNDLER_PLATFORM === 'web';
-
 module.exports = isWeb ? config : getBundleModeMetroConfig(config);

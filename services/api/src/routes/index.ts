@@ -1002,7 +1002,75 @@ export function createApiRouter() {
     res.json({ sliders });
   });
 
+  // News
+  get('/news', async (req: Request, res: Response) => {
+    if (useMemoryStore) {
+      return res.json({ news: devStore.listNews({ isActive: true }) });
+    }
+    const news = await prisma.news.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ news });
+  });
 
+  // Admin News
+  get('/admin/news/all', authenticate, authorize(['ADMIN']), async (req: Request, res: Response) => {
+    if (useMemoryStore) {
+      return res.json({ news: devStore.listNews({}) });
+    }
+    const news = await prisma.news.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ news });
+  });
+
+  post('/admin/news', authenticate, authorize(['ADMIN']), async (req: Request, res: Response) => {
+    const body = z.object({
+      title: z.string().min(1),
+      description: z.string().optional(),
+      imageUrl: z.string().optional(),
+      content: z.string().optional(),
+      link: z.string().optional(),
+      isActive: z.boolean().default(true),
+    }).parse(req.body);
+
+    if (useMemoryStore) {
+      const item = devStore.createNews(body);
+      return res.status(201).json({ news: item });
+    }
+    const item = await prisma.news.create({ data: body });
+    res.status(201).json({ news: item });
+  });
+
+  patch('/admin/news/:id', authenticate, authorize(['ADMIN']), async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const body = z.object({
+      title: z.string().optional(),
+      description: z.string().optional(),
+      imageUrl: z.string().optional(),
+      content: z.string().optional(),
+      link: z.string().optional(),
+      isActive: z.boolean().optional(),
+    }).parse(req.body);
+
+    if (useMemoryStore) {
+      const item = devStore.updateNews(id, body);
+      return res.json({ news: item });
+    }
+    const item = await prisma.news.update({ where: { id }, data: body });
+    res.json({ news: item });
+  });
+
+  del('/admin/news/:id', authenticate, authorize(['ADMIN']), async (req: Request, res: Response) => {
+    const id = req.params.id;
+    if (useMemoryStore) {
+      devStore.deleteNews(id);
+      return res.json({ ok: true });
+    }
+    await prisma.news.delete({ where: { id } });
+    res.json({ ok: true });
+  });
 
   // Listings
   get('/listings', async (req: Request, res: Response) => {

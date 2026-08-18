@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Dimensions,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -13,18 +14,12 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { COLORS, FONTS } from '../theme';
+import { VEHICLE_CONFIGS } from '../constants/vehicleConfigs';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_W = (SCREEN_W - 48 - 12) / 3; // 3 columns, 16px side padding, 12px gap
 
-const VEHICLE_TYPES: { id: string; name: string; icon: any }[] = [
-  { id: 'sedan',     name: 'Sedan',     icon: 'car-side' },
-  { id: 'suv',       name: 'SUV',       icon: 'car-estate' },
-  { id: 'hatchback', name: 'Hatchback', icon: 'car-hatchback' },
-  { id: 'pickup',    name: 'Pickup',    icon: 'car-pickup' },
-  { id: 'sport',     name: 'Sport',     icon: 'car-sports' },
-  { id: 'utility',   name: 'Utility',   icon: 'van-utility' },
-];
+const VEHICLE_TYPES = Object.values(VEHICLE_CONFIGS);
 
 export default function ChooseCarType() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -68,10 +63,10 @@ export default function ChooseCarType() {
                 style={[styles.card, isSelected && styles.cardSelected]}
                 onPress={() => setSelected(item.id)}
               >
-                <MaterialCommunityIcons
-                  name={item.icon}
-                  size={64}
-                  color={isSelected ? COLORS.secondary : 'rgba(255,255,255,0.85)'}
+                <Image
+                  source={item.previewImage}
+                  style={styles.cardImage}
+                  resizeMode="contain"
                 />
                 <Text style={[styles.cardLabel, isSelected && styles.cardLabelActive]}>
                   {item.name}
@@ -161,6 +156,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     position: 'relative',
+    overflow: 'hidden',
+  },
+  cardImage: {
+    width: '80%',
+    height: '60%',
   },
   cardSelected: {
     borderColor: COLORS.secondary,

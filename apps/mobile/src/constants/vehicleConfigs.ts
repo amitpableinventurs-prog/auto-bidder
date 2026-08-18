@@ -1,0 +1,261 @@
+export interface VehicleConfig {
+  id: string;
+  name: string;
+  icon: string;
+  previewImage: any;
+  outlines: {
+    Exterior: any[];
+    Interior: any[];
+    Detail: any[];
+    Custom: any[];
+  };
+}
+
+export const VEHICLE_CONFIGS: Record<string, VehicleConfig> = {
+  sedan: {
+    id: 'sedan',
+    name: 'Sedan',
+    icon: 'car-side',
+    previewImage: require('../../assets/Sedan.png'),
+    outlines: {
+      Exterior: [
+        require('../../assets/Sedan Car Angle/Satate=1, Name=Exterior.png'),
+        require('../../assets/Sedan Car Angle/Satate=2, Name=Exterior.png'),
+        require('../../assets/Sedan Car Angle/Satate=3, Name=Exterior.png'),
+        require('../../assets/Sedan Car Angle/Satate=4, Name=Exterior.png'),
+        require('../../assets/Sedan Car Angle/Satate=5, Name=Exterior.png'),
+        require('../../assets/Sedan Car Angle/Satate=6, Name=Exterior.png'),
+        require('../../assets/Sedan Car Angle/Satate=7, Name=Exterior.png'),
+        require('../../assets/Sedan Car Angle/Satate=8, Name=Exterior.png'),
+      ],
+      Interior: [
+        require('../../assets/Sedan Car Angle/Satate=1, Name=Interior.png'),
+        require('../../assets/Sedan Car Angle/Satate=2, Name=Interior.png'),
+        require('../../assets/Sedan Car Angle/Satate=3, Name=Interior.png'),
+        require('../../assets/Sedan Car Angle/Satate=4, Name=Interior.png'),
+        require('../../assets/Sedan Car Angle/Satate=5, Name=Interior.png'),
+        require('../../assets/Sedan Car Angle/Satate=6, Name=Interior.png'),
+        require('../../assets/Sedan Car Angle/Satate=7, Name=Interior.png'),
+        require('../../assets/Sedan Car Angle/Satate=8, Name=Interior.png'),
+      ],
+      Detail: [
+        require('../../assets/Sedan Car Angle/Satate=1, Name=Detail.png'),
+        require('../../assets/Sedan Car Angle/Satate=2, Name=Detail.png'),
+        require('../../assets/Sedan Car Angle/Satate=3, Name=Detail.png'),
+        require('../../assets/Sedan Car Angle/Satate=4, Name=Detail.png'),
+        require('../../assets/Sedan Car Angle/Satate=5, Name=Detail.png'),
+        require('../../assets/Sedan Car Angle/Satate=6, Name=Detail.png'),
+        require('../../assets/Sedan Car Angle/Satate=7, Name=Detail.png'),
+        require('../../assets/Sedan Car Angle/Satate=8, Name=Detail.png'),
+      ],
+      Custom: [
+        require('../../assets/Sedan Car Angle/Satate=1, Name=Custom.png'),
+      ],
+    },
+  },
+  hatchback: {
+    id: 'hatchback',
+    name: 'Hatchback',
+    icon: 'car-hatchback',
+    previewImage: require('../../assets/Hatchback.png'),
+    outlines: {
+      Exterior: [
+        require('../../assets/Hatchback Car Angle/Satate=1, Name=Exterior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=2, Name=Exterior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=3, Name=Exterior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=4, Name=Exterior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=5, Name=Exterior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=6, Name=Exterior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=7, Name=Exterior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=8, Name=Exterior.png'),
+      ],
+      Interior: [
+        require('../../assets/Hatchback Car Angle/Satate=1, Name=Interior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=2, Name=Interior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=3, Name=Interior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=4, Name=Interior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=5, Name=Interior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=6, Name=Interior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=7, Name=Interior.png'),
+        require('../../assets/Hatchback Car Angle/Satate=8, Name=Interior.png'),
+      ],
+      Detail: [
+        require('../../assets/Hatchback Car Angle/Satate=1, Name=Detail.png'),
+        require('../../assets/Hatchback Car Angle/Satate=2, Name=Detail.png'),
+        require('../../assets/Hatchback Car Angle/Satate=3, Name=Detail.png'),
+        require('../../assets/Hatchback Car Angle/Satate=4, Name=Detail.png'),
+        require('../../assets/Hatchback Car Angle/Satate=5, Name=Detail.png'),
+        require('../../assets/Hatchback Car Angle/Satate=6, Name=Detail.png'),
+        require('../../assets/Hatchback Car Angle/Satate=7, Name=Detail.png'),
+        require('../../assets/Hatchback Car Angle/Satate=8, Name=Detail.png'),
+      ],
+      Custom: [
+        require('../../assets/Hatchback Car Angle/Satate=1, Name=Custom.png'),
+      ],
+    },
+  },
+  suv: {
+    id: 'suv',
+    name: 'SUV',
+    icon: 'car-estate',
+    previewImage: require('../../assets/suv.png'),
+    outlines: {
+      Exterior: [
+        require('../../assets/SUV Car Angle/Satate=1, Name=Exterior.png'),
+        require('../../assets/SUV Car Angle/Satate=2, Name=Exterior.png'),
+        require('../../assets/SUV Car Angle/Satate=3, Name=Exterior.png'),
+        require('../../assets/SUV Car Angle/Satate=4, Name=Exterior.png'),
+        require('../../assets/SUV Car Angle/Satate=5, Name=Exterior.png'),
+        require('../../assets/SUV Car Angle/Satate=6, Name=Exterior.png'),
+        require('../../assets/SUV Car Angle/Satate=7, Name=Exterior.png'),
+        require('../../assets/SUV Car Angle/Satate=8, Name=Exterior.png'),
+      ],
+      Interior: [
+        require('../../assets/SUV Car Angle/Satate=1, Name=Interior.png'),
+        require('../../assets/SUV Car Angle/Satate=2, Name=Interior.png'),
+        require('../../assets/SUV Car Angle/Satate=3, Name=Interior.png'),
+        require('../../assets/SUV Car Angle/Satate=4, Name=Interior.png'),
+        require('../../assets/SUV Car Angle/Satate=5, Name=Interior.png'),
+        require('../../assets/SUV Car Angle/Satate=6, Name=Interior.png'),
+        require('../../assets/SUV Car Angle/Satate=7, Name=Interior.png'),
+        require('../../assets/SUV Car Angle/Satate=8, Name=Interior.png'),
+      ],
+      Detail: [
+        require('../../assets/SUV Car Angle/Satate=1, Name=Detail.png'),
+        require('../../assets/SUV Car Angle/Satate=2, Name=Detail.png'),
+        require('../../assets/SUV Car Angle/Satate=3, Name=Detail.png'),
+        require('../../assets/SUV Car Angle/Satate=4, Name=Detail.png'),
+        require('../../assets/SUV Car Angle/Satate=5, Name=Detail.png'),
+        require('../../assets/SUV Car Angle/Satate=6, Name=Detail.png'),
+        require('../../assets/SUV Car Angle/Satate=7, Name=Detail.png'),
+        require('../../assets/SUV Car Angle/Satate=8, Name=Detail.png'),
+      ],
+      Custom: [
+        require('../../assets/SUV Car Angle/Satate=1, Name=Custom.png'),
+      ],
+    },
+  },
+  muv: {
+    id: 'muv',
+    name: 'MUV',
+    icon: 'van-utility',
+    previewImage: require('../../assets/utility.png'),
+    outlines: {
+      Exterior: [
+        require('../../assets/Utility Car Angle/Satate=1, Name=Exterior.png'),
+        require('../../assets/Utility Car Angle/Satate=2, Name=Exterior.png'),
+        require('../../assets/Utility Car Angle/Satate=3, Name=Exterior.png'),
+        require('../../assets/Utility Car Angle/Satate=4, Name=Exterior.png'),
+        require('../../assets/Utility Car Angle/Satate=5, Name=Exterior.png'),
+        require('../../assets/Utility Car Angle/Satate=6, Name=Exterior.png'),
+        require('../../assets/Utility Car Angle/Satate=7, Name=Exterior.png'),
+        require('../../assets/Utility Car Angle/Satate=8, Name=Exterior.png'),
+      ],
+      Interior: [
+        require('../../assets/Utility Car Angle/Satate=1, Name=Interior.png'),
+        require('../../assets/Utility Car Angle/Satate=2, Name=Interior.png'),
+        require('../../assets/Utility Car Angle/Satate=3, Name=Interior.png'),
+        require('../../assets/Utility Car Angle/Satate=4, Name=Interior.png'),
+        require('../../assets/Utility Car Angle/Satate=5, Name=Interior.png'),
+        require('../../assets/Utility Car Angle/Satate=6, Name=Interior.png'),
+        require('../../assets/Utility Car Angle/Satate=7, Name=Interior.png'),
+        require('../../assets/Utility Car Angle/Satate=8, Name=Interior.png'),
+      ],
+      Detail: [
+        require('../../assets/Utility Car Angle/Satate=1, Name=Detail.png'),
+        require('../../assets/Utility Car Angle/Satate=2, Name=Detail.png'),
+        require('../../assets/Utility Car Angle/Satate=3, Name=Detail.png'),
+        require('../../assets/Utility Car Angle/Satate=4, Name=Detail.png'),
+        require('../../assets/Utility Car Angle/Satate=5, Name=Detail.png'),
+        require('../../assets/Utility Car Angle/Satate=6, Name=Detail.png'),
+        require('../../assets/Utility Car Angle/Satate=7, Name=Detail.png'),
+        require('../../assets/Utility Car Angle/Satate=8, Name=Detail.png'),
+      ],
+      Custom: [
+        require('../../assets/Utility Car Angle/Satate=1, Name=Custom.png'),
+      ],
+    },
+  },
+  coupe: {
+    id: 'coupe',
+    name: 'Coupe',
+    icon: 'car-sports',
+    previewImage: require('../../assets/sport.png'),
+    outlines: {
+      Exterior: [
+        require('../../assets/Sports Car Angle/Satate=1, Name=Exterior.png'),
+        require('../../assets/Sports Car Angle/Satate=2, Name=Exterior.png'),
+        require('../../assets/Sports Car Angle/Satate=3, Name=Exterior.png'),
+        require('../../assets/Sports Car Angle/Satate=4, Name=Exterior.png'),
+        require('../../assets/Sports Car Angle/Satate=5, Name=Exterior.png'),
+        require('../../assets/Sports Car Angle/Satate=6, Name=Exterior.png'),
+        require('../../assets/Sports Car Angle/Satate=7, Name=Exterior.png'),
+        require('../../assets/Sports Car Angle/Satate=8, Name=Exterior.png'),
+      ],
+      Interior: [
+        require('../../assets/Sports Car Angle/Satate=1, Name=Interior.png'),
+        require('../../assets/Sports Car Angle/Satate=2, Name=Interior.png'),
+        require('../../assets/Sports Car Angle/Satate=3, Name=Interior.png'),
+        require('../../assets/Sports Car Angle/Satate=4, Name=Interior.png'),
+        require('../../assets/Sports Car Angle/Satate=5, Name=Interior.png'),
+        require('../../assets/Sports Car Angle/Satate=6, Name=Interior.png'),
+        require('../../assets/Sports Car Angle/Satate=7, Name=Interior.png'),
+        require('../../assets/Sports Car Angle/Satate=8, Name=Interior.png'),
+      ],
+      Detail: [
+        require('../../assets/Sports Car Angle/Satate=1, Name=Detail.png'),
+        require('../../assets/Sports Car Angle/Satate=2, Name=Detail.png'),
+        require('../../assets/Sports Car Angle/Satate=3, Name=Detail.png'),
+        require('../../assets/Sports Car Angle/Satate=4, Name=Detail.png'),
+        require('../../assets/Sports Car Angle/Satate=5, Name=Detail.png'),
+        require('../../assets/Sports Car Angle/Satate=6, Name=Detail.png'),
+        require('../../assets/Sports Car Angle/Satate=7, Name=Detail.png'),
+        require('../../assets/Sports Car Angle/Satate=8, Name=Detail.png'),
+      ],
+      Custom: [
+        require('../../assets/Sports Car Angle/Satate=1, Name=Custom.png'),
+      ],
+    },
+  },
+  pickup: {
+    id: 'pickup',
+    name: 'Pickup',
+    icon: 'car-pickup',
+    previewImage: require('../../assets/pickups.png'),
+    outlines: {
+      Exterior: [
+        require('../../assets/Pickup Car Angle/Satate=1, Name=Exterior.png'),
+        require('../../assets/Pickup Car Angle/Satate=2, Name=Exterior.png'),
+        require('../../assets/Pickup Car Angle/Satate=3, Name=Exterior.png'),
+        require('../../assets/Pickup Car Angle/Satate=4, Name=Exterior.png'),
+        require('../../assets/Pickup Car Angle/Satate=5, Name=Exterior.png'),
+        require('../../assets/Pickup Car Angle/Satate=6, Name=Exterior.png'),
+        require('../../assets/Pickup Car Angle/Satate=7, Name=Exterior.png'),
+        require('../../assets/Pickup Car Angle/Satate=8, Name=Exterior.png'),
+      ],
+      Interior: [
+        require('../../assets/Pickup Car Angle/Satate=1, Name=Interior.png'),
+        require('../../assets/Pickup Car Angle/Satate=2, Name=Interior.png'),
+        require('../../assets/Pickup Car Angle/Satate=3, Name=Interior.png'),
+        require('../../assets/Pickup Car Angle/Satate=4, Name=Interior.png'),
+        require('../../assets/Pickup Car Angle/Satate=5, Name=Interior.png'),
+        require('../../assets/Pickup Car Angle/Satate=6, Name=Interior.png'),
+        require('../../assets/Pickup Car Angle/Satate=7, Name=Interior.png'),
+        require('../../assets/Pickup Car Angle/Satate=8, Name=Interior.png'),
+      ],
+      Detail: [
+        require('../../assets/Pickup Car Angle/Satate=1, Name=Detail.png'),
+        require('../../assets/Pickup Car Angle/Satate=2, Name=Detail.png'),
+        require('../../assets/Pickup Car Angle/Satate=3, Name=Detail.png'),
+        require('../../assets/Pickup Car Angle/Satate=4, Name=Detail.png'),
+        require('../../assets/Pickup Car Angle/Satate=5, Name=Detail.png'),
+        require('../../assets/Pickup Car Angle/Satate=6, Name=Detail.png'),
+        require('../../assets/Pickup Car Angle/Satate=7, Name=Detail.png'),
+        require('../../assets/Pickup Car Angle/Satate=8, Name=Detail.png'),
+      ],
+      Custom: [
+        require('../../assets/Pickup Car Angle/Satate=1, Name=Custom.png'),
+      ],
+    },
+  },
+};

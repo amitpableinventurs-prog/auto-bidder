@@ -15,6 +15,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { DeviceMotion } from 'expo-sensors';
 import { useNavigation, useRoute, RouteProp, useIsFocused } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -22,45 +23,51 @@ import { uploadFile } from '../api';
 import { logger } from '../utils/logger';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as ImagePicker from 'expo-image-picker';
+import { VEHICLE_CONFIGS } from '../constants/vehicleConfigs';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 const CATEGORIES = ['Exterior', 'Interior', 'Detail', 'Custom'];
 
-const GUIDANCE_CONFIG: Record<string, any> = {
-  Exterior: [
-    { id: 'front', label: 'Front', instruction: 'Try to Fit your Car inside borders', outline: require('../../assets/Satate=1, Name=Exterior.png'), mandatory: false },
-    { id: 'leftFront', label: 'Left Front 45°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=2, Name=Exterior.png'), mandatory: false },
-    { id: 'leftSide', label: 'Left Side 90°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=3, Name=Exterior.png'), mandatory: false },
-    { id: 'leftBack', label: 'Left Back 135°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=4, Name=Exterior.png'), mandatory: false },
-    { id: 'back', label: 'Back 180°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=5, Name=Exterior.png'), mandatory: false },
-    { id: 'rightBack', label: 'Right Back 225°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=6, Name=Exterior.png'), mandatory: false },
-    { id: 'rightSide', label: 'Right Side 270°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=7, Name=Exterior.png'), mandatory: false },
-    { id: 'rightFront', label: 'Right Front 315°', instruction: 'To Click photo in best angles\nClick when green', outline: require('../../assets/Satate=8, Name=Exterior.png'), mandatory: false },
-  ],
-  Interior: [
-    { id: 'odometer', label: 'Odometer', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=1, Name=Interior.png'), mandatory: false },
-    { id: 'frontPassDoor', label: 'Front Passenger Door', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=2, Name=Interior.png'), mandatory: false },
-    { id: 'rightRearDoor', label: 'Right Rear Door', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=3, Name=Interior.png'), mandatory: false },
-    { id: 'rearSeat', label: 'Rear Seat', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=4, Name=Interior.png'), mandatory: false },
-    { id: 'trunk', label: 'Trunk', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=5, Name=Interior.png'), mandatory: false },
-    { id: 'dashboard', label: 'Dashboard', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=6, Name=Interior.png'), mandatory: false },
-    { id: 'centralDash', label: 'Central Dash', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=7, Name=Interior.png'), mandatory: false },
-    { id: 'steering', label: 'Steering Wheel', instruction: 'Click here to upload Car\'s interior Images', outline: require('../../assets/Satate=8, Name=Interior.png'), mandatory: false },
-  ],
-  Detail: [
-    { id: 'engine', label: 'Engine & Bonnet', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=1, Name=Detail.png'), mandatory: false },
-    { id: 'spareTyre', label: 'Spare Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=2, Name=Detail.png'), mandatory: false },
-    { id: 'pedals', label: 'Pedals', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=3, Name=Detail.png'), mandatory: false },
-    { id: 'keys', label: 'Keys', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=4, Name=Detail.png'), mandatory: false },
-    { id: 'rightFrontTyre', label: 'Right Front Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=5, Name=Detail.png'), mandatory: false },
-    { id: 'rightRearTyre', label: 'Right Rear Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=6, Name=Detail.png'), mandatory: false },
-    { id: 'leftFrontTyre', label: 'Left Front Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=7, Name=Detail.png'), mandatory: false },
-    { id: 'leftRearTyre', label: 'Left Rear Tyre', instruction: 'Click here to upload Car\'s Detail Images', outline: require('../../assets/Satate=8, Name=Detail.png'), mandatory: false },
-  ],
-  Custom: [
-    { id: 'custom', label: 'Custom', instruction: 'Click here to upload Car\'s Custom Images', outline: require('../../assets/Satate=1, Name=Custom.png'), mandatory: false },
-  ]
+const getGuidanceConfig = (carType: string) => {
+  const config = VEHICLE_CONFIGS[carType] || VEHICLE_CONFIGS.sedan;
+  const { outlines } = config;
+
+  return {
+    Exterior: [
+      { id: 'front', label: 'Front', instruction: 'Capture the front view of the vehicle clearly.', outline: outlines.Exterior[0], mandatory: true },
+      { id: 'frontLeft45', label: 'Front Left 45°', instruction: 'Capture from the front-left corner at a 45-degree angle.', outline: outlines.Exterior[1], mandatory: true },
+      { id: 'leftSide', label: 'Left Side', instruction: 'Capture the full left side profile of the vehicle.', outline: outlines.Exterior[2], mandatory: true },
+      { id: 'rearLeft45', label: 'Rear Left 45°', instruction: 'Capture from the rear-left corner at a 45-degree angle.', outline: outlines.Exterior[3], mandatory: true },
+      { id: 'rear', label: 'Rear', instruction: 'Capture the full rear view of the vehicle.', outline: outlines.Exterior[4], mandatory: true },
+      { id: 'rearRight45', label: 'Rear Right 45°', instruction: 'Capture from the rear-right corner at a 45-degree angle.', outline: outlines.Exterior[5], mandatory: true },
+      { id: 'rightSide', label: 'Right Side', instruction: 'Capture the full right side profile of the vehicle.', outline: outlines.Exterior[6], mandatory: true },
+      { id: 'frontRight45', label: 'Front Right 45°', instruction: 'Capture from the front-right corner at a 45-degree angle.', outline: outlines.Exterior[7], mandatory: true },
+    ],
+    Interior: [
+      { id: 'odometer', label: 'Dashboard/Odometer', instruction: 'Capture a clear photo of the dashboard and odometer reading.', outline: outlines.Interior[0], mandatory: true },
+      { id: 'steering', label: 'Steering Wheel', instruction: 'Capture the steering wheel and instrument cluster.', outline: outlines.Interior[1], mandatory: true },
+      { id: 'console', label: 'Center Console', instruction: 'Capture the gear lever and center console area.', outline: outlines.Interior[2], mandatory: true },
+      { id: 'frontSeats', label: 'Front Seats', instruction: 'Capture the condition of the front seats.', outline: outlines.Interior[3], mandatory: true },
+      { id: 'rearSeats', label: 'Rear Seats', instruction: 'Capture the condition of the rear passenger seats.', outline: outlines.Interior[4], mandatory: true },
+      { id: 'roof', label: 'Roof/Sunroof', instruction: 'Capture the interior roof liner and sunroof if available.', outline: outlines.Interior[5], mandatory: true },
+      { id: 'doorPads', label: 'Door Pads', instruction: 'Capture the condition of the door trims.', outline: outlines.Interior[6], mandatory: true },
+      { id: 'bootSpace', label: 'Boot/Trunk Space', instruction: 'Capture the trunk area with the boot open.', outline: outlines.Interior[7], mandatory: true },
+    ],
+    Detail: [
+      { id: 'engineBay', label: 'Engine Bay', instruction: 'Capture the engine compartment with the hood open.', outline: outlines.Detail[0], mandatory: true },
+      { id: 'frontLeftTyre', label: 'Front Left Tyre', instruction: 'Capture the front left tyre tread and rim.', outline: outlines.Detail[1], mandatory: true },
+      { id: 'frontRightTyre', label: 'Front Right Tyre', instruction: 'Capture the front right tyre tread and rim.', outline: outlines.Detail[2], mandatory: true },
+      { id: 'rearLeftTyre', label: 'Rear Left Tyre', instruction: 'Capture the rear left tyre tread and rim.', outline: outlines.Detail[3], mandatory: true },
+      { id: 'rearRightTyre', label: 'Rear Right Tyre', instruction: 'Capture the rear right tyre tread and rim.', outline: outlines.Detail[4], mandatory: true },
+      { id: 'spareTyre', label: 'Spare Tyre', instruction: 'Capture the spare wheel and tool kit.', outline: outlines.Detail[5], mandatory: true },
+      { id: 'batteryVIN', label: 'Battery/VIN', instruction: 'Capture the battery and VIN plate clearly.', outline: outlines.Detail[6], mandatory: true },
+      { id: 'undercarriage', label: 'Undercarriage', instruction: 'Capture the bottom view/chassis if possible.', outline: outlines.Detail[7], mandatory: true },
+    ],
+    Custom: [
+      { id: 'custom', label: 'Custom', instruction: 'Click here to upload Car\'s Custom Images', outline: outlines.Custom[0], mandatory: false },
+    ]
+  };
 };
 
 export default function CarCamera() {
@@ -81,15 +88,123 @@ export default function CarCamera() {
   const [capturedImages, setCapturedImages] = useState<Record<string, string[]>>({});
   const [uploading, setUploading] = useState(false);
   const [isAngleCorrect, setIsAngleCorrect] = useState(false);
+  const [isStable, setIsStable] = useState(false);
+  const [isPerfect, setIsPerfect] = useState(false);
+  const [guidanceMessage, setGuidanceMessage] = useState('Align your car');
   const [burstCount, setBurstCount] = useState(0);
   const [isCameraReady, setIsCameraReady] = useState(false);
 
-  const currentAngles = GUIDANCE_CONFIG[selectedCategory] || GUIDANCE_CONFIG.Exterior;
+  const stabilityTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const guidanceConfig = getGuidanceConfig(selectedType);
+  const currentAngles = guidanceConfig[selectedCategory] || guidanceConfig.Exterior;
   const currentAngle = currentAngles[selectedAngleIndex] || currentAngles[0];
+
+  // Sensor Logic
+  useEffect(() => {
+    let subscription: any;
+
+    const startSensors = async () => {
+      const { status } = await DeviceMotion.requestPermissionsAsync();
+      if (status !== 'granted') return;
+
+      const handleMotionData = (data: any) => {
+        if (!data.rotation) return;
+
+        const { beta, gamma } = data.rotation;
+        const { alpha: rA, beta: rB, gamma: rC } = data.rotationRate || { alpha: 0, beta: 0, gamma: 0 };
+
+        // 1. Angle Detection (Radians)
+        const pitchDeg = (beta * 180) / Math.PI;
+        const rollDeg = (gamma * 180) / Math.PI;
+
+        // Tolerance: +/- 10 degrees
+        const isPitchOk = pitchDeg > 75 && pitchDeg < 105;
+        const isRollOk = Math.abs(rollDeg) < 10;
+        const correctAngle = isPitchOk && isRollOk;
+
+        setIsAngleCorrect(correctAngle);
+
+        // 2. Stability Detection
+        const movement = Math.abs(rA) + Math.abs(rB) + Math.abs(rC);
+        const stable = movement < 0.2; // Threshold for "Steady"
+        setIsStable(stable);
+
+        // 2.5 Stability Timer Logic
+        if (correctAngle && stable) {
+          if (!stabilityTimerRef.current && !isPerfect) {
+            stabilityTimerRef.current = setTimeout(() => {
+              setIsPerfect(true);
+              setGuidanceMessage('Perfect Angle – Ready!');
+            }, 1000);
+          }
+        } else {
+          if (stabilityTimerRef.current) {
+            clearTimeout(stabilityTimerRef.current);
+            stabilityTimerRef.current = null;
+          }
+          setIsPerfect(false);
+        }
+
+        // 3. Guidance Messaging
+        if (!isPitchOk) {
+          setGuidanceMessage(pitchDeg < 75 ? 'Tilt phone forward' : 'Tilt phone backward');
+        } else if (!isRollOk) {
+          setGuidanceMessage('Level the phone');
+        } else if (!stable) {
+          setGuidanceMessage('Hold Steady...');
+        } else if (!isPerfect) {
+          setGuidanceMessage('Keep holding...');
+        }
+      };
+
+      // Safety check for Web: Some environments don't support DeviceMotion.addListener
+      if (typeof DeviceMotion.addListener === 'function') {
+        try {
+          subscription = DeviceMotion.addListener(handleMotionData);
+        } catch (e) {
+          logger.warn('DeviceMotion.addListener failed, falling back to window event:', e);
+          setupWebFallback();
+        }
+      } else {
+        setupWebFallback();
+      }
+
+      function setupWebFallback() {
+        if (Platform.OS === 'web') {
+          const webHandler = (event: DeviceMotionEvent) => {
+            // Map Web event to Expo format
+            const data = {
+              rotation: {
+                alpha: (event.rotationRate?.alpha || 0) * (Math.PI / 180),
+                beta: (event.accelerationIncludingGravity?.y || 0) * (Math.PI / 180), // Rough mapping for pitch
+                gamma: (event.accelerationIncludingGravity?.x || 0) * (Math.PI / 180), // Rough mapping for roll
+              },
+              rotationRate: event.rotationRate,
+            };
+            handleMotionData(data);
+          };
+          window.addEventListener('devicemotion', webHandler);
+          subscription = { remove: () => window.removeEventListener('devicemotion', webHandler) };
+        }
+      }
+
+      DeviceMotion.setUpdateInterval(100);
+    };
+
+    if (isFocused) {
+      startSensors();
+    }
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [isFocused, selectedAngleIndex, selectedCategory]);
 
   // Screen Orientation
   useEffect(() => {
     async function changeOrientation() {
+      if (Platform.OS === 'web') return;
       try {
         if (isFocused) {
           await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
@@ -103,7 +218,9 @@ export default function CarCamera() {
     changeOrientation();
 
     return () => {
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+      if (Platform.OS !== 'web') {
+        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+      }
     };
   }, [isFocused]);
 
@@ -124,15 +241,6 @@ export default function CarCamera() {
         }, 100);
         return () => clearTimeout(timer);
     }
-  }, [selectedAngleIndex, selectedCategory]);
-
-  // Mock angle detection
-  useEffect(() => {
-    setIsAngleCorrect(false);
-    const timer = setTimeout(() => {
-      setIsAngleCorrect(true);
-    }, 1500);
-    return () => clearTimeout(timer);
   }, [selectedAngleIndex, selectedCategory]);
 
   if (!permission) {
@@ -250,8 +358,8 @@ export default function CarCamera() {
   const handleFinish = () => {
     // Check mandatory photos
     const missingMandatory: string[] = [];
-    Object.keys(GUIDANCE_CONFIG).forEach(cat => {
-        GUIDANCE_CONFIG[cat].forEach((angle: any) => {
+    Object.keys(guidanceConfig).forEach(cat => {
+        guidanceConfig[cat].forEach((angle: any) => {
             if (angle.mandatory && !capturedImages[`${cat}_${angle.id}`]?.length) {
                 missingMandatory.push(`${cat} ${angle.label}`);
             }
@@ -274,7 +382,7 @@ export default function CarCamera() {
       imageUrl: allUrls[0] || listingData?.imageUrl,
       carType: selectedType,
     };
-    navigation.navigate('ListingDocuments', { listingData: updatedListingData });
+    navigation.navigate('InspectionReport', { listingData: updatedListingData });
   };
 
   const handleBack = () => {
@@ -285,7 +393,7 @@ export default function CarCamera() {
       if (catIdx > 0) {
         const prevCat = CATEGORIES[catIdx - 1];
         setSelectedCategory(prevCat);
-        setSelectedAngleIndex(GUIDANCE_CONFIG[prevCat].length - 1);
+        setSelectedAngleIndex(getGuidanceConfig(selectedType)[prevCat].length - 1);
       } else {
         navigation.goBack();
       }
@@ -294,7 +402,7 @@ export default function CarCamera() {
 
   const nextAngle = selectedAngleIndex < currentAngles.length - 1
     ? currentAngles[selectedAngleIndex + 1]
-    : (CATEGORIES.indexOf(selectedCategory) < CATEGORIES.length - 1 ? GUIDANCE_CONFIG[CATEGORIES[CATEGORIES.indexOf(selectedCategory) + 1]][0] : null);
+    : (CATEGORIES.indexOf(selectedCategory) < CATEGORIES.length - 1 ? getGuidanceConfig(selectedType)[CATEGORIES[CATEGORIES.indexOf(selectedCategory) + 1]][0] : null);
 
   return (
     <View style={styles.container}>
@@ -314,7 +422,7 @@ export default function CarCamera() {
 
       <View style={[styles.darkenLayer, { pointerEvents: 'none' }]} />
 
-      {/* Green Guide Box - Edge to Edge */}
+      {/* Green/Orange/Red Guide Box - Edge to Edge */}
       <View style={[
           styles.edgeGuideBox,
           {
@@ -323,7 +431,7 @@ export default function CarCamera() {
             right: Math.max(insets.right, 10),
             bottom: Math.max(insets.bottom, 10)
           },
-          isAngleCorrect && styles.edgeGuideBoxGreen,
+          isPerfect ? styles.edgeGuideBoxGreen : (isAngleCorrect ? styles.edgeGuideBoxOrange : styles.edgeGuideBoxRed),
           { pointerEvents: 'none' }
       ]} />
 
@@ -361,8 +469,13 @@ export default function CarCamera() {
       <View style={[styles.centerContentLandscape, { pointerEvents: 'none' }]}>
         <View style={styles.instructionWrap}>
             <Text style={styles.instructionText}>
-              {currentAngle.instruction}
+              {isAngleCorrect ? guidanceMessage : currentAngle.instruction}
             </Text>
+            {!isAngleCorrect && (
+               <Text style={[styles.subInstruction, { color: '#ff4444' }]}>
+                  {guidanceMessage}
+               </Text>
+            )}
         </View>
 
         <View style={styles.outlineWrapperLandscape}>
@@ -377,7 +490,7 @@ export default function CarCamera() {
                       styles.mainCarOutlineLandscape,
                       selectedCategory !== 'Exterior' && { transform: [{ scale: 1.4 }] }
                     ]}
-                    tintColor={isAngleCorrect ? "#22c55e" : "rgba(255,255,255,0.4)"}
+                    tintColor={isPerfect ? "#22c55e" : (isAngleCorrect ? "#fb923c" : "rgba(255,255,255,0.4)")}
                     resizeMode="contain"
                   />
               ) : (
@@ -443,15 +556,23 @@ export default function CarCamera() {
               <Pressable style={styles.zoomBtn}><Ionicons name="remove" size={24} color="#fff" /></Pressable>
           </View>
 
-          <Pressable style={styles.cameraBtnOuter} onPress={handleCapture} disabled={uploading}>
-              <View style={styles.cameraBtnInner}>
+          <Pressable
+            style={[styles.cameraBtnOuter, isPerfect && styles.cameraBtnOuterPerfect]}
+            onPress={handleCapture}
+            disabled={uploading}
+          >
+              <View style={[styles.cameraBtnInner, isPerfect && styles.cameraBtnInnerPerfect]}>
                   {uploading ? (
                   <View style={{ alignItems: 'center' }}>
                       <ActivityIndicator size="small" color="#1e6bd6" />
                       {burstCount > 0 && <Text style={styles.burstText}>{burstCount}/5</Text>}
                   </View>
                   ) : (
-                  <MaterialCommunityIcons name="camera-iris" size={40} color="#0b2447" />
+                  <MaterialCommunityIcons
+                    name="camera-iris"
+                    size={40}
+                    color={isPerfect ? "#fff" : "#0b2447"}
+                  />
                   )}
               </View>
           </Pressable>
@@ -497,8 +618,18 @@ const styles = StyleSheet.create({
   },
   edgeGuideBoxGreen: {
       borderColor: '#22c55e',
-      borderWidth: 3,
-      backgroundColor: 'rgba(34,197,94,0.05)',
+      borderWidth: 4,
+      backgroundColor: 'rgba(34,197,94,0.1)',
+  },
+  edgeGuideBoxOrange: {
+      borderColor: '#fb923c',
+      borderWidth: 2.5,
+      backgroundColor: 'rgba(251,146,60,0.05)',
+  },
+  edgeGuideBoxRed: {
+      borderColor: '#ef4444',
+      borderWidth: 1.5,
+      backgroundColor: 'rgba(239,68,68,0.02)',
   },
 
   topControls: {
@@ -651,11 +782,15 @@ const styles = StyleSheet.create({
       width: 74,
       height: 74,
       borderRadius: 37,
-      backgroundColor: 'rgba(30,107,214,0.3)',
+      backgroundColor: 'rgba(255,255,255,0.2)',
       padding: 4,
       alignItems: 'center',
       justifyContent: 'center',
-      marginVertical: 10, // Ensure gap from others
+      marginVertical: 10,
+  },
+  cameraBtnOuterPerfect: {
+      backgroundColor: 'rgba(34,197,94,0.4)',
+      transform: [{ scale: 1.1 }],
   },
   cameraBtnInner: {
       width: 60,
@@ -664,6 +799,9 @@ const styles = StyleSheet.create({
       borderRadius: 30,
       alignItems: 'center',
       justifyContent: 'center'
+  },
+  cameraBtnInnerPerfect: {
+      backgroundColor: '#22c55e',
   },
 
   zoomContainerLandscape: {

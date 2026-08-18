@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from './config';
 import { logger } from './utils/logger';
 import { compressImage } from './utils/image-utils';
@@ -96,6 +98,18 @@ export type ApiCollection = {
   isActive: boolean;
 };
 
+export type ApiNews = {
+  id: string;
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  content?: string | null;
+  link?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type CreateListingPayload = {
   sellerId: string;
   title?: string;
@@ -161,16 +175,54 @@ export function setOnUnauthorized(callback: () => void) {
   onUnauthorizedCallback = callback;
 }
 
+async function ensureAuthToken(): Promise<string | null> {
+  if (authToken && authToken !== 'null' && authToken !== 'undefined' && authToken.trim() !== '') {
+    return authToken;
+  }
+
+  try {
+    let savedToken = null;
+
+    // Attempt 1: SecureStore (Primary for Native)
+    if (Platform.OS !== 'web') {
+      try {
+        savedToken = await SecureStore.getItemAsync('auth_token');
+        if (savedToken) {
+          logger.log('[API] Re-hydrated token from SecureStore');
+          authToken = savedToken;
+          return savedToken;
+        }
+      } catch (e) {
+        logger.warn('[API] SecureStore retrieval failed, falling back to AsyncStorage');
+      }
+    }
+
+    // Attempt 2: AsyncStorage (Fallback for Native, Primary for Web)
+    savedToken = await AsyncStorage.getItem('auth_token');
+    if (savedToken) {
+      logger.log(`[API] Re-hydrated token from AsyncStorage (${Platform.OS})`);
+      authToken = savedToken;
+      return savedToken;
+    }
+  } catch (e) {
+    logger.warn('[API] Token re-hydration failed completely');
+  }
+
+  return null;
+}
+
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const startTime = Date.now();
+  const token = await ensureAuthToken();
+
   const headers: Record<string, string> = {
     'content-type': 'application/json',
     'Accept': 'application/json',
     ...(options?.headers as any),
   };
 
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const controller = new AbortController();
@@ -295,6 +347,35 @@ export function getBrands() {
 
 export function getCollections() {
   return request<{ collections: ApiCollection[] }>('/api/collections');
+}
+
+// NEWS
+export function getNews() {
+  return request<{ news: ApiNews[] }>('/api/news');
+}
+
+export function getAdminNews() {
+  return request<{ news: ApiNews[] }>('/api/admin/news/all');
+}
+
+export function createNews(payload: Partial<ApiNews>) {
+  return request<{ news: ApiNews }>('/api/admin/news', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateNews(id: string, payload: Partial<ApiNews>) {
+  return request<{ news: ApiNews }>(`/api/admin/news/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteNews(id: string) {
+  return request<{ ok: boolean }>(`/api/admin/news/${id}`, {
+    method: 'DELETE',
+  });
 }
 
 // LISTINGS
@@ -444,6 +525,16 @@ export async function uploadFile(
   customName?: string,
   retries = 3
 ): Promise<{ url: string }> {
+  // Enhanced token validation to catch race conditions or corrupted storage
+  const token = await ensureAuthToken();
+  const isInvalidToken = !token;
+
+  if (isInvalidToken) {
+    logger.error('[UPLOAD] No valid auth token found. Session might be expired or not initialized.');
+    if (onUnauthorizedCallback) onUnauthorizedCallback();
+    throw new Error('Unauthorized: No valid session found');
+  }
+
   const filename = customName || fileUri.split('/').pop() || 'upload.jpg';
 
   // Automatically compress images before upload to avoid 413 errors
@@ -491,11 +582,14 @@ export async function uploadFile(
           method: 'POST',
           body: formData,
           headers: {
-            'Authorization': `Bearer ${authToken}`,
+            'Authorization': `Bearer ${token}`,
             'Accept': 'application/json',
           },
         })
           .then(async (res) => {
+            if (res.status === 401) {
+              if (onUnauthorizedCallback) onUnauthorizedCallback();
+            }
             if (!res.ok) {
               const err = await res.json().catch(() => ({}));
               throw new Error(err.error || `Upload failed: ${res.status}`);
@@ -510,10 +604,13 @@ export async function uploadFile(
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${API_BASE_URL}/api/upload`);
 
-        xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         xhr.setRequestHeader('Accept', 'application/json');
 
         xhr.onload = () => {
+          if (xhr.status === 401) {
+            if (onUnauthorizedCallback) onUnauthorizedCallback();
+          }
           try {
             const response = JSON.parse(xhr.responseText);
             if (xhr.status >= 200 && xhr.status < 300) {
@@ -541,6 +638,12 @@ export async function uploadFile(
       return await performUpload();
     } catch (error: any) {
       logger.warn(`[UPLOAD] Attempt ${i + 1} failed:`, error.message);
+
+      // Don't retry on unauthorized errors
+      if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+        throw error;
+      }
+
       if (i === retries - 1) throw error;
       // Exponential backoff
       await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));

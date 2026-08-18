@@ -41,6 +41,7 @@ import * as SettingsMod from "../screens/Settings";
 import * as PlaceholderScreenMod from "../screens/PlaceholderScreen";
 import * as SellerDashboardMod from "../screens/SellerDashboard";
 import * as AuctionSetupMod from "../screens/AuctionSetup";
+import * as InspectionReportMod from "../screens/InspectionReport";
 import * as ListingManagementMod from "../screens/ListingManagement";
 import * as EarningsDashboardMod from "../screens/EarningsDashboard";
 import * as SoldVehiclesMod from "../screens/SoldVehicles";
@@ -66,6 +67,7 @@ import * as AdminUserManagementMod from "../screens/admin/AdminUserManagement";
 import * as AdminSellerVerificationMod from "../screens/admin/AdminSellerVerification";
 import * as AdminVehicleVerificationMod from "../screens/admin/AdminVehicleVerification";
 import * as AdminRevenueAnalyticsMod from "../screens/admin/AdminRevenueAnalytics";
+import * as AdminNewsManagementMod from "../screens/admin/AdminNewsManagement";
 
 const LocationSearch = resolve(LocationSearchMod);
 const OtpVerification = resolve(OtpVerificationMod);
@@ -95,6 +97,7 @@ const Settings = resolve(SettingsMod);
 const PlaceholderScreen = resolve(PlaceholderScreenMod);
 const SellerDashboard = resolve(SellerDashboardMod);
 const AuctionSetup = resolve(AuctionSetupMod);
+const InspectionReport = resolve(InspectionReportMod);
 const ListingManagement = resolve(ListingManagementMod);
 const EarningsDashboard = resolve(EarningsDashboardMod);
 const SoldVehicles = resolve(SoldVehiclesMod);
@@ -119,6 +122,7 @@ const AdminUserManagement = resolve(AdminUserManagementMod);
 const AdminSellerVerification = resolve(AdminSellerVerificationMod);
 const AdminVehicleVerification = resolve(AdminVehicleVerificationMod);
 const AdminRevenueAnalytics = resolve(AdminRevenueAnalyticsMod);
+const AdminNewsManagement = resolve(AdminNewsManagementMod);
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -310,6 +314,7 @@ export default function AppNavigator() {
         <Stack.Screen name="CameraGuidance" component={CameraGuidance} />
         <Stack.Screen name="CarCamera" component={CarCamera} />
         <Stack.Screen name="ListingDocuments" component={FillCarDetails} initialParams={{ initialTab: 'basic' }} />
+        <Stack.Screen name="InspectionReport" component={InspectionReport} />
         <Stack.Screen name="AuctionSetup" component={AuctionSetup} />
         <Stack.Screen name="ListingManagement" component={ListingManagement} />
         <Stack.Screen name="Earnings" component={EarningsDashboard} />
@@ -334,6 +339,7 @@ export default function AppNavigator() {
         <Stack.Screen name="AdminSellerVerif" component={AdminSellerVerification} />
         <Stack.Screen name="AdminVehicleVerif" component={AdminVehicleVerification} />
         <Stack.Screen name="AdminRevenue" component={AdminRevenueAnalytics} />
+        <Stack.Screen name="AdminNews" component={AdminNewsManagement} />
       </Stack.Group>
     </Stack.Navigator>
   );

@@ -40,12 +40,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setAuthToken(null);
     socketService.disconnect();
-    if (Platform.OS === 'web') {
-      await AsyncStorage.removeItem('auth_token');
-    } else {
+
+    // Clear all storage
+    await AsyncStorage.removeItem('auth_token');
+    await AsyncStorage.removeItem('auth_user');
+    if (Platform.OS !== 'web') {
       await SecureStore.deleteItemAsync('auth_token');
     }
-    await AsyncStorage.removeItem('auth_user');
   };
 
   const login = async (phone: string, otp: string, name?: string, userType?: string) => {
@@ -59,9 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthToken(token);
       socketService.connect(token);
 
-      if (Platform.OS === 'web') {
-        await AsyncStorage.setItem('auth_token', token);
-      } else {
+      // Dual storage for tokens on native
+      await AsyncStorage.setItem('auth_token', token);
+      if (Platform.OS !== 'web') {
         await SecureStore.setItemAsync('auth_token', token);
       }
       await AsyncStorage.setItem('auth_user', JSON.stringify(user));
@@ -90,9 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthToken(token);
       socketService.connect(token);
 
-      if (Platform.OS === 'web') {
-        await AsyncStorage.setItem('auth_token', token);
-      } else {
+      // Dual storage for tokens on native
+      await AsyncStorage.setItem('auth_token', token);
+      if (Platform.OS !== 'web') {
         await SecureStore.setItemAsync('auth_token', token);
       }
       await AsyncStorage.setItem('auth_user', JSON.stringify(user));
@@ -120,9 +121,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthToken(token);
       socketService.connect(token);
 
-      if (Platform.OS === 'web') {
-        await AsyncStorage.setItem('auth_token', token);
-      } else {
+      // Dual storage for tokens on native
+      await AsyncStorage.setItem('auth_token', token);
+      if (Platform.OS !== 'web') {
         await SecureStore.setItemAsync('auth_token', token);
       }
       await AsyncStorage.setItem('auth_user', JSON.stringify(user));
@@ -149,10 +150,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const loadStorage = async () => {
       try {
         let savedToken = null;
-        if (Platform.OS === 'web') {
-          savedToken = await AsyncStorage.getItem('auth_token');
-        } else {
+
+        // Priority 1: SecureStore
+        if (Platform.OS !== 'web') {
           savedToken = await SecureStore.getItemAsync('auth_token');
+        }
+
+        // Priority 2: AsyncStorage fallback
+        if (!savedToken) {
+          savedToken = await AsyncStorage.getItem('auth_token');
         }
 
         const savedUserJson = await AsyncStorage.getItem('auth_user');
@@ -185,9 +191,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } catch (e: any) {
                logger.error('Auth state parse error, clearing corrupted data:', e.message);
                await AsyncStorage.removeItem('auth_user');
-               if (Platform.OS === 'web') {
-                 await AsyncStorage.removeItem('auth_token');
-               } else {
+               await AsyncStorage.removeItem('auth_token');
+               if (Platform.OS !== 'web') {
                  await SecureStore.deleteItemAsync('auth_token');
                }
             }

@@ -21,7 +21,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { useAppStore } from "../store/useAppStore";
 import { useAuth } from "../AuthContext";
-import { getListings, toggleFavorite, getFavorites, type ApiListing, ApiUser, getSliders, ApiSlider, getBrands, getCollections, ApiCollection } from "../api";
+import { getListings, toggleFavorite, getFavorites, type ApiListing, ApiUser, getSliders, ApiSlider, getBrands, getCollections, ApiCollection, getNews, ApiNews } from "../api";
 import { COLORS, TYPOGRAPHY, FONTS, TAB_BAR_HEIGHT, getShadow } from '../theme';
 import { logger } from '../utils/logger';
 import Logo from "../components/Logo";
@@ -173,6 +173,7 @@ export default function MainHome({ navigation }: any) {
   const [featuredCars, setFeaturedCars] = useState<ApiListing[]>([]);
   const [brands, setBrands] = useState<any[]>(ALL_BRANDS);
   const [collections, setCollections] = useState<ApiCollection[]>(DEFAULT_COLLECTIONS as any);
+  const [news, setNews] = useState<ApiNews[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllBrands, setShowAllBrands] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -193,7 +194,8 @@ export default function MainHome({ navigation }: any) {
           fetchFeaturedCars(),
           fetchFavorites(),
           fetchBrands(),
-          fetchCollectionsData()
+          fetchCollectionsData(),
+          fetchNewsData()
         ]).then(() => {
           logger.perf('Home screen ready', Date.now() - startTime);
         });
@@ -215,6 +217,17 @@ export default function MainHome({ navigation }: any) {
       }
     } catch (err) {
       console.warn("Failed to fetch collections", err);
+    }
+  };
+
+  const fetchNewsData = async () => {
+    try {
+      const res = await getNews();
+      if (res?.news) {
+        setNews(res.news);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch news", err);
     }
   };
 
@@ -757,6 +770,33 @@ export default function MainHome({ navigation }: any) {
         </Pressable>
       </View>
 
+      {/* Latest News */}
+      {news.length > 0 && (
+        <View style={styles.section}>
+          <SectionHeader title="Latest News" viewAll onViewAll={() => navigation.navigate('PlaceholderScreen', { title: 'News' })} />
+          <FlatList
+            data={news}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.horizontalList}
+            renderItem={({ item }) => (
+              <Pressable style={styles.newsCard} onPress={() => item.link ? Linking.openURL(item.link) : null}>
+                <Image source={{ uri: item.imageUrl || "https://images.unsplash.com/photo-1504711434230-a0703c7265f7?auto=format&fit=crop&w=400&q=80" }} style={styles.newsImage} />
+                <View style={styles.newsContent}>
+                  <Text style={styles.newsTitle} numberOfLines={2}>{item.title}</Text>
+                  <Text style={styles.newsDesc} numberOfLines={2}>{item.description}</Text>
+                  <View style={styles.readMoreRow}>
+                    <Text style={styles.readMoreText}>READ MORE</Text>
+                    <Ionicons name="chevron-forward" size={14} color={COLORS.coral} />
+                  </View>
+                </View>
+              </Pressable>
+            )}
+          />
+        </View>
+      )}
+
       {/* Assistance */}
       <NeedAssistance />
     </ScreenWrapper>
@@ -1066,5 +1106,49 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 12,
     fontFamily: FONTS.poppins.semiBold,
+  },
+  newsCard: {
+    width: SCREEN_W * 0.85,
+    backgroundColor: '#E8F1FA',
+    borderRadius: 16,
+    marginRight: 15,
+    flexDirection: 'row',
+    padding: 12,
+    alignItems: 'center',
+  },
+  newsImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+    backgroundColor: COLORS.lightGrey2,
+  },
+  newsContent: {
+    flex: 1,
+    marginLeft: 15,
+    justifyContent: 'center',
+  },
+  newsTitle: {
+    fontSize: 16,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.black2,
+    lineHeight: 22,
+  },
+  newsDesc: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginTop: 6,
+    lineHeight: 18,
+    fontFamily: FONTS.openSans.regular,
+  },
+  readMoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 4,
+  },
+  readMoreText: {
+    fontSize: 12,
+    fontFamily: FONTS.poppins.bold,
+    color: COLORS.coral,
   },
 });

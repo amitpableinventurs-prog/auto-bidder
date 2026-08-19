@@ -166,7 +166,7 @@ export default function CameraGuidance() {
 
             <Text style={styles.label}>Vehicle Type</Text>
 
-            <View style={styles.grid}>
+            <View style={styles.list}>
                 {VEHICLE_TYPES.map((item) => (
                     <Pressable
                         key={item.id}
@@ -176,10 +176,10 @@ export default function CameraGuidance() {
                             selectedType === item.id && styles.typeCardActiveNew
                         ]}
                     >
-                        <View style={styles.imageWrapperNew}>
+                        <Text style={styles.typeLabelNew}>{item.name}</Text>
+                        <View style={styles.imageFrameNew}>
                              <Image source={item.image} style={styles.typeImageNew} resizeMode="contain" />
                         </View>
-                        <Text style={styles.typeLabelNew}>{item.name}</Text>
                     </Pressable>
                 ))}
             </View>
@@ -323,7 +323,7 @@ export default function CameraGuidance() {
   return (
     <ScreenWrapper
       style={styles.container}
-      backgroundColor="#0a0d14"
+      backgroundColor="#0d162d"
       edges={[]}
     >
         <View style={styles.content}>
@@ -348,29 +348,41 @@ export default function CameraGuidance() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0d14' },
+  container: { flex: 1, backgroundColor: '#0d162d' },
   content: { flex: 1 },
 
   stepContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 40 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 40 },
   iconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#1e6bd6', alignItems: 'center', justifyContent: 'center' },
   titleText: { color: '#fff', fontSize: 22, fontWeight: '700' },
-  label: { color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 20 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  label: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 20 },
+  list: { gap: 16 },
   typeCardNew: {
-    width: (SCREEN_W - 50) / 3,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    padding: 10,
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10
+    justifyContent: 'space-between',
+    backgroundColor: '#1c253d',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.1)',
+    height: 100,
   },
-  typeCardActiveNew: { borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.1)' },
-  imageWrapperNew: { width: '100%', height: 60, alignItems: 'center', justifyContent: 'center' },
-  typeImageNew: { width: '100%', height: '100%' },
-  typeLabelNew: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 8 },
+  typeCardActiveNew: { borderColor: '#fff' },
+  imageFrameNew: {
+      width: 100,
+      height: 70,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.3)',
+      borderRadius: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  typeImageNew: { width: '90%', height: '90%' },
+  typeLabelNew: { color: '#fff', fontSize: 20, fontWeight: '700' },
 
   tourHeader: { position: 'absolute', top: 50, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 100 },
   tourHeaderLandscape: { position: 'absolute', top: 20, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 100 },
@@ -425,10 +437,11 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0a0d14',
+    justifyContent: 'flex-end',
+    backgroundColor: '#0d162d',
     zIndex: 1000
   },
-  footerText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1e6bd6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
+  footerText: { color: '#fff', fontSize: 20, fontWeight: '800' },
+  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });
 

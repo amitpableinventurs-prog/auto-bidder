@@ -65,6 +65,7 @@ export type ApiListing = {
   sellingTimeline?: string;
   seller?: ApiUser;
   owner?: ApiUser;
+  activities?: any[];
   bids?: { id: string; amount: number; status: string; userId: string; user?: ApiUser }[];
   createdAt?: string;
   updatedAt?: string;
@@ -656,4 +657,15 @@ export async function uploadFile(
 // ADMIN (Used by Admin screens in mobile if any)
 export function getAdminBids() {
   return request<{ bids: any[] }>('/api/admin/bids/all');
+}
+
+export function updateListingStatus(id: string, status: string, notes?: string) {
+  return request<{ listing: ApiListing }>(`/api/admin/listings/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, notes }),
+  });
+}
+
+export function getListingActivities(listingId: string) {
+  return request<{ activities: any[] }>(`/api/listings/${listingId}/activities`);
 }

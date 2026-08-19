@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Dimensions,
   Image,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Animated,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -16,8 +17,8 @@ import { RootStackParamList } from '../navigation/types';
 import { COLORS, FONTS } from '../theme';
 import { VEHICLE_CONFIGS } from '../constants/vehicleConfigs';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_W = (SCREEN_W - 48 - 12) / 3; // 3 columns, 16px side padding, 12px gap
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - 60) / 2;
 
 const VEHICLE_TYPES = Object.values(VEHICLE_CONFIGS);
 
@@ -26,6 +27,21 @@ export default function ChooseCarType() {
   const route = useRoute<RouteProp<RootStackParamList, 'ChooseCarType'>>();
   const { brand, listingData } = route.params || {};
   const [selected, setSelected] = useState<string | null>(null);
+
+  // Animation values for each card (normally you'd use a single value or an array,
+  // but for simplicity with a small fixed list, we can just handle the scale on selection)
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handleSelect = (id: string) => {
+    setSelected(id);
+    scaleAnim.setValue(0.95);
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 10,
+    }).start();
+  };
 
   const handleNext = () => {
     if (selected) {
@@ -44,59 +60,72 @@ export default function ChooseCarType() {
         </Pressable>
         <View style={styles.titleRow}>
           <View style={styles.iconCircle}>
-            <MaterialCommunityIcons name="camera-iris" size={28} color={COLORS.white} />
+            <MaterialCommunityIcons name="car-cog" size={32} color="#fff" />
           </View>
-          <Text style={styles.headerTitle}>Choose Your Car Type</Text>
+          <View>
+            <Text style={styles.headerTitle}>Car Type</Text>
+            <Text style={styles.headerSubtitle}>Select your vehicle category</Text>
+          </View>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtitle}>Select vehicle type to begin guided photo capture</Text>
-
-        {/* 3 × 2 grid */}
         <View style={styles.grid}>
           {VEHICLE_TYPES.map((item) => {
             const isSelected = selected === item.id;
             return (
-              <Pressable
+              <Animated.View
                 key={item.id}
-                style={[styles.card, isSelected && styles.cardSelected]}
-                onPress={() => setSelected(item.id)}
+                style={[
+                  { transform: [{ scale: isSelected ? scaleAnim : 1 }] }
+                ]}
               >
-                <Image
-                  source={item.previewImage}
-                  style={styles.cardImage}
-                  resizeMode="contain"
-                />
-                <Text style={[styles.cardLabel, isSelected && styles.cardLabelActive]}>
-                  {item.name}
-                </Text>
-                {isSelected && (
-                  <View style={styles.checkBadge}>
-                    <Ionicons name="checkmark" size={12} color="#fff" />
+                <Pressable
+                  style={[styles.typeCard, isSelected && styles.typeCardSelected]}
+                  onPress={() => handleSelect(item.id)}
+                >
+                  {isSelected && (
+                    <View style={styles.checkBadge}>
+                      <Ionicons name="checkmark-circle" size={24} color="#1e6bd6" />
+                    </View>
+                  )}
+                  <View style={styles.imageContainer}>
+                    <Image
+                      source={item.previewImage}
+                      style={[styles.typeImage, isSelected && styles.typeImageSelected]}
+                      resizeMode="contain"
+                    />
                   </View>
-                )}
-              </Pressable>
+                  <Text style={[styles.typeLabel, isSelected && styles.typeLabelSelected]}>{item.name}</Text>
+                </Pressable>
+              </Animated.View>
             );
           })}
         </View>
 
-        {/* Next button */}
-        <Pressable
-          style={[styles.nextBtn, !selected && styles.nextBtnDisabled]}
-          onPress={handleNext}
-          disabled={!selected}
-        >
-          <Text style={styles.nextBtnText}>NEXT</Text>
-          <Ionicons name="chevron-forward" size={20} color="#fff" />
-        </Pressable>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <View style={styles.progressContainer}>
+             <View style={styles.progressLine} />
+             <View style={[styles.progressLine, { backgroundColor: '#1e6bd6', width: '40%' }]} />
+          </View>
+
+          <Pressable
+            style={[styles.nextBtn, !selected && styles.nextBtnDisabled]}
+            onPress={handleNext}
+            disabled={!selected}
+          >
+            <Text style={styles.nextBtnText}>Continue</Text>
+            <Ionicons name="arrow-forward" size={22} color="#fff" />
+          </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0a0d14' },
+  safe: { flex: 1, backgroundColor: '#0d162d' },
 
   header: {
     paddingHorizontal: 20,
@@ -107,102 +136,146 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
     justifyContent: 'center',
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
   },
   iconCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: COLORS.secondary,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#1e6bd6',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#1e6bd6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    color: COLORS.white,
+    fontSize: 26,
+    color: '#fff',
     fontFamily: FONTS.poppins.bold,
-    flexShrink: 1,
+    fontWeight: '800',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+    fontFamily: FONTS.poppins.regular,
+    marginTop: -2,
   },
 
   scroll: {
-    paddingHorizontal: 16,
-    paddingBottom: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 100,
   },
-  subtitle: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
-    fontFamily: FONTS.poppins.regular,
-    marginBottom: 24,
-  },
-
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    justifyContent: 'space-between',
+    gap: 20,
   },
-  card: {
-    width: CARD_W,
-    height: CARD_W * 1.1,
-    backgroundColor: '#161b2e',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.12)',
+  typeCard: {
+    width: CARD_WIDTH,
+    height: CARD_WIDTH * 1.2,
+    backgroundColor: '#1c253d',
+    borderRadius: 24,
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    position: 'relative',
+    justifyContent: 'space-between',
+    borderWidth: 2,
+    borderColor: 'transparent',
     overflow: 'hidden',
   },
-  cardImage: {
-    width: '80%',
-    height: '60%',
-  },
-  cardSelected: {
-    borderColor: COLORS.secondary,
-    backgroundColor: 'rgba(37,99,235,0.12)',
-  },
-  cardLabel: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-    fontFamily: FONTS.poppins.semiBold,
-  },
-  cardLabelActive: {
-    color: COLORS.secondary,
+  typeCardSelected: {
+    borderColor: '#1e6bd6',
+    backgroundColor: 'rgba(30, 107, 214, 0.1)',
   },
   checkBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.secondary,
+    top: 10,
+    right: 10,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    zIndex: 10,
+  },
+  imageContainer: {
+    flex: 1,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  typeImage: {
+    width: '110%',
+    height: '110%',
+    opacity: 0.8,
+  },
+  typeImageSelected: {
+    opacity: 1,
+  },
+  typeLabel: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: FONTS.poppins.bold,
+    marginTop: 10,
+  },
+  typeLabelSelected: {
+    color: '#fff',
   },
 
+  footer: {
+    marginTop: 40,
+    alignItems: 'center',
+    gap: 30,
+  },
+  progressContainer: {
+    width: '100%',
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 2,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  progressLine: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
   nextBtn: {
-    marginTop: 36,
-    height: 54,
-    backgroundColor: COLORS.secondary,
-    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    backgroundColor: '#1e6bd6',
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    gap: 12,
+    shadowColor: '#1e6bd6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 10,
   },
   nextBtnDisabled: {
-    opacity: 0.4,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   nextBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '800',
     fontFamily: FONTS.poppins.bold,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
 });

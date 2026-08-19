@@ -593,10 +593,9 @@ export default function FillCarDetails() {
 
       const payload = buildPayload();
       if (skipMore) {
-          navigation.navigate('AuctionSetup', { listingData: payload });
+          navigation.navigate('InspectionReport', { listingData: payload });
       } else {
-          setActiveTab('more');
-          scrollRef.current?.scrollTo({ y: 0, animated: true });
+          navigation.navigate('ListingDocuments', { listingData: payload });
       }
     } else {
       // More details validation
@@ -614,7 +613,7 @@ export default function FillCarDetails() {
       setErrors({});
 
       const payload = buildPayload();
-      navigation.navigate('AuctionSetup', { listingData: payload });
+      navigation.navigate('InspectionReport', { listingData: payload });
     }
   };
 

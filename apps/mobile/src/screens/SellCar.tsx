@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-=======
-﻿import { StatusBar } from 'expo-status-bar';
 import React, { useState, useRef, useEffect } from 'react';
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 import {
   Image,
   ImageBackground,
@@ -233,10 +228,6 @@ export default function SellCar() {
               <Text style={styles.startBtnText}>START SELLING</Text>
             </Pressable>
 
-<<<<<<< HEAD
-          <View style={styles.brandGrid}>
-            {filteredBrands.map(b => (
-=======
             <View style={styles.dividerRow}>
               <View style={styles.line} />
               <Text style={styles.orText}>Or</Text>
@@ -277,16 +268,11 @@ export default function SellCar() {
               ))}
             </View>
             {!showAllBrands && (
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
               <Pressable
                   style={styles.viewAllBtn}
                   onPress={() => setShowAllBrands(true)}
               >
-<<<<<<< HEAD
-                <Image source={typeof b.logo === 'string' ? { uri: b.logo } : b.logo} style={[styles.brandLogo, { backgroundColor: COLORS.white }]} resizeMode="contain" />
-=======
                  <Text style={styles.viewAllText}>VIEW ALL BRANDS</Text>
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
               </Pressable>
             )}
 

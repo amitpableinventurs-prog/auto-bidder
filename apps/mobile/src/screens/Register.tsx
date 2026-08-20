@@ -1,6 +1,5 @@
-﻿import { FONTS } from '../theme';
+import { FONTS } from '../theme';
 import React, { useState } from 'react';
-<<<<<<< HEAD
 import {
   StyleSheet,
   View,
@@ -13,17 +12,10 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-=======
-import { View, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
->>>>>>> 2ce57fb (Update project)
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-<<<<<<< HEAD
-import { COLORS, TYPOGRAPHY } from '../theme';
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
 
 const { height: SCREEN_H } = Dimensions.get('window');
 
@@ -76,64 +68,10 @@ export default function Register() {
       console.warn('Background Registration OTP request failed', err.message);
     });
 
-<<<<<<< HEAD
     // Navigate immediately
     setPhoneNumber(fullPhone);
     setUser({ id: 'temp-id', email: '', name, userType } as any);
     navigation.navigate('Otp', { phoneNumber: fullPhone });
-=======
-    try {
-      await register(fullPhone, name, email, userType, referralCode || undefined);
-      setPhoneNumber(fullPhone);
-      setLoading(false);
-
-      Alert.alert('Success', 'Account created successfully!', [
-        {
-          text: 'Continue',
-          onPress: () => {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'CompleteProfile' as any }],
-            });
-          }
-        }
-      ]);
-    } catch (err: any) {
-      setLoading(false);
-      Alert.alert('Error', err.message || 'Failed to create account. Please try again.');
-    }
-  };
-
-  const handleSocialSignup = async (provider: 'google' | 'apple') => {
-    if (provider === 'google') {
-        setLoading(true);
-        try {
-            // Simulated Google Auth connectivity
-            const demoEmail = 'newuser@google.com';
-            const demoName = 'New Google User';
-
-            await socialLogin(demoEmail, demoName);
-
-            Alert.alert('Success', 'Signed up with Google!', [
-                {
-                    text: 'Continue',
-                    onPress: () => {
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'CompleteProfile' as any }],
-                        });
-                    }
-                }
-            ]);
-        } catch (err: any) {
-            Alert.alert('Error', err.message || 'Social signup failed');
-        } finally {
-            setLoading(false);
-        }
-    } else {
-        Alert.alert('Social Signup', 'Apple signup integration coming soon!');
-    }
->>>>>>> 2ce57fb (Update project)
   };
 
   return (
@@ -159,10 +97,7 @@ export default function Register() {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-<<<<<<< HEAD
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-=======
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
         >
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <View style={styles.form}>
@@ -311,15 +246,9 @@ const styles = StyleSheet.create({
   typeBtn: {
     flex: 1,
     flexDirection: 'row',
-<<<<<<< HEAD
     height: 52,
     borderRadius: 12,
     borderWidth: 1.5,
-=======
-    height: 50,
-    borderRadius: 5,
-    borderWidth: 1,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
@@ -349,48 +278,17 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   inputContainer: {
-<<<<<<< HEAD
-    height: 54,
-    borderWidth: 1.5,
-=======
     height: 44,
     borderWidth: 1,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     borderColor: COLORS.border,
     borderRadius: 4,
     flexDirection: 'row',
     alignItems: 'center',
-<<<<<<< HEAD
-    paddingHorizontal: 16,
-    backgroundColor: COLORS.lightGrey2,
-=======
     paddingHorizontal: 12,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
   },
   input: {
     flex: 1,
     marginLeft: 10,
-<<<<<<< HEAD
-    fontSize: 15,
-    color: COLORS.black2,
-    fontFamily: FONTS.poppins.semiBold,
-  },
-  prefix: {
-    fontSize: 15,
-    color: COLORS.black2,
-    fontFamily: FONTS.poppins.semiBold,
-  },
-  divider: {
-    width: 1.5,
-    height: 24,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 12,
-  },
-  primaryBtn: {
-    backgroundColor: COLORS.secondary,
-    height: 58,
-    borderRadius: 16,
-=======
     fontSize: 16,
     color: COLORS.text,
     fontFamily: FONTS.poppins.medium,
@@ -404,7 +302,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.blue,
     height: 50,
     borderRadius: 5,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
@@ -420,12 +317,8 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     color: COLORS.white,
     fontSize: 16,
-<<<<<<< HEAD
-    fontFamily: FONTS.poppins.bold,
-=======
     fontWeight: '800',
     fontFamily: FONTS.poppins.extraBold,
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     letterSpacing: 1,
   },
   footer: {
@@ -436,19 +329,12 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 14,
     color: COLORS.textMuted,
-<<<<<<< HEAD
-  },
-  loginLink: {
-    ...TYPOGRAPHY.bodySmall,
-    color: COLORS.primary,
-=======
     fontFamily: FONTS.poppins.regular,
   },
   loginLink: {
     fontSize: 14,
     color: COLORS.accent,
     fontWeight: '700',
->>>>>>> c89a25ad7a2d764f99f5102b91ee091f0c85127b
     fontFamily: FONTS.poppins.bold,
   },
 });

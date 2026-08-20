@@ -449,22 +449,18 @@ export default function FillCarDetails() {
     });
 
     if (!result.canceled && result.assets[0].uri) {
-        handleImageResult(result.assets[0].uri, result.assets[0].mimeType ?? undefined, result.assets[0].fileName ?? undefined, type);
-    }
-  };
-
-  const pickDocument = async (type: 'rc' | 'invoice' | 'bankNoc') => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
-      });
-
-      if (!result.canceled && result.assets[0].uri) {
-        handleImageResult(result.assets[0].uri, result.assets[0].mimeType ?? undefined, result.assets[0].name ?? undefined, type);
+      try {
+        setUploading(type);
+        const { url } = await uploadFile(result.assets[0].uri, result.assets[0].mimeType, result.assets[0].fileName || undefined);
+        if (type === 'rc') setRcImages([...rcImages, url]);
+        else if (type === 'invoice') setInvoiceImages([...invoiceImages, url]);
+        else if (type === 'bankNoc') setBankNocImages([...bankNocImages, url]);
+      } catch (err) {
+        console.warn('Image picking failed', err);
+        Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
+      } finally {
+        setUploading(null);
       }
-    } catch (err) {
-      console.warn('Document picking failed', err);
-      Alert.alert('Upload Failed', 'Failed to upload document. Please try again.');
     }
   };
 

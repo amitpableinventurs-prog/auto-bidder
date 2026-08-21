@@ -58,7 +58,7 @@ jobs:
             "ndk;26.1.10909125"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=dev
 
       - name: Verify Expo
         run: |

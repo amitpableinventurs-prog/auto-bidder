@@ -12,6 +12,8 @@ export type Slider = {
   title: string;
   subtitle?: string | null;
   imageUrl: string;
+  videoUrl?: string | null;
+  mediaType: string;
   link?: string | null;
   order: number;
   isActive: boolean;
@@ -1284,11 +1286,12 @@ class DevStore {
       .sort((a, b) => a.order - b.order || b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  createSlider(input: Omit<Slider, 'id' | 'createdAt' | 'updatedAt'>) {
+  createSlider(input: Omit<Slider, 'id' | 'createdAt' | 'updatedAt' | 'mediaType'> & { mediaType?: string }) {
     const now = new Date();
     const slider: Slider = {
       id: id('sld'),
       ...input,
+      mediaType: input.mediaType ?? 'IMAGE',
       createdAt: now,
       updatedAt: now,
     };

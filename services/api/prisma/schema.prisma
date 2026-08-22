@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -291,6 +291,8 @@ model Slider {
   title     String
   subtitle  String?
   imageUrl  String
+  videoUrl  String?
+  mediaType String   @default("IMAGE")
   link      String?
   order     Int      @default(0)
   isActive  Boolean  @default(true)

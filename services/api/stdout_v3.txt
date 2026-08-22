@@ -1,0 +1,2 @@
+[ENV] Loading configuration from: C:\Users\Vaibhav Soni\Music\autobidder.in\autobidder.com\services\api\.env
+[ENV] AUTO_BIDDER_STORE: memory

@@ -19,6 +19,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Logo from "../components/Logo";
 import NeedAssistance from "../components/NeedAssistance";
 import ScreenWrapper from '../components/ScreenWrapper';
+import SliderMedia from '../components/SliderMedia';
 import { ALL_BRANDS } from '../utils/brands';
 import { COLORS, FONTS, TAB_BAR_HEIGHT } from '../theme';
 import { useNavigation, DrawerActions, useFocusEffect } from '@react-navigation/native';
@@ -242,14 +243,18 @@ export default function SellCar() {
       </View>
 
       {/* Hero Section */}
-      <ImageBackground
-        source={{ uri: heroSlider?.imageUrl || 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80' }}
-        style={[styles.hero, { backgroundColor: COLORS.lightGrey1 }]}
-      >
+      <View style={styles.hero}>
+        <SliderMedia
+          mediaType={heroSlider?.mediaType}
+          imageUrl={heroSlider?.imageUrl || 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80'}
+          videoUrl={heroSlider?.videoUrl}
+          isActive={true}
+          style={[StyleSheet.absoluteFill, { backgroundColor: COLORS.lightGrey1 }]}
+        />
         <View style={styles.heroOverlay}>
            <Text style={styles.heroTitle}>{heroSlider?.title || 'Get The Best Price For Your Car!'}</Text>
         </View>
-      </ImageBackground>
+      </View>
 
       {/* Main Content Overlapping Hero */}
       <View style={styles.mainContainer}>

@@ -1,5 +1,5 @@
 // API client for admin panel
-const API_BASE = (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:4000') + '/api';
+const API_BASE = (typeof window !== 'undefined' && localStorage.getItem('apiBase') ? localStorage.getItem('apiBase') : 'https://api.autobidder.in') + '/api';
 
 class AdminAPI {
     constructor() {

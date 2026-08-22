@@ -74,9 +74,11 @@ export type ApiListing = {
 export type ApiSlider = {
   id: string;
   type: 'ONBOARDING' | 'HOME' | 'BUY_CAR' | 'SELL_CAR';
+  mediaType?: 'IMAGE' | 'GIF' | 'VIDEO';
   title: string;
   subtitle?: string | null;
   imageUrl: string;
+  videoUrl?: string | null;
   link?: string | null;
   order: number;
   isActive: boolean;
@@ -169,6 +171,7 @@ let authToken: string | null = null;
 let onUnauthorizedCallback: (() => void) | null = null;
 
 export function setAuthToken(token: string | null) {
+  logger.log(`[API] Setting auth token: ${token ? 'PRESENT' : 'NULL'}`);
   authToken = token;
 }
 
@@ -205,10 +208,11 @@ async function ensureAuthToken(): Promise<string | null> {
       authToken = savedToken;
       return savedToken;
     }
-  } catch (e) {
-    logger.warn('[API] Token re-hydration failed completely');
+  } catch (e: any) {
+    logger.warn('[API] Token re-hydration failed completely:', e.message);
   }
 
+  logger.warn(`[API] No token found in memory or storage (Platform: ${Platform.OS})`);
   return null;
 }
 

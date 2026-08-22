@@ -27,6 +27,7 @@ import { getMockListings, MOCK_VEHICLES } from '../utils/mockData';
 import Logo from '../components/Logo';
 import NeedAssistance from '../components/NeedAssistance';
 import ScreenWrapper from '../components/ScreenWrapper';
+import SliderMedia from '../components/SliderMedia';
 import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../AuthContext';
 import { getStorageItem, setStorageItem } from '../utils/storage-utils';
@@ -209,12 +210,21 @@ export default function BuyCarList({ navigation, route }: any) {
     navigation.navigate('CarDetails', { listingId: l.id });
   };
 
-  const renderBanner = ({ item }: { item: ApiSlider }) => (
+  const renderBanner = ({ item, index }: { item: ApiSlider; index: number }) => (
     <View style={styles.bannerCard}>
       <View style={styles.bannerContent}>
         <Text style={styles.bannerTitle}>{item.title}</Text>
       </View>
-      <Image source={{ uri: item.imageUrl }} style={styles.bannerImage} resizeMode="contain" />
+      <View style={{ width: 100, height: 100 }}>
+        <SliderMedia
+          mediaType={item.mediaType}
+          imageUrl={item.imageUrl}
+          videoUrl={item.videoUrl}
+          isActive={bannerIndex === index}
+          resizeMode="contain"
+          style={styles.bannerImage}
+        />
+      </View>
     </View>
   );
 

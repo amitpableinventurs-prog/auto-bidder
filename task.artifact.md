@@ -1,9 +1,3 @@
-- [x] Resolve Metro cache and web bundling errors
-    - [x] Create implementation plan
-    - [x] Create web-only mocks for native internals
-    - [x] Consolidate and update `metro.config.js`
-    - [x] Remove redundant `metro.config.cjs`
-    - [x] Resolve deep react-native internal resolution issues for web
-    - [x] Resolve TurboModuleRegistry runtime error on web
-    - [x] Resolve `getConstants` runtime error on web using Proxy mock
-    - [ ] Verify bundling with cache clear
+- [x] Implement `POST /admin/seed-rich` in `services/api/src/routes/index.ts`
+- [x] Improve `AUTO_BIDDER_STORE` parsing in `services/api/src/env.ts`
+- [ ] Verify seeding from Admin Panel

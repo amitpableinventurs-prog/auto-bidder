@@ -69,7 +69,7 @@ export function createHttpApp() {
   });
 
   app.get('/ready', async (_req, res) => {
-    if (process.env.AUTO_BIDDER_STORE !== 'database') return res.json({ ok: true, store: 'memory' });
+    if (env.AUTO_BIDDER_STORE !== 'database') return res.json({ ok: true, store: 'memory' });
     try {
       await prisma.$queryRaw`SELECT 1`;
       return res.json({ ok: true, store: 'database' });

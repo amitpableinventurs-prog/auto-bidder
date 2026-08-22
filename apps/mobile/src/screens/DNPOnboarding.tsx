@@ -99,54 +99,47 @@ export default function DNPOnboardingScreen() {
           const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
           setCurrentIndex(index);
         }}
-        style={styles.slider}
+        scrollEventThrottle={16}
       >
         {ONBOARDING_SLIDES.map((slide) => (
-          <View key={slide.id} style={[styles.slide, { width: SCREEN_W }]}>
-            <View style={styles.slideContent}>
-              <View style={styles.iconContainer}>
-                <Ionicons name={slide.icon as any} size={60} color={COLORS.secondary} />
+          <View key={slide.id} style={styles.slide}>
+            <View style={styles.imageContainer}>
+              <Image source={{ uri: slide.image }} style={styles.image} />
+              <View style={styles.iconBadge}>
+                <Ionicons name={slide.icon as any} size={32} color={COLORS.primary} />
               </View>
-              
-              <Image 
-                source={{ uri: slide.image }} 
-                style={styles.slideImage}
-                resizeMode="cover"
-              />
-              
-              <View style={styles.slideTextContainer}>
-                <Text style={styles.slideTitle}>{slide.title}</Text>
-                <Text style={styles.slideSubtitle}>{slide.subtitle}</Text>
-              </View>
+            </View>
+            <View style={styles.contentContainer}>
+              <Text style={styles.title}>{slide.title}</Text>
+              <Text style={styles.subtitle}>{slide.subtitle}</Text>
             </View>
           </View>
         ))}
       </ScrollView>
 
-      {/* Pagination Dots */}
-      <View style={styles.dotsContainer}>
-        {ONBOARDING_SLIDES.map((_, index) => (
-          <Pressable
-            key={index}
-            style={[
-              styles.dot,
-              index === currentIndex && styles.dotActive,
-            ]}
-            onPress={() => handleDotPress(index)}
-          />
-        ))}
-      </View>
-
       {/* Footer */}
       <View style={styles.footer}>
+        <View style={styles.pagination}>
+          {ONBOARDING_SLIDES.map((_, index) => (
+            <Pressable
+              key={index}
+              style={[
+                styles.dot,
+                currentIndex === index && styles.activeDot
+              ]}
+              onPress={() => handleDotPress(index)}
+            />
+          ))}
+        </View>
+
         <Pressable style={styles.nextBtn} onPress={handleNext}>
           <Text style={styles.nextBtnText}>
             {currentIndex === ONBOARDING_SLIDES.length - 1 ? 'Get Started' : 'Next'}
           </Text>
           <Ionicons 
-            name={currentIndex === ONBOARDING_SLIDES.length - 1 ? 'arrow-forward' : 'arrow-forward'} 
+            name={currentIndex === ONBOARDING_SLIDES.length - 1 ? 'rocket' : 'arrow-forward'}
             size={20} 
-            color={COLORS.white} 
+            color="#fff"
           />
         </Pressable>
       </View>
@@ -157,143 +150,124 @@ export default function DNPOnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
   backBtn: {
     padding: 8,
-    borderRadius: 20,
-    backgroundColor: COLORS.lightGrey2,
+    marginRight: 10,
   },
   skipBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   skipText: {
     ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.textMuted,
+    color: COLORS.gray500,
   },
   progressContainer: {
-    backgroundColor: COLORS.lightGrey2,
+    backgroundColor: COLORS.gray100,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   progressText: {
     ...TYPOGRAPHY.bodySmall,
-    fontFamily: FONTS.poppins.bold,
+    fontWeight: '700',
     color: COLORS.black2,
-    fontSize: 12,
-  },
-  slider: {
-    flex: 1,
   },
   slide: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  slideContent: {
-    flex: 1,
     width: SCREEN_W,
-    justifyContent: 'center',
+    flex: 1,
     alignItems: 'center',
     paddingHorizontal: 30,
   },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: COLORS.lightBlue1,
+  imageContainer: {
+    width: SCREEN_W * 0.8,
+    height: SCREEN_W * 0.8,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginTop: 20,
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  iconBadge: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 15,
+    shadowRadius: 10,
     elevation: 5,
   },
-  slideImage: {
-    width: SCREEN_W * 0.85,
-    height: SCREEN_W * 0.6,
-    borderRadius: 24,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  slideTextContainer: {
+  contentContainer: {
+    marginTop: 40,
     alignItems: 'center',
-    paddingHorizontal: 20,
   },
-  slideTitle: {
-    ...TYPOGRAPHY.h4,
-    fontFamily: FONTS.poppins.bold,
+  title: {
+    ...TYPOGRAPHY.h2,
+    textAlign: 'center',
     color: COLORS.black2,
-    textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  slideSubtitle: {
+  subtitle: {
     ...TYPOGRAPHY.bodyMedium,
-    color: COLORS.textMuted,
     textAlign: 'center',
+    color: COLORS.gray600,
     lineHeight: 24,
   },
-  dotsContainer: {
+  footer: {
+    paddingHorizontal: 30,
+    paddingBottom: 40,
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 24,
-    gap: 8,
+  },
+  pagination: {
+    flexDirection: 'row',
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.lightGrey1,
+    backgroundColor: COLORS.gray300,
+    marginRight: 8,
   },
-  dotActive: {
+  activeDot: {
     width: 24,
-    backgroundColor: COLORS.secondary,
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    paddingTop: 10,
+    backgroundColor: COLORS.primary,
   },
   nextBtn: {
+    backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.secondary,
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 8,
-    shadowColor: COLORS.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   nextBtnText: {
-    ...TYPOGRAPHY.bodyMedium,
-    fontFamily: FONTS.poppins.bold,
-    color: COLORS.white,
-    fontSize: 16,
+    color: '#fff',
+    fontWeight: '700',
+    marginRight: 8,
   },
 });

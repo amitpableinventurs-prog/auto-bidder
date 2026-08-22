@@ -20,9 +20,9 @@ allprojects {
   }
 }
 
-// Force NDK version safely
+// Keep the NDK version aligned with the project Gradle settings.
 ext {
-    ndkVersion = "27.1.12297006"
+    ndkVersion = "26.1.10909125"
 }
 
 subprojects {

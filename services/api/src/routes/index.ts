@@ -41,18 +41,21 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024, files: 1 },
+  limits: { fileSize: 100 * 1024 * 1024, files: 1 },
   fileFilter: (_req, file, cb) => {
     const allowedTypes = new Set([
       'image/jpeg',
       'image/png',
       'image/webp',
+      'image/gif',
+      'video/mp4',
+      'video/quicktime',
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ]);
     if (!allowedTypes.has(file.mimetype)) {
-      return cb(new Error('Only JPEG, PNG, WebP, PDF, and MS Word uploads are allowed'));
+      return cb(new Error('Only Images (JPG, PNG, WEBP, GIF), Videos (MP4, MOV), PDF, and MS Word uploads are allowed'));
     }
     cb(null, true);
   },
@@ -1882,13 +1885,13 @@ export function createApiRouter() {
     const [
       users,
       dealers,
+      pendingSellers,
       listings,
       activeListings,
       pendingListings,
       submittedBids,
       pendingAppointments,
       fraudAlerts,
-      pendingLeads,
       recentListings,
       recentBids,
       recentAppointments,
@@ -1896,14 +1899,13 @@ export function createApiRouter() {
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { userType: 'DEALER' } }),
+      prisma.user.count({ where: { isVerified: false, role: 'SELLER' } }),
       prisma.listing.count(),
       prisma.listing.count({ where: { status: 'ACTIVE' } }),
       prisma.listing.count({ where: { status: 'PENDING_INSPECTION' } }),
       prisma.bid.count({ where: { status: 'SUBMITTED' } }),
       prisma.appointment.count({ where: { status: { in: ['PENDING', 'CONFIRMED'] } } }),
       prisma.fraudAlert.count(),
-      // Mocking leads count for now as there is no Lead model yet
-      Promise.resolve(2),
       prisma.listing.findMany({
         take: 10,
         orderBy: { createdAt: 'desc' },
@@ -1935,19 +1937,77 @@ export function createApiRouter() {
       stats: {
         users,
         dealers,
+        pendingSellers,
         listings,
         activeListings,
         pendingListings,
         submittedBids,
         pendingAppointments,
         fraudAlerts,
-        pendingLeads,
+        pendingLeads: 0, // Simplified for now
         totalRevenue: totalRevenueResult._sum.amount || 0,
       },
       recentListings,
       recentBids,
       recentAppointments,
     });
+  });
+
+  post('/admin/seed-rich', async (_req: Request, res: Response) => {
+    if (useMemoryStore) {
+      return res.status(201).json(devStore.seedRich());
+    }
+
+    // Rich seed for database
+    try {
+      const seller1 = await prisma.user.upsert({
+        where: { email: 'seller1@autobidder.demo' },
+        create: { email: 'seller1@autobidder.demo', phone: '9999900001', name: 'Rajesh Kumar', role: 'SELLER', userType: 'SELLER', isVerified: true },
+        update: { role: 'SELLER', userType: 'SELLER', isVerified: true },
+      });
+
+      const buyer1 = await prisma.user.upsert({
+        where: { email: 'buyer1@autobidder.demo' },
+        create: { email: 'buyer1@autobidder.demo', phone: '9999900003', name: 'Amit Patel', role: 'BUYER', userType: 'BUYER', isVerified: true },
+        update: { isVerified: true },
+      });
+
+      const carData = [
+        { brand: 'Maruti Suzuki', model: 'Swift', variant: 'VXi AMT', year: 2022, fuel: 'Petrol', transmission: 'Automatic', color: 'Pearl Red', city: 'Mumbai', km: 18000, demand: 750000, plate: 'MH01AB1234', own: '1st Owner', status: 'ACTIVE' as const },
+        { brand: 'Hyundai', model: 'Creta', variant: 'SX(O)', year: 2023, fuel: 'Petrol', transmission: 'Automatic', color: 'Typhoon Silver', city: 'Bangalore', km: 9500, demand: 1450000, plate: 'KA01BB5678', own: '1st Owner', status: 'ACTIVE' as const },
+        { brand: 'Mahindra', model: 'Thar', variant: 'LX Hard Top', year: 2023, fuel: 'Diesel', transmission: 'Automatic', color: 'Everest White', city: 'Indore', km: 12000, demand: 1850000, plate: 'MP09EE2345', own: '1st Owner', status: 'ACTIVE' as const },
+      ];
+
+      for (const car of carData) {
+        const listing = await prisma.listing.create({
+          data: {
+            sellerId: seller1.id,
+            title: `${car.brand} ${car.model} ${car.variant}`,
+            brand: car.brand, model: car.model, variant: car.variant,
+            manufacturingYear: car.year, fuelType: car.fuel, transmission: car.transmission,
+            color: car.color, city: car.city, plateNumber: car.plate,
+            ownership: car.own, kilometersDriven: car.km,
+            demandPrice: car.demand, startingBid: Math.floor(car.demand * 0.9),
+            status: car.status,
+            imageUrl: `https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=60`,
+          },
+        });
+
+        // Add a bid
+        await prisma.bid.create({
+          data: {
+            listingId: listing.id,
+            userId: buyer1.id,
+            amount: listing.startingBid + 5000,
+            status: 'SUBMITTED',
+          }
+        });
+      }
+
+      return res.status(201).json({ ok: true, message: 'Rich data seeded to database' });
+    } catch (e: any) {
+      return res.status(500).json({ error: 'Seed failed', details: e.message });
+    }
   });
 
   post('/admin/seed-demo', async (_req: Request, res: Response) => {
@@ -2207,6 +2267,8 @@ export function createApiRouter() {
       title: z.string(),
       subtitle: z.string().optional(),
       imageUrl: z.string(),
+      videoUrl: z.string().optional(),
+      mediaType: z.string().default('IMAGE'),
       link: z.string().optional(),
       order: z.number().int().default(0),
       isActive: z.boolean().default(true),
@@ -2217,6 +2279,8 @@ export function createApiRouter() {
         title: body.title,
         type: body.type as any,
         imageUrl: body.imageUrl,
+        videoUrl: body.videoUrl,
+        mediaType: body.mediaType,
         link: body.link,
         subtitle: body.subtitle,
         order: body.order,
@@ -2236,6 +2300,8 @@ export function createApiRouter() {
       title: z.string().optional(),
       subtitle: z.string().optional(),
       imageUrl: z.string().optional(),
+      videoUrl: z.string().optional(),
+      mediaType: z.string().optional(),
       link: z.string().optional(),
       order: z.number().int().optional(),
       isActive: z.boolean().optional(),
@@ -2726,6 +2792,55 @@ patch('/admin/listings/:id/status', async (req: Request, res: Response) => {
     res.json({ bid });
   });
 
+  // Admin: Global Search
+  get('/admin/search', async (req: Request, res: Response) => {
+    const query = z.string().min(1).parse(req.query.q);
+
+    if (useMemoryStore) {
+      // Very basic memory store search
+      const users = devStore.adminAllUsers().users.filter(u =>
+        u.name?.toLowerCase().includes(query.toLowerCase()) ||
+        u.email?.toLowerCase().includes(query.toLowerCase()) ||
+        u.phone?.includes(query)
+      );
+      const listings = devStore.listListings({ q: query });
+      return res.json({ users, listings, dealers: users.filter(u => u.userType === 'DEALER') });
+    }
+
+    const [users, listings] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          OR: [
+            { name: { contains: query } },
+            { email: { contains: query } },
+            { phone: { contains: query } },
+            { businessName: { contains: query } }
+          ]
+        },
+        take: 10,
+        include: { _count: { select: { listings: true, bids: true } } }
+      }),
+      prisma.listing.findMany({
+        where: {
+          OR: [
+            { title: { contains: query } },
+            { brand: { contains: query } },
+            { model: { contains: query } },
+            { plateNumber: { contains: query } },
+            { city: { contains: query } }
+          ]
+        },
+        take: 10,
+        include: listingInclude()
+      })
+    ]);
+
+    res.json({
+      users,
+      listings,
+      dealers: users.filter(u => u.userType === 'DEALER')
+    });
+  });
 
   return router;
 }

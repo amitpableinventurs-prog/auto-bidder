@@ -20,6 +20,7 @@ import { useNavigation, useRoute, RouteProp, useIsFocused } from '@react-navigat
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { uploadFile } from '../api';
+import { useAuth } from '../AuthContext';
 import { logger } from '../utils/logger';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as ImagePicker from 'expo-image-picker';
@@ -75,6 +76,7 @@ export default function CarCamera() {
   const route = useRoute<RouteProp<RootStackParamList, 'CarCamera'>>();
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
+  const { user, token } = useAuth();
   const { listingData } = (route.params as any) || {};
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -105,8 +107,10 @@ export default function CarCamera() {
     let subscription: any;
 
     const startSensors = async () => {
-      const { status } = await DeviceMotion.requestPermissionsAsync();
-      if (status !== 'granted') return;
+      if (Platform.OS !== 'web') {
+        const { status } = await DeviceMotion.requestPermissionsAsync();
+        if (status !== 'granted') return;
+      }
 
       const handleMotionData = (data: any) => {
         if (!data.rotation) return;
@@ -158,38 +162,43 @@ export default function CarCamera() {
         }
       };
 
-      // Safety check for Web: Some environments don't support DeviceMotion.addListener
-      if (typeof DeviceMotion.addListener === 'function') {
-        try {
-          subscription = DeviceMotion.addListener(handleMotionData);
-        } catch (e) {
-          logger.warn('DeviceMotion.addListener failed, falling back to window event:', e);
-          setupWebFallback();
-        }
-      } else {
-        setupWebFallback();
-      }
-
-      function setupWebFallback() {
+        // Safety check for Web: Some environments don't support DeviceMotion.addListener
         if (Platform.OS === 'web') {
-          const webHandler = (event: DeviceMotionEvent) => {
-            // Map Web event to Expo format
-            const data = {
-              rotation: {
-                alpha: (event.rotationRate?.alpha || 0) * (Math.PI / 180),
-                beta: (event.accelerationIncludingGravity?.y || 0) * (Math.PI / 180), // Rough mapping for pitch
-                gamma: (event.accelerationIncludingGravity?.x || 0) * (Math.PI / 180), // Rough mapping for roll
-              },
-              rotationRate: event.rotationRate,
-            };
-            handleMotionData(data);
-          };
-          window.addEventListener('devicemotion', webHandler);
-          subscription = { remove: () => window.removeEventListener('devicemotion', webHandler) };
+            setupWebFallback();
+        } else if (DeviceMotion && typeof DeviceMotion.addListener === 'function') {
+            try {
+                // Some versions of expo-sensors on Android/iOS might still fail even if addListener is a function
+                subscription = DeviceMotion.addListener(handleMotionData);
+            } catch (e) {
+                logger.warn('DeviceMotion.addListener failed, falling back to window event:', e);
+                setupWebFallback();
+            }
+        } else {
+            setupWebFallback();
         }
-      }
 
-      DeviceMotion.setUpdateInterval(100);
+        function setupWebFallback() {
+            if (Platform.OS === 'web') {
+                const webHandler = (event: DeviceMotionEvent) => {
+                    // Map Web event to Expo format
+                    const data = {
+                        rotation: {
+                            alpha: (event.rotationRate?.alpha || 0) * (Math.PI / 180),
+                            beta: (event.accelerationIncludingGravity?.y || 0) * (Math.PI / 180), // Rough mapping for pitch
+                            gamma: (event.accelerationIncludingGravity?.x || 0) * (Math.PI / 180), // Rough mapping for roll
+                        },
+                        rotationRate: event.rotationRate,
+                    };
+                    handleMotionData(data);
+                };
+                window.addEventListener('devicemotion', webHandler);
+                subscription = { remove: () => window.removeEventListener('devicemotion', webHandler) };
+            }
+        }
+
+        if (Platform.OS !== 'web') {
+            DeviceMotion.setUpdateInterval(100);
+        }
     };
 
     if (isFocused) {
@@ -198,8 +207,9 @@ export default function CarCamera() {
 
     return () => {
       subscription?.remove();
+      if (stabilityTimerRef.current) clearTimeout(stabilityTimerRef.current);
     };
-  }, [isFocused, selectedAngleIndex, selectedCategory]);
+  }, [isFocused]); // Only re-run when focus changes
 
   // Screen Orientation
   useEffect(() => {
@@ -264,6 +274,11 @@ export default function CarCamera() {
   }
 
   const handleCapture = async () => {
+    if (!token) {
+        Alert.alert('Session Expired', 'Please login again to capture and upload images.');
+        navigation.navigate('Login');
+        return;
+    }
     if (!cameraRef.current || !isCameraReady || uploading) {
         if (!isCameraReady) Alert.alert('Wait', 'Camera is not ready yet.');
         return;
@@ -317,6 +332,11 @@ export default function CarCamera() {
   };
 
   const handlePickFromGallery = async () => {
+    if (!token) {
+        Alert.alert('Session Expired', 'Please login again to capture and upload images.');
+        navigation.navigate('Login');
+        return;
+    }
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
@@ -383,7 +403,7 @@ export default function CarCamera() {
       carType: selectedType,
       capturedImagesStatus: capturedImages, // Added to track which angles were captured
     };
-    navigation.navigate('InspectionReport', { listingData: updatedListingData });
+    navigation.navigate('FillDetails', { listingData: updatedListingData });
   };
 
   const handleBack = () => {

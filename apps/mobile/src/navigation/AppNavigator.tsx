@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { RootStackParamList, MainTabParamList, DrawerParamList } from './types';
 import { useAuth } from '../AuthContext';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomDrawerContent from '../components/CustomDrawerContent';
@@ -262,7 +262,15 @@ function MainDrawer() {
 }
 
 export default function AppNavigator() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0d1121' }}>
+        <ActivityIndicator size="large" color="#FFC307" />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator id="RootStackNavigator" screenOptions={{ headerShown: false }}>

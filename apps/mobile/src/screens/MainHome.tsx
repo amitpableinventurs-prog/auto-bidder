@@ -28,6 +28,7 @@ import Logo from "../components/Logo";
 import * as Linking from 'expo-linking';
 import { getStorageItem, setStorageItem } from '../utils/storage-utils';
 import ScreenWrapper from "../components/ScreenWrapper";
+import SliderMedia from "../components/SliderMedia";
 
 import { ALL_BRANDS } from "../utils/brands";
 import NeedAssistance from "../components/NeedAssistance";
@@ -240,6 +241,8 @@ export default function MainHome({ navigation }: any) {
               title: s.title,
               subtitle: s.subtitle,
               image: s.imageUrl,
+              videoUrl: s.videoUrl,
+              mediaType: s.mediaType || 'IMAGE',
               link: s.link,
               isAccent: true
           }));
@@ -532,10 +535,13 @@ export default function MainHome({ navigation }: any) {
           onScrollBeginDrag={stopHeroAutoPlay}
           onScrollEndDrag={startHeroAutoPlay}
           keyExtractor={item => item.id}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <Pressable style={{ width: SCREEN_W - 30 }} onPress={() => handleSliderPress(item)}>
-              <Image
-                source={{ uri: item.image }}
+              <SliderMedia
+                mediaType={item.mediaType}
+                imageUrl={item.image}
+                videoUrl={item.videoUrl}
+                isActive={activeHero === index}
                 style={styles.heroImage}
                 resizeMode="cover"
               />

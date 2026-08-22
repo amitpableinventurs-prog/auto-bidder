@@ -6,9 +6,10 @@ class AdminApp {
         // Default to port 4000 if running locally on a different port
         const defaultBase = (typeof window !== 'undefined' && window.location?.hostname === 'localhost') ?
             'http://localhost:4000' :
-            (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'http://localhost:4000';
+            'https://api.autobidder.in';
 
         this.apiBase = localStorage.getItem('apiBase') || defaultBase;
+        this.environment = this.apiBase.includes('localhost') ? 'LOCAL' : 'LIVE';
         this.token = localStorage.getItem('admin_token');
         this.initializeEventListeners();
     }
@@ -16,7 +17,17 @@ class AdminApp {
     setApiBase(url) {
         // Clean URL to base (no /api suffix)
         this.apiBase = url.replace(/\/$/, '').replace(/\/api$/, '');
+        this.environment = this.apiBase.includes('localhost') ? 'LOCAL' : 'LIVE';
         localStorage.setItem('apiBase', this.apiBase);
+        this.updateEnvironmentUI();
+    }
+
+    updateEnvironmentUI() {
+        const envBadge = document.getElementById('env-badge');
+        if (envBadge) {
+            envBadge.textContent = this.environment;
+            envBadge.className = `badge badge-${this.environment === 'LIVE' ? 'success' : 'warning'}`;
+        }
     }
 
     initializeEventListeners() {
@@ -27,6 +38,18 @@ class AdminApp {
                 this.setApiBase(e.target.value);
             });
         }
+
+        const envSelector = document.getElementById('envSelector');
+        if (envSelector) {
+            envSelector.value = this.apiBase;
+            envSelector.addEventListener('change', (e) => {
+                this.setApiBase(e.target.value);
+                if (input) input.value = e.target.value;
+                location.reload(); // Reload to apply new base to all requests
+            });
+        }
+
+        this.updateEnvironmentUI();
     }
 
     async fetch(endpoint, options = {}) {
@@ -56,12 +79,13 @@ class AdminApp {
             if (response.status === 401) {
                 this.token = null;
                 localStorage.removeItem('admin_token');
-                throw new Error('Unauthorized: Session expired');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Unauthorized: Session expired');
             }
 
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
-                throw new Error(error.error || `API Error: ${response.status}`);
+                throw new Error(error.error || `API Error: ${response.status} ${response.statusText}`);
             }
 
             return await response.json();
@@ -173,6 +197,11 @@ class AdminApp {
     }
     async getDashboardStats() { return this.fetch('/admin/dashboard'); }
 
+    // Global Search
+    async globalSearch(query) {
+        return this.fetch(`/admin/search?q=${encodeURIComponent(query)}`);
+    }
+
     // Sliders
     async getSliders() { return this.fetch('/admin/sliders/all'); }
     async createSlider(data) {
@@ -195,6 +224,49 @@ class AdminApp {
     }
     async deleteBrand(id) {
         return this.fetch(`/admin/brands/${id}`, { method: 'DELETE' });
+    }
+
+    // Collections
+    async getCollections() { return this.fetch('/admin/collections/all'); }
+    async createCollection(data) {
+        return this.fetch('/admin/collections', { method: 'POST', body: JSON.stringify(data) });
+    }
+    async updateCollection(id, data) {
+        return this.fetch(`/admin/collections/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    }
+    async deleteCollection(id) {
+        return this.fetch(`/admin/collections/${id}`, { method: 'DELETE' });
+    }
+
+    // News
+    async getNews() { return this.fetch('/admin/news/all'); }
+    async createNews(data) {
+        return this.fetch('/admin/news', { method: 'POST', body: JSON.stringify(data) });
+    }
+    async updateNews(id, data) {
+        return this.fetch(`/admin/news/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    }
+    async deleteNews(id) {
+        return this.fetch(`/admin/news/${id}`, { method: 'DELETE' });
+    }
+
+    // DNP (Dealer Network Program)
+    async getDnpLeads() { return this.fetch('/admin/dnp/leads'); }
+    async getDnpCommissions() { return this.fetch('/admin/dnp/commissions'); }
+    async getDnpWithdrawals() { return this.fetch('/admin/dnp/withdrawals'); }
+    async processDnpWithdrawal(id, status, notes) {
+        return this.fetch(`/admin/dnp/withdrawals/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status, adminNotes: notes })
+        });
+    }
+    async getDnpStats() { return this.fetch('/admin/dnp/stats'); }
+
+    // Health & System
+    async getHealth() {
+        // Use raw fetch for health to avoid auth/prefix issues if needed,
+        // but this.fetch works if /api/health exists
+        return this.fetch('/health');
     }
 
     // Upload
